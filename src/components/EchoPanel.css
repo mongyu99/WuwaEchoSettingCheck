@@ -1,0 +1,135 @@
+.echo-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 16px;
+  padding: 20px 24px;
+}
+
+.echo-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.echo-panel__badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  border-radius: 999px;
+  padding: 3px 10px;
+  flex-shrink: 0;
+}
+
+.echo-panel__failed {
+  color: var(--score-low);
+  font-size: 12px;
+  margin: 0;
+}
+
+.echo-panel__block {
+  border-left: 3px solid transparent;
+  padding-left: 12px;
+}
+
+.echo-panel__block--main {
+  border-color: var(--region-main);
+}
+
+.echo-panel__block--sub {
+  border-color: var(--region-sub);
+}
+
+.echo-panel__block h3 {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin: 0 0 6px;
+  text-transform: uppercase;
+}
+
+.echo-panel__count {
+  color: var(--region-sub);
+}
+
+.echo-panel__block ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.echo-panel__block--main li {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.echo-panel__empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+}
+
+.echo-panel__sub-row {
+  display: grid;
+  grid-template-columns: 1fr 100px 24px;
+  gap: 8px;
+  align-items: center;
+}
+
+.echo-panel__sub-row input {
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-hairline);
+  border-radius: 6px;
+  color: var(--text-primary);
+  padding: 6px 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.echo-panel__sub-row input:last-of-type {
+  text-align: right;
+}
+
+.echo-panel__sub-row button {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 17px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.echo-panel__sub-row button:hover {
+  color: var(--score-low);
+}
+
+.echo-panel__sub-row--highlight input {
+  border-color: var(--region-main);
+  background: rgba(232, 197, 71, 0.12);
+}
+
+.echo-panel__add {
+  align-self: flex-start;
+  margin-top: 6px;
+  background: transparent;
+  border: 1px dashed var(--border-hairline);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.echo-panel__add:hover {
+  color: var(--text-primary);
+  border-color: var(--region-sub);
+}

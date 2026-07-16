@@ -1,0 +1,61 @@
+:root {
+  /* Color */
+  --bg-void: #0b0e17;
+  --bg-surface: #151a2b;
+  --bg-surface-raised: #1c2338;
+  --accent-wave: #6ee7f9;
+  --accent-resonance: #a78bfa;
+  --text-primary: #e8ecf7;
+  --text-muted: #8891ab;
+  --score-low: #f97066;
+  --score-mid: #f0b94f;
+  --score-high: #6ee7f9;
+  --border-hairline: rgba(232, 236, 247, 0.08);
+
+  /* Region markers (matches in-game info panel structure) */
+  --region-name: #e2892f;
+  --region-main: #e8c547;
+  --region-sub: #f97066;
+
+  /* Type */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-void);
+  background-image:
+    radial-gradient(circle at 15% 0%, rgba(110, 231, 249, 0.08), transparent 45%),
+    radial-gradient(circle at 85% 20%, rgba(167, 139, 250, 0.08), transparent 40%);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent-wave);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
