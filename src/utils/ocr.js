@@ -1,5 +1,97 @@
 import { createWorker } from 'tesseract.js'
 import { STAT_WEIGHTS } from './scoreCalculator'
+import { MAIN_STAT_BONUS_NAMES } from '../config/mainStatBonusNames'
+import { SUB_STAT_OPTIONS, SUB_STAT_NAMES, formatSubStatValue } from '../config/subStatOptions'
+
+/**
+ * 두 문자열 사이의 편집 거리(레벤슈타인 거리)를 계산합니다. OCR로 심하게 깨진 라벨을
+ * 알려진 후보 목록과 근접 비교해서 보정하는 데 씁니다.
+ */
+function levenshtein(a, b) {
+  const dp = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0))
+  for (let i = 0; i <= a.length; i++) dp[i][0] = i
+  for (let j = 0; j <= b.length; j++) dp[0][j] = j
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1])
+    }
+  }
+  return dp[a.length][b.length]
+}
+
+/** label과 가장 가까운 후보를 찾되, 후보 길이에 비해 너무 많이 다르면 매칭하지 않습니다. */
+function closestMatch(label, candidates) {
+  const stripped = label.replace(/\s+/g, '')
+  let best = null
+  let bestDist = Infinity
+  for (const cand of candidates) {
+    const candStripped = cand.replace(/\s+/g, '')
+    const dist = levenshtein(stripped, candStripped)
+    const threshold = Math.max(2, Math.ceil(candStripped.length * 0.4))
+    if (dist <= threshold && dist < bestDist) {
+      bestDist = dist
+      best = cand
+    }
+  }
+  return best
+}
+
+/**
+ * 메인 스탯은 항상 2줄입니다: 첫 줄은 코스트 보너스(15가지 중 하나), 둘째 줄은 실제
+ * 주스탯인데 코스트 3 메아리 기준으로는 공격력 아니면 HP뿐입니다. 이 규칙을 이용해 OCR로
+ * 깨진 라벨을 보정합니다.
+ */
+export function normalizeMainStats(mainStats) {
+  return mainStats.map((s, idx) => {
+    if (idx === 0) {
+      const matched = closestMatch(s.label, MAIN_STAT_BONUS_NAMES)
+      return matched ? { ...s, label: matched } : s
+    }
+    if (idx === 1) {
+      const isAttack = closestMatch(s.label, ['공격력']) !== null
+      return { ...s, label: isAttack ? '공격력' : 'HP' }
+    }
+    return s
+  })
+}
+
+/**
+ * 부옵션은 이제 자유 입력이 아니라 정해진 목록에서 클릭으로 고르는 방식입니다. OCR로 읽은
+ * 라벨/값을 카탈로그(SUB_STAT_OPTIONS)에서 가장 가까운 조합으로 스냅합니다. 확신이 안 서면
+ * (매칭 실패) 빈 값으로 두어 사용자가 드롭다운에서 직접 고르게 합니다.
+ */
+export function snapSubStatsToCatalog(subStats) {
+  return subStats.map((s) => {
+    const isPercent = s.valueText.includes('%')
+    const base = s.label.replace(/%/g, '').trim()
+    const pool = SUB_STAT_NAMES.filter((n) => n.endsWith('%') === isPercent)
+    const poolBase = pool.map((n) => n.replace(/%$/, ''))
+    const matchedBase = closestMatch(base, poolBase)
+    const label = matchedBase ? pool[poolBase.indexOf(matchedBase)] : ''
+
+    if (!label) {
+      return { ...s, label: '', valueText: '' }
+    }
+
+    const rawNum = parseFloat(s.valueText)
+    const options = SUB_STAT_OPTIONS[label]
+    let nearest = options[0]
+    if (!Number.isNaN(rawNum)) {
+      let bestDiff = Math.abs(options[0] - rawNum)
+      for (const v of options) {
+        const diff = Math.abs(v - rawNum)
+        if (diff < bestDiff) {
+          bestDiff = diff
+          nearest = v
+        }
+      }
+    }
+
+    return { ...s, label, valueText: formatSubStatValue(label, nearest) }
+  })
+}
 
 /**
  * 알려진 스탯명(STAT_WEIGHTS)의 공백을 제거한 형태 -> 정식 표기 매핑.

@@ -85,7 +85,7 @@
   align-items: center;
 }
 
-.echo-panel__sub-row input {
+.echo-panel__sub-row select {
   background: var(--bg-surface-raised);
   border: 1px solid var(--border-hairline);
   border-radius: 6px;
@@ -95,7 +95,11 @@
   font-size: 13px;
 }
 
-.echo-panel__sub-row input:last-of-type {
+.echo-panel__sub-row select:disabled {
+  opacity: 0.5;
+}
+
+.echo-panel__sub-row select:last-of-type {
   text-align: right;
 }
 
@@ -112,7 +116,7 @@
   color: var(--score-low);
 }
 
-.echo-panel__sub-row--highlight input {
+.echo-panel__sub-row--highlight select {
   border-color: var(--region-main);
   background: rgba(232, 197, 71, 0.12);
 }

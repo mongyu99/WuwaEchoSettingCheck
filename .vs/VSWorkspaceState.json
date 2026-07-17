@@ -3,9 +3,9 @@
     "",
     "\\public",
     "\\src",
-    "\\src\\components",
-    "\\src\\config"
+    "\\src\\config",
+    "\\src\\pages"
   ],
-  "SelectedNode": "\\src\\config\\regions.js",
+  "SelectedNode": "\\src\\pages\\StatsPage.jsx",
   "PreviewInSolutionExplorer": false
 }

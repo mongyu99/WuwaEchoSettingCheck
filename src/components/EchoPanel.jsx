@@ -1,11 +1,15 @@
-import { STAT_WEIGHTS } from '../utils/scoreCalculator'
+import { SUB_STAT_OPTIONS, SUB_STAT_NAMES, formatSubStatValue } from '../config/subStatOptions'
 import './EchoPanel.css'
 
-const statOptions = Object.keys(STAT_WEIGHTS)
-
 export default function EchoPanel({ echo, index, onUpdateSubStats }) {
-  const updateSub = (id, field, value) => {
-    onUpdateSubStats(echo.id, echo.subStats.map((s) => (s.id === id ? { ...s, [field]: value } : s)))
+  const updateSubLabel = (id, label) => {
+    onUpdateSubStats(
+      echo.id,
+      echo.subStats.map((s) => (s.id === id ? { ...s, label, valueText: '' } : s)),
+    )
+  }
+  const updateSubValue = (id, valueText) => {
+    onUpdateSubStats(echo.id, echo.subStats.map((s) => (s.id === id ? { ...s, valueText } : s)))
   }
   const removeSub = (id) => {
     onUpdateSubStats(echo.id, echo.subStats.filter((s) => s.id !== id))
@@ -18,10 +22,10 @@ export default function EchoPanel({ echo, index, onUpdateSubStats }) {
   return (
     <article className="echo-panel">
       <header className="echo-panel__header">
-        <span className="echo-panel__badge">사진 {index + 1}</span>
+        <span className="echo-panel__badge">에코 {index + 1}</span>
       </header>
 
-      {echo.failed && <p className="echo-panel__failed">이 사진은 인식에 실패했어요. 값을 직접 입력해주세요.</p>}
+      {echo.failed && <p className="echo-panel__failed">이 사진은 인식에 실패했어요. 값을 직접 선택해주세요.</p>}
 
       <section className="echo-panel__block echo-panel__block--main">
         <h3>메인 스탯</h3>
@@ -40,28 +44,33 @@ export default function EchoPanel({ echo, index, onUpdateSubStats }) {
         <h3>서브 스탯 <span className="echo-panel__count">{echo.subStats.length}/5</span></h3>
         <ul>
           {echo.subStats.length === 0 && <li className="echo-panel__empty">서브 스탯 없음</li>}
-          {echo.subStats.map((s) => (
-            <li key={s.id} className={`echo-panel__sub-row ${s.highlighted ? 'echo-panel__sub-row--highlight' : ''}`}>
-              <input
-                type="text"
-                list="stat-name-options"
-                value={s.label}
-                placeholder="스탯명"
-                onChange={(e) => updateSub(s.id, 'label', e.target.value)}
-              />
-              <input
-                type="text"
-                value={s.valueText}
-                placeholder="예: 7.5% 또는 40"
-                onChange={(e) => updateSub(s.id, 'valueText', e.target.value)}
-              />
-              <button onClick={() => removeSub(s.id)} aria-label="서브 스탯 삭제">×</button>
-            </li>
-          ))}
+          {echo.subStats.map((s) => {
+            const usedLabels = echo.subStats.map((o) => o.label).filter(Boolean)
+            const options = SUB_STAT_NAMES.filter((name) => name === s.label || !usedLabels.includes(name))
+            return (
+              <li key={s.id} className={`echo-panel__sub-row ${s.highlighted ? 'echo-panel__sub-row--highlight' : ''}`}>
+                <select value={s.label} onChange={(e) => updateSubLabel(s.id, e.target.value)}>
+                  <option value="">스탯 선택</option>
+                  {options.map((name) => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </select>
+                <select
+                  value={s.valueText}
+                  onChange={(e) => updateSubValue(s.id, e.target.value)}
+                  disabled={!s.label}
+                >
+                  <option value="">수치 선택</option>
+                  {s.label && SUB_STAT_OPTIONS[s.label].map((num) => {
+                    const text = formatSubStatValue(s.label, num)
+                    return <option key={text} value={text}>{text}</option>
+                  })}
+                </select>
+                <button onClick={() => removeSub(s.id)} aria-label="서브 스탯 삭제">×</button>
+              </li>
+            )
+          })}
         </ul>
-        <datalist id="stat-name-options">
-          {statOptions.map((opt) => <option key={opt} value={opt} />)}
-        </datalist>
         {echo.subStats.length < 5 && (
           <button className="echo-panel__add" onClick={addSub}>+ 서브 스탯 추가</button>
         )}

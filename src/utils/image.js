@@ -2,6 +2,19 @@ export const TARGET_WIDTH = 1920
 export const TARGET_HEIGHT = 1080
 export const MAX_IMAGES = 5
 
+/**
+ * Blob을 base64 dataURL 문자열로 변환합니다. blob: object URL과 달리 JSON으로 직렬화해서
+ * localStorage에 저장할 수 있어, 미리보기 이미지를 저장/복원할 때 씁니다.
+ */
+export function blobToDataURL(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
+}
+
 function loadImage(file) {
   return new Promise((resolve, reject) => {
     const img = new Image()

@@ -9,8 +9,8 @@
  * 이름·코스트 영역은 인식률이 낮아 더 이상 사용하지 않습니다.
  */
 export const FIXED_REGIONS = {
-    mainStat: { x: 1485, y: 230, width: 385, height: 70 },
-    subStat: { x: 1485, y: 300, width: 385, height: 180 },
+  mainStat: { x: 1485, y: 230, width: 385, height: 70 },
+  subStat: { x: 1485, y: 300, width: 385, height: 180 },
 }
 
 export const REGION_META = [

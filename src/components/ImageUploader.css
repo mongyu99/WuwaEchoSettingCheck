@@ -187,39 +187,3 @@
   border-color: var(--border-hairline);
   color: var(--text-primary);
 }
-
-.uploader--compact {
-  padding: 14px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.uploader__compact-info {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.uploader__actions--compact {
-  margin: 0;
-  display: flex;
-  gap: 10px;
-}
-
-.uploader__add-btn {
-  display: inline-flex;
-  align-items: center;
-  border: 1px dashed var(--border-hairline);
-  border-radius: 8px;
-  padding: 9px 14px;
-  font-size: 13px;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-.uploader__add-btn:hover {
-  color: var(--text-primary);
-  border-color: var(--accent-wave);
-}
