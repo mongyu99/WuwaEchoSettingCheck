@@ -12,6 +12,7 @@ import {
   buildStatsFromLines,
   normalizeMainStats,
   snapSubStatsToCatalog,
+  parseCost,
 } from './utils/ocr'
 import { detectHighlightedLines } from './utils/highlight'
 import { preprocessForOcr } from './utils/image'
@@ -19,42 +20,78 @@ import { prepareImageForExtraction } from './utils/pipeline'
 import { saveState, loadState } from './utils/persist'
 import './App.css'
 
+const EMPTY_BASE_STATS = { charAtk: '', weaponAtk: '', baseHp: '', baseDef: '' }
+
+/** 예전 저장 형식(캐릭터당 에코 배열만 저장)과도 호환되도록 레코드 모양을 항상 통일합니다. */
+function normalizeRecord(rec) {
+  if (Array.isArray(rec)) {
+    return { echoes: rec, weapon: null, echoSets: [], baseStats: { ...EMPTY_BASE_STATS } }
+  }
+  return {
+    echoes: rec?.echoes ?? [],
+    weapon: rec?.weapon ?? null, // 무기 카탈로그 id (또는 null)
+    echoSets: Array.isArray(rec?.echoSets) ? rec.echoSets.filter((s) => s && typeof s === 'object') : [], // [{ setId, pieceCount }]
+    baseStats: { ...EMPTY_BASE_STATS, ...(rec?.baseStats ?? {}) },
+  }
+}
+
 const saved = loadState()
 const savedCharacter = saved?.characterId ? CHARACTERS.find((c) => c.id === saved.characterId) ?? null : null
 
 export default function App() {
   const [page, setPage] = useState(saved?.page ?? 'characters') // characters | capture | edit | stats
   const [character, setCharacter] = useState(savedCharacter)
-  // 캐릭터 id별로 에코 세팅을 따로 보관합니다: { [characterId]: echo[] }
+  // 캐릭터 id별로 에코/무기/에코세트/기초스탯을 따로 보관합니다: { [characterId]: { echoes, weapon, echoSets, baseStats } }
   const [characterData, setCharacterData] = useState(saved?.characterData ?? {})
   const [isProcessing, setIsProcessing] = useState(false)
   const [progress, setProgress] = useState(0)
   const [replacingId, setReplacingId] = useState(null)
 
-  const echoes = character ? characterData[character.id] ?? [] : []
+  const record = normalizeRecord(character ? characterData[character.id] ?? {} : {})
+  const echoes = record.echoes
 
   // 진행 상태가 바뀔 때마다 저장해서, 브라우저를 나갔다 들어와도 이어서 볼 수 있게 합니다.
   useEffect(() => {
     saveState({ page, characterId: character?.id ?? null, characterData })
   }, [page, character, characterData])
 
-  const setEchoesForCurrent = (updater) => {
+  const updateRecordForCurrent = (patcher) => {
     if (!character) return
     setCharacterData((prev) => {
-      const current = prev[character.id] ?? []
-      const next = typeof updater === 'function' ? updater(current) : updater
-      return { ...prev, [character.id]: next }
+      const current = normalizeRecord(prev[character.id] ?? {})
+      return { ...prev, [character.id]: patcher(current) }
     })
+  }
+
+  const setEchoesForCurrent = (updater) => {
+    updateRecordForCurrent((rec) => ({
+      ...rec,
+      echoes: typeof updater === 'function' ? updater(rec.echoes) : updater,
+    }))
+  }
+
+  const setWeaponForCurrent = (weapon) => {
+    updateRecordForCurrent((rec) => ({ ...rec, weapon }))
+  }
+
+  const setEchoSetsForCurrent = (echoSets) => {
+    updateRecordForCurrent((rec) => ({ ...rec, echoSets: echoSets.slice(0, 3) }))
+  }
+
+  const setBaseStatsForCurrent = (partial) => {
+    updateRecordForCurrent((rec) => ({ ...rec, baseStats: { ...rec.baseStats, ...partial } }))
   }
 
   /** 크롭된 이미지 3종(메인/서브 스탯, 미리보기)으로부터 결과 카드 하나를 만듭니다. */
   const buildEchoFromCrops = async (id, crops, previewUrl) => {
     try {
-      const [mainPre, subPre] = await Promise.all([
+      const [costPre, mainPre, subPre] = await Promise.all([
+        crops.cost ? preprocessForOcr(crops.cost) : Promise.resolve(null),
         preprocessForOcr(crops.mainStat),
         preprocessForOcr(crops.subStat),
       ])
-      const [mainRaw, subResult] = await Promise.all([
+      const [costRaw, mainRaw, subResult] = await Promise.all([
+        costPre ? extractText(costPre) : Promise.resolve(''),
         extractText(mainPre),
         recognizeRegion(subPre),
       ])
@@ -68,13 +105,14 @@ export default function App() {
       return {
         id,
         previewUrl,
+        cost: parseCost(costRaw),
         mainStats: normalizeMainStats(parseStatLines(mainRaw)),
         subStats,
         failed: false,
       }
     } catch (err) {
       console.error(err)
-      return { id, previewUrl, mainStats: [], subStats: [], failed: true }
+      return { id, previewUrl, cost: null, mainStats: [], subStats: [], failed: true }
     }
   }
 
@@ -116,24 +154,20 @@ export default function App() {
 
   const handleSelectCharacter = (c) => {
     setCharacter(c)
-    const existing = characterData[c.id]
-    setPage(existing && existing.length > 0 ? 'stats' : 'capture')
+    const rec = normalizeRecord(characterData[c.id] ?? {})
+    setPage(rec.echoes.length > 0 ? 'stats' : 'capture')
   }
 
   const goToCharacters = () => setPage('characters')
 
+  /** 초기화: 이 캐릭터의 캡처된 에코만 지우고, 다시 캡처할 수 있도록 캡처 화면으로 이동합니다. */
   const handleResetCurrent = () => {
     if (!character) {
       goToCharacters()
       return
     }
-    setCharacterData((prev) => {
-      const next = { ...prev }
-      delete next[character.id]
-      return next
-    })
-    setCharacter(null)
-    setPage('characters')
+    updateRecordForCurrent((rec) => ({ ...rec, echoes: [] }))
+    setPage('capture')
   }
 
   const renderPage = () => {
@@ -164,6 +198,11 @@ export default function App() {
           <StatsPage
             echoes={echoes}
             character={character}
+            weapon={record.weapon}
+            echoSets={record.echoSets}
+            onSetWeapon={setWeaponForCurrent}
+            onSetEchoSets={setEchoSetsForCurrent}
+            onUpdateSubStats={updateSubStats}
             onGoToCharacters={goToCharacters}
             onReset={handleResetCurrent}
           />

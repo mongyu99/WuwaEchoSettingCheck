@@ -227,6 +227,12 @@ export async function extractText(image, onProgress) {
  * 줄 위치(bbox)가 필요 없는 경우에 사용합니다. %가 붙어있으면 isPercent: true로
  * 표시되어 화면에도 %가 그대로 유지됩니다.
  */
+/** "COST 3" 같은 코스트 영역 원문에서 숫자만 뽑아냅니다. 못 찾으면 null. */
+export function parseCost(rawText) {
+  const match = rawText.match(/\d+/)
+  return match ? match[0] : null
+}
+
 export function parseStatLines(rawText) {
   const cleaned = rawText.split('\n').map(cleanLine).filter(Boolean)
   const merged = mergeOrphanValues(cleaned)

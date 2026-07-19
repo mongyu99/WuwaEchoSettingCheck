@@ -1,7 +1,7 @@
 import { SUB_STAT_OPTIONS, SUB_STAT_NAMES, formatSubStatValue } from '../config/subStatOptions'
 import './EchoPanel.css'
 
-export default function EchoPanel({ echo, index, onUpdateSubStats }) {
+export default function EchoPanel({ echo, index, onUpdateSubStats, highlightIncomplete, validLabels, suggestedLabels }) {
   const updateSubLabel = (id, label) => {
     onUpdateSubStats(
       echo.id,
@@ -23,6 +23,7 @@ export default function EchoPanel({ echo, index, onUpdateSubStats }) {
     <article className="echo-panel">
       <header className="echo-panel__header">
         <span className="echo-panel__badge">에코 {index + 1}</span>
+        {echo.cost && <span className="echo-panel__cost">COST {echo.cost}</span>}
       </header>
 
       {echo.failed && <p className="echo-panel__failed">이 사진은 인식에 실패했어요. 값을 직접 선택해주세요.</p>}
@@ -47,8 +48,15 @@ export default function EchoPanel({ echo, index, onUpdateSubStats }) {
           {echo.subStats.map((s) => {
             const usedLabels = echo.subStats.map((o) => o.label).filter(Boolean)
             const options = SUB_STAT_NAMES.filter((name) => name === s.label || !usedLabels.includes(name))
+            const incomplete = highlightIncomplete && (!s.label || !s.valueText)
+            const isValidOption = s.label && validLabels?.includes(s.label)
+            const isFlatValid = isValidOption && s.valueText && !s.valueText.includes('%')
+            const isSuggested = s.label && suggestedLabels?.includes(s.label)
             return (
-              <li key={s.id} className={`echo-panel__sub-row ${s.highlighted ? 'echo-panel__sub-row--highlight' : ''}`}>
+              <li
+                key={s.id}
+                className={`echo-panel__sub-row ${s.highlighted ? 'echo-panel__sub-row--highlight' : ''} ${incomplete ? 'echo-panel__sub-row--incomplete' : ''} ${isValidOption ? (isFlatValid ? 'echo-panel__sub-row--valid-flat' : 'echo-panel__sub-row--valid') : ''} ${isSuggested ? 'echo-panel__sub-row--suggested' : ''}`}
+              >
                 <select value={s.label} onChange={(e) => updateSubLabel(s.id, e.target.value)}>
                   <option value="">스탯 선택</option>
                   {options.map((name) => (

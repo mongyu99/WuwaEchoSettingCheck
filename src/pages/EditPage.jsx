@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import EchoPanel from '../components/EchoPanel'
-import ConfirmDialog from '../components/ConfirmDialog'
 import './EditPage.css'
 
 function hasIncompleteStat(echoes) {
@@ -8,13 +7,15 @@ function hasIncompleteStat(echoes) {
 }
 
 export default function EditPage({ echoes, onUpdateSubStats, onReplaceOne, replacingId, onProceedToStats, onGoToCharacters }) {
-  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [highlightIncomplete, setHighlightIncomplete] = useState(false)
 
   const handleProceedClick = () => {
     if (hasIncompleteStat(echoes)) {
-      setConfirmOpen(true)
+      setHighlightIncomplete(true)
+      alert('스탯명이나 수치를 고르지 않은 서브 스탯이 있어요. 하늘색 테두리로 표시된 칸을 채워주세요.')
       return
     }
+    setHighlightIncomplete(false)
     onProceedToStats()
   }
 
@@ -58,7 +59,12 @@ export default function EditPage({ echoes, onUpdateSubStats, onReplaceOne, repla
                 }}
               />
             </label>
-            <EchoPanel echo={echo} index={idx} onUpdateSubStats={onUpdateSubStats} />
+            <EchoPanel
+              echo={echo}
+              index={idx}
+              onUpdateSubStats={onUpdateSubStats}
+              highlightIncomplete={highlightIncomplete}
+            />
           </div>
         ))}
       </div>
@@ -70,19 +76,6 @@ export default function EditPage({ echoes, onUpdateSubStats, onReplaceOne, repla
           </button>
         </div>
       )}
-
-      <ConfirmDialog
-        open={confirmOpen}
-        title="선택하지 않은 항목이 있어요"
-        message="스탯명이나 수치를 고르지 않은 서브 스탯이 있어요. 선택하지 않은 게 맞나요?"
-        confirmLabel="예, 맞아요"
-        cancelLabel="아니요, 다시 볼게요"
-        onConfirm={() => {
-          setConfirmOpen(false)
-          onProceedToStats()
-        }}
-        onCancel={() => setConfirmOpen(false)}
-      />
     </section>
   )
 }

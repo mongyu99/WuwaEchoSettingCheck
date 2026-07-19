@@ -9,11 +9,13 @@
  * 이름·코스트 영역은 인식률이 낮아 더 이상 사용하지 않습니다.
  */
 export const FIXED_REGIONS = {
+  cost: { x: 1485, y: 195, width: 385, height: 35 },
   mainStat: { x: 1485, y: 230, width: 385, height: 70 },
   subStat: { x: 1485, y: 300, width: 385, height: 180 },
 }
 
 export const REGION_META = [
+  { key: 'cost', label: '코스트', varName: '--region-name' },
   { key: 'mainStat', label: '메인 스탯 (2줄)', varName: '--region-main' },
   { key: 'subStat', label: '서브 스탯 (0~5줄)', varName: '--region-sub' },
 ]

@@ -1,67 +1,66 @@
 .app {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 64px 20px 100px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 48px 32px 100px;
 }
 
 .app__header {
-    margin-bottom: 40px;
+  margin-bottom: 40px;
 }
 
 .app__eyebrow {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    letter-spacing: 0.12em;
-    color: var(--accent-resonance);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--accent-resonance);
 }
 
 .app__header h1 {
-    font-family: var(--font-display);
-    font-size: 34px;
-    line-height: 1.25;
-    margin: 12px 0 8px;
-    background: linear-gradient(90deg, var(--text-primary), var(--accent-wave));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+  font-family: var(--font-display);
+  font-size: 34px;
+  line-height: 1.25;
+  margin: 12px 0 8px;
+  background: linear-gradient(90deg, var(--text-primary), var(--accent-wave));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .app__header p {
-    color: var(--text-muted);
-    font-size: 15px;
-    margin: 0;
+  color: var(--text-muted);
+  font-size: 15px;
+  margin: 0;
 }
 
 .app__flow {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .page-transition {
-    animation: page-slide-in 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: page-slide-in 0.32s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes page-slide-in {
-    from {
-        opacity: 0;
-        transform: translateX(28px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .page-transition {
-        animation: none;
-    }
+  .page-transition {
+    animation: none;
+  }
 }
 
 @media (max-width: 480px) {
-    .app__header h1 {
-        font-size: 26px;
-    }
+  .app__header h1 {
+    font-size: 26px;
+  }
 }

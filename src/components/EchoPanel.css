@@ -24,6 +24,16 @@
   flex-shrink: 0;
 }
 
+.echo-panel__cost {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent-resonance);
+  border: 1px solid var(--border-hairline);
+  border-radius: 999px;
+  padding: 3px 10px;
+  flex-shrink: 0;
+}
+
 .echo-panel__failed {
   color: var(--score-low);
   font-size: 12px;
@@ -119,6 +129,24 @@
 .echo-panel__sub-row--highlight select {
   border-color: var(--region-main);
   background: rgba(232, 197, 71, 0.12);
+}
+
+.echo-panel__sub-row--incomplete select {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 1px #38bdf8;
+}
+
+.echo-panel__sub-row--valid select {
+  border-color: var(--region-main);
+}
+
+.echo-panel__sub-row--valid-flat select {
+  border-color: #9c7a2e;
+}
+
+.echo-panel__sub-row--suggested select {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 1px #38bdf8;
 }
 
 .echo-panel__add {
