@@ -1,0 +1,16 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\public",
+    "\\public\\characters",
+    "\\raw-characters",
+    "\\raw-weapons",
+    "\\scripts",
+    "\\src",
+    "\\src\\components",
+    "\\src\\pages",
+    "\\WuwaQuickSwapHelper\\Overlay"
+  ],
+  "SelectedNode": "\\src\\pages\\StatsPage.jsx",
+  "PreviewInSolutionExplorer": false
+}
