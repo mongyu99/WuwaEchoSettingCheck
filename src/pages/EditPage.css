@@ -54,6 +54,16 @@
   display: block;
 }
 
+.echo-row__thumb--empty {
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface-raised);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
 .echo-row__replace {
   align-self: stretch;
   text-align: center;

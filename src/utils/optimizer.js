@@ -1,4 +1,5 @@
 import { SUB_STAT_OPTIONS } from '../config/subStatOptions'
+import { successProbability } from './probability'
 
 // (기준값 + %) 형태로 계산해야 하는 카테고리와, %만으로 계산되는 카테고리
 export const BASE_PERCENT_CATEGORIES = {
@@ -14,13 +15,31 @@ export const PERCENT_ONLY_CATEGORIES = {
 export const OPTIMIZER_CATEGORIES = { ...BASE_PERCENT_CATEGORIES, ...PERCENT_ONLY_CATEGORIES }
 
 /**
+ * sourceLabel(% 서브스탯)을 가진 서브스탯 중, 빼도 marginBudget(퍼센트 포인트) 이내라서 목표를
+ * 계속 달성한 상태로 남는 것들 중 가장 큰 값을 재배치 후보로 고릅니다(여유분을 최대한 활용).
+ * 그런 서브스탯이 여러 에코에 있으면 값이 가장 큰 것 하나만 반환합니다.
+ */
+export function findReallocationCandidate(sourceLabel, marginBudget, echoes) {
+  let best = null
+  echoes.forEach((echo, echoIndex) => {
+    echo.subStats.forEach((s) => {
+      if (s.label !== sourceLabel) return
+      const value = parseFloat(s.valueText)
+      if (Number.isNaN(value) || value > marginBudget) return
+      if (!best || value > best.value) best = { echoIndex, value, valueText: s.valueText }
+    })
+  })
+  return best
+}
+
+/**
  * 에코를 "먼저 건드릴 순서"로 정렬합니다: 유효 옵션이 가장 적게 채워진 에코 먼저, 같으면 서브스탯
  * 값 합계가 가장 낮은 에코 먼저.
  */
 function priorityOrder(echoes, validLabels) {
   return echoes
     .map((echo, index) => {
-      const validCount = echo.subStats.filter((s) => s.label && validLabels.includes(s.label)).length
+      const validCount = echo.subStats.filter((s) => s.label && s.valueText && validLabels.includes(s.label)).length
       const totalValue = echo.subStats.reduce((sum, s) => {
         const n = parseFloat(s.valueText)
         return sum + (Number.isNaN(n) ? 0 : n)
@@ -34,6 +53,43 @@ function priorityOrder(echoes, validLabels) {
 function pickSufficientTier(options, remaining) {
   const sufficient = options.find((v) => v >= remaining)
   return sufficient ?? options[options.length - 1]
+}
+
+/**
+ * 새로 채울 자리에 %스탯을 넣을지 플랫 스탯을 넣을지, "한 번 굴려서 충분한 단계가 나올 확률"이
+ * 더 높은 쪽을 골라 추천합니다. 값이 아니라 "그 자리를 이 스탯으로 정했을 때, 재련 한 번으로
+ * 목표를 채울 확률"이 기준입니다. 플랫 옵션이 없는 카테고리(공명 효율·크리티컬 등)이거나, 이미 그
+ * 라벨을 갖고 있어 후보에서 빠지면 percentLabel/flatLabel을 null로 넘겨서 비교 없이 나머지 하나만
+ * 씁니다.
+ */
+function chooseStatOption({ percentLabel, options, neededPercent, flatLabel, flatOptions, neededFlat }) {
+  const percentChoice = percentLabel
+    ? {
+        label: percentLabel,
+        value: `${pickSufficientTier(options, neededPercent)}%`,
+        gain: pickSufficientTier(options, neededPercent),
+        isFlat: false,
+        probability: successProbability(percentLabel, neededPercent),
+      }
+    : null
+
+  const flatChoice =
+    flatLabel && flatOptions.length && neededFlat != null
+      ? {
+          label: flatLabel,
+          value: `${pickSufficientTier(flatOptions, neededFlat)}`,
+          gain: pickSufficientTier(flatOptions, neededFlat),
+          isFlat: true,
+          probability: successProbability(flatLabel, neededFlat),
+        }
+      : null
+
+  if (percentChoice && flatChoice) {
+    return flatChoice.probability > percentChoice.probability
+      ? { primary: flatChoice, alt: percentChoice }
+      : { primary: percentChoice, alt: flatChoice }
+  }
+  return { primary: percentChoice ?? flatChoice, alt: null }
 }
 
 /**
@@ -62,48 +118,78 @@ export function runOptimizerFromGap({ category, gapValue, base, echoes, validLab
   const maxTierValue = options.length ? options[options.length - 1] : null
   if (!maxTierValue) return { achieved: false, steps: [], impossible: true, neededPercentTotal }
 
-  // 기준값 곱셈형 카테고리는, 유효 옵션이 아닌 자리를 %가 아니라 "플랫" 스탯으로 채우는 대안도 있다고 안내합니다.
+  // 기준값 곱셈형 카테고리는, 자리를 %가 아니라 "플랫" 스탯으로 채우는 대안도 있습니다 — 어느 쪽이
+  // 재련 한 번으로 목표를 채울 확률이 더 높은지 그때그때 비교해서 고릅니다.
   const flatOptions = info.flatLabel ? SUB_STAT_OPTIONS[info.flatLabel] ?? [] : []
-  const flatMax = flatOptions.length ? flatOptions[flatOptions.length - 1] : null
-  const altFlat = flatMax ? { label: info.flatLabel, value: `${flatMax}` } : null
 
   const ordered = priorityOrder(echoes, validLabels)
   const steps = []
   let remainingPercent = neededPercentTotal
 
+  // remainingPercent(퍼센트 단위)를 "지금까지 남은 필요량과 같은 값"의 플랫 스탯 필요량으로 환산합니다.
+  const flatEquivalent = () => (base > 0 ? (remainingPercent / 100) * base : null)
+
+  // 선택된 옵션(퍼센트 또는 플랫)만큼 remainingPercent를 줄입니다. 플랫이 선택됐으면 다시 퍼센트
+  // 단위로 환산해서 빼야 이후 반복에서 남은 필요량 계산이 맞습니다.
+  const consume = (choice) => {
+    remainingPercent -= choice.isFlat && base > 0 ? (choice.gain / base) * 100 : choice.gain
+  }
+
   // 1순위: 빈 자리 채우기 → 없으면 유효 옵션이 아닌 스탯을 교체 (둘 다 기존 유효 옵션은 안 건드림)
   for (const { echo, index } of ordered) {
     if (remainingPercent <= 0) break
-    if (echo.subStats.some((s) => s.label === info.percentLabel)) continue // 이미 이 스탯을 갖고 있음
+    // 이미 값까지 채워진 라벨은 후보에서 뺍니다("스탯 선택"/"수치 선택" 미지정인 자리는 빈 자리로 취급).
+    const hasPercent = echo.subStats.some((s) => s.label === info.percentLabel && s.valueText)
+    const hasFlat = info.flatLabel && echo.subStats.some((s) => s.label === info.flatLabel && s.valueText)
+    if (hasPercent && (hasFlat || !info.flatLabel)) continue
 
-    if (echo.subStats.length < 5) {
-      const pick = pickSufficientTier(options, remainingPercent)
+    const filledCount = echo.subStats.filter((s) => s.label && s.valueText).length
+    if (filledCount < 5) {
+      const { primary, alt } = chooseStatOption({
+        percentLabel: hasPercent ? null : info.percentLabel,
+        options,
+        neededPercent: remainingPercent,
+        flatLabel: hasFlat ? null : info.flatLabel,
+        flatOptions,
+        neededFlat: flatEquivalent(),
+      })
       steps.push({
         echoIndex: index,
         action: 'add',
-        label: info.percentLabel,
-        toValue: `${pick}%`,
-        gain: pick,
-        altFlat,
+        label: primary.label,
+        toValue: primary.value,
+        gain: primary.gain,
+        gainIsFlat: primary.isFlat,
+        probability: primary.probability,
+        alt,
       })
-      remainingPercent -= pick
+      consume(primary)
       continue
     }
 
-    const invalidStat = echo.subStats.find((s) => s.label && !validLabels.includes(s.label))
+    const invalidStat = echo.subStats.find((s) => s.label && s.valueText && !validLabels.includes(s.label))
     if (invalidStat) {
-      const pick = pickSufficientTier(options, remainingPercent)
+      const { primary, alt } = chooseStatOption({
+        percentLabel: hasPercent ? null : info.percentLabel,
+        options,
+        neededPercent: remainingPercent,
+        flatLabel: hasFlat ? null : info.flatLabel,
+        flatOptions,
+        neededFlat: flatEquivalent(),
+      })
       steps.push({
         echoIndex: index,
         action: 'replace',
         fromLabel: invalidStat.label,
         fromValue: invalidStat.valueText,
-        label: info.percentLabel,
-        toValue: `${pick}%`,
-        gain: pick,
-        altFlat,
+        label: primary.label,
+        toValue: primary.value,
+        gain: primary.gain,
+        gainIsFlat: primary.isFlat,
+        probability: primary.probability,
+        alt,
       })
-      remainingPercent -= pick
+      consume(primary)
     }
   }
 

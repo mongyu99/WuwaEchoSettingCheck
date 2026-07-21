@@ -13,6 +13,7 @@ import {
   normalizeMainStats,
   snapSubStatsToCatalog,
   parseCost,
+  inferCostFromMainStats,
 } from './utils/ocr'
 import { detectHighlightedLines } from './utils/highlight'
 import { preprocessForOcr } from './utils/image'
@@ -22,15 +23,21 @@ import './App.css'
 
 const EMPTY_BASE_STATS = { charAtk: '', weaponAtk: '', baseHp: '', baseDef: '' }
 
-/** 예전 저장 형식(캐릭터당 에코 배열만 저장)과도 호환되도록 레코드 모양을 항상 통일합니다. */
+/** 예전 저장 형식(캐릭터당 에코 배열만 저장, 또는 에코 세트를 배열로 저장하던 형식)과도 호환되도록
+ * 레코드 모양을 항상 통일합니다. */
 function normalizeRecord(rec) {
   if (Array.isArray(rec)) {
-    return { echoes: rec, weapon: null, echoSets: [], baseStats: { ...EMPTY_BASE_STATS } }
+    return { echoes: rec, weapon: null, echoSetId: null, baseStats: { ...EMPTY_BASE_STATS } }
   }
+  // 예전엔 에코 세트를 [{ setId, pieceCount }] 배열로 여러 개 저장했습니다. 이제는 캐릭터당 하나만
+  // 고르는 select라, 예전 데이터가 있으면 첫 번째 세트만 살려서 이어갑니다.
+  const legacyEchoSetId = Array.isArray(rec?.echoSets) ? rec.echoSets[0]?.setId ?? null : null
   return {
     echoes: rec?.echoes ?? [],
     weapon: rec?.weapon ?? null, // 무기 카탈로그 id (또는 null)
-    echoSets: Array.isArray(rec?.echoSets) ? rec.echoSets.filter((s) => s && typeof s === 'object') : [], // [{ setId, pieceCount }]
+    echoSetId: rec?.echoSetId ?? legacyEchoSetId, // 에코 세트 카탈로그 id (또는 null)
+    // 메인 에코는 더 이상 따로 저장하지 않습니다 — 고른 에코 세트에서 항상 자동으로 정해집니다
+    // (config/mainEchoes.js의 getMainEchoForSet).
     baseStats: { ...EMPTY_BASE_STATS, ...(rec?.baseStats ?? {}) },
   }
 }
@@ -38,10 +45,30 @@ function normalizeRecord(rec) {
 const saved = loadState()
 const savedCharacter = saved?.characterId ? CHARACTERS.find((c) => c.id === saved.characterId) ?? null : null
 
+/**
+ * echo.previewUrl은 사진 전체를 base64로 담고 있어서 용량이 큽니다. 캐릭터를 여러 명 쓰다 보면
+ * localStorage 용량(보통 5~10MB)을 넘겨서 저장이 조용히 실패하고, 새로고침하면 마지막으로 저장에
+ * "성공했던" 훨씬 예전 상태로 되돌아가는 문제가 있었습니다. previewUrl은 캡처 직후 "사진 교체"
+ * 미리보기에만 쓰이고 점수 계산엔 필요 없어서, 저장할 때는 빼고 메모리(현재 세션)에만 유지합니다.
+ */
+function stripPreviewUrls(characterData) {
+  const result = {}
+  for (const [id, rec] of Object.entries(characterData)) {
+    const echoes = Array.isArray(rec) ? rec : rec?.echoes
+    if (!Array.isArray(echoes)) {
+      result[id] = rec
+      continue
+    }
+    const strippedEchoes = echoes.map(({ previewUrl, ...rest }) => rest)
+    result[id] = Array.isArray(rec) ? strippedEchoes : { ...rec, echoes: strippedEchoes }
+  }
+  return result
+}
+
 export default function App() {
   const [page, setPage] = useState(saved?.page ?? 'characters') // characters | capture | edit | stats
   const [character, setCharacter] = useState(savedCharacter)
-  // 캐릭터 id별로 에코/무기/에코세트/기초스탯을 따로 보관합니다: { [characterId]: { echoes, weapon, echoSets, baseStats } }
+  // 캐릭터 id별로 에코/무기/에코세트/기초스탯을 따로 보관합니다: { [characterId]: { echoes, weapon, echoSetId, baseStats } }
   const [characterData, setCharacterData] = useState(saved?.characterData ?? {})
   const [isProcessing, setIsProcessing] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -52,7 +79,7 @@ export default function App() {
 
   // 진행 상태가 바뀔 때마다 저장해서, 브라우저를 나갔다 들어와도 이어서 볼 수 있게 합니다.
   useEffect(() => {
-    saveState({ page, characterId: character?.id ?? null, characterData })
+    saveState({ page, characterId: character?.id ?? null, characterData: stripPreviewUrls(characterData) })
   }, [page, character, characterData])
 
   const updateRecordForCurrent = (patcher) => {
@@ -74,8 +101,8 @@ export default function App() {
     updateRecordForCurrent((rec) => ({ ...rec, weapon }))
   }
 
-  const setEchoSetsForCurrent = (echoSets) => {
-    updateRecordForCurrent((rec) => ({ ...rec, echoSets: echoSets.slice(0, 3) }))
+  const setEchoSetForCurrent = (echoSetId) => {
+    updateRecordForCurrent((rec) => ({ ...rec, echoSetId }))
   }
 
   const setBaseStatsForCurrent = (partial) => {
@@ -101,12 +128,13 @@ export default function App() {
       const subStats = snapSubStatsToCatalog(
         subStatsRaw.map((s, i) => ({ ...s, highlighted: !!highlights[i] })).slice(0, 5),
       )
+      const mainStats = normalizeMainStats(parseStatLines(mainRaw))
 
       return {
         id,
         previewUrl,
-        cost: parseCost(costRaw),
-        mainStats: normalizeMainStats(parseStatLines(mainRaw)),
+        cost: inferCostFromMainStats(mainStats) ?? parseCost(costRaw),
+        mainStats,
         subStats,
         failed: false,
       }
@@ -199,9 +227,9 @@ export default function App() {
             echoes={echoes}
             character={character}
             weapon={record.weapon}
-            echoSets={record.echoSets}
+            echoSetId={record.echoSetId}
             onSetWeapon={setWeaponForCurrent}
-            onSetEchoSets={setEchoSetsForCurrent}
+            onSetEchoSet={setEchoSetForCurrent}
             onUpdateSubStats={updateSubStats}
             onGoToCharacters={goToCharacters}
             onReset={handleResetCurrent}
@@ -209,7 +237,7 @@ export default function App() {
         )
       case 'characters':
       default:
-        return <CharacterSelectPage onSelect={handleSelectCharacter} characterData={characterData} />
+        return <CharacterSelectPage onSelect={handleSelectCharacter} />
     }
   }
 

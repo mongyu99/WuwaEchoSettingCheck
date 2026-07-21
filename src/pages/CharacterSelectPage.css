@@ -110,25 +110,6 @@
   color: #06131a;
 }
 
-.char-card__tier {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(6, 8, 14, 0.75);
-  border: 1px solid var(--region-main);
-  color: var(--region-main);
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 12px;
-  border-radius: 999px;
-  min-width: 28px;
-  height: 24px;
-  padding: 0 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .char-card__caption {
   font-size: 13px;
   color: var(--text-primary);

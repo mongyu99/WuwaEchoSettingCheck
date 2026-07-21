@@ -12,7 +12,7 @@
 export const ECHO_SETS = {
   'long-journey-star': {
     name: '긴 여정을 떠나는 별',
-    icon: '/echo-sets/long-journey-star.png',
+    icon: '/echo-sets/trailblazing-star.png',
     pieces: {
       2: {
         bonuses: [{ category: '속성 피해 보너스', value: 10 }],

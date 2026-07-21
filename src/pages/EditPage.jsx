@@ -43,7 +43,11 @@ export default function EditPage({ echoes, onUpdateSubStats, onReplaceOne, repla
               }}
               onDragOver={(e) => e.preventDefault()}
             >
-              <img className="echo-row__thumb" src={echo.previewUrl} alt={`에코 ${idx + 1} 스캔 영역`} />
+              {echo.previewUrl ? (
+                <img className="echo-row__thumb" src={echo.previewUrl} alt={`에코 ${idx + 1} 스캔 영역`} />
+              ) : (
+                <div className="echo-row__thumb echo-row__thumb--empty">사진 없음</div>
+              )}
               <span className="echo-row__replace">
                 {replacingId === echo.id ? '교체 중…' : '사진 교체 (클릭 또는 드래그)'}
               </span>

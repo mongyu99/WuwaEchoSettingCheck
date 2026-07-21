@@ -7,7 +7,7 @@
  * 일반 공격 피해 / 강공격 피해 / 공명 스킬 피해 / 공명 해방 피해).
  */
 export const CHARACTER_BASE_STATS = {
-  에이메스: {
+  aemeath: {
     hp: 11025,
     atk: 425,
     def: 1148,

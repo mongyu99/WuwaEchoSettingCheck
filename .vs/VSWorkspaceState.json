@@ -8,9 +8,7 @@
     "\\scripts",
     "\\src",
     "\\src\\components",
-    "\\src\\pages",
-    "\\WuwaQuickSwapHelper\\Overlay"
+    "\\src\\pages"
   ],
-  "SelectedNode": "\\src\\pages\\StatsPage.jsx",
   "PreviewInSolutionExplorer": false
 }

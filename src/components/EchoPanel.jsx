@@ -1,7 +1,18 @@
 import { SUB_STAT_OPTIONS, SUB_STAT_NAMES, formatSubStatValue } from '../config/subStatOptions'
+import { getEchoCost } from '../utils/ocr'
 import './EchoPanel.css'
 
-export default function EchoPanel({ echo, index, onUpdateSubStats, highlightIncomplete, validLabels, suggestedLabels }) {
+export default function EchoPanel({
+  echo,
+  index,
+  onUpdateSubStats,
+  highlightIncomplete,
+  validLabels,
+  suggestedStats,
+  blinkLabel,
+  blinkValue,
+  blinkToken,
+}) {
   const updateSubLabel = (id, label) => {
     onUpdateSubStats(
       echo.id,
@@ -23,7 +34,7 @@ export default function EchoPanel({ echo, index, onUpdateSubStats, highlightInco
     <article className="echo-panel">
       <header className="echo-panel__header">
         <span className="echo-panel__badge">에코 {index + 1}</span>
-        {echo.cost && <span className="echo-panel__cost">COST {echo.cost}</span>}
+        {getEchoCost(echo) && <span className="echo-panel__cost">COST {getEchoCost(echo)}</span>}
       </header>
 
       {echo.failed && <p className="echo-panel__failed">이 사진은 인식에 실패했어요. 값을 직접 선택해주세요.</p>}
@@ -51,11 +62,17 @@ export default function EchoPanel({ echo, index, onUpdateSubStats, highlightInco
             const incomplete = highlightIncomplete && (!s.label || !s.valueText)
             const isValidOption = s.label && validLabels?.includes(s.label)
             const isFlatValid = isValidOption && s.valueText && !s.valueText.includes('%')
-            const isSuggested = s.label && suggestedLabels?.includes(s.label)
+            // 계산기가 추천한 "그 당시 상태"(라벨+수치)와 지금이 여전히 같을 때만 하늘색으로 표시합니다.
+            // 라벨이든 수치든 사용자가 바꾸면 더 이상 추천 대상이 아니므로 자동으로 색이 풀립니다.
+            const isSuggested =
+              s.label && s.valueText && suggestedStats?.some((sug) => sug.label === s.label && sug.value === s.valueText)
+            // 계산기 추천을 클릭한 직후, 그 자리를 잠깐 깜빡여서 어디로 이동했는지 알려줍니다. 같은
+            // 자리가 다시 깜빡여도 재생되도록 key에 blinkToken을 섞어 그 순간 다시 마운트시킵니다.
+            const isBlinking = blinkLabel && s.label === blinkLabel && s.valueText === blinkValue
             return (
               <li
-                key={s.id}
-                className={`echo-panel__sub-row ${s.highlighted ? 'echo-panel__sub-row--highlight' : ''} ${incomplete ? 'echo-panel__sub-row--incomplete' : ''} ${isValidOption ? (isFlatValid ? 'echo-panel__sub-row--valid-flat' : 'echo-panel__sub-row--valid') : ''} ${isSuggested ? 'echo-panel__sub-row--suggested' : ''}`}
+                key={isBlinking ? `${s.id}-blink-${blinkToken}` : s.id}
+                className={`echo-panel__sub-row ${s.highlighted ? 'echo-panel__sub-row--highlight' : ''} ${incomplete ? 'echo-panel__sub-row--incomplete' : ''} ${isValidOption ? (isFlatValid ? 'echo-panel__sub-row--valid-flat' : 'echo-panel__sub-row--valid') : ''} ${isSuggested ? 'echo-panel__sub-row--suggested' : ''} ${isBlinking ? 'echo-panel__sub-row--blink' : ''}`}
               >
                 <select value={s.label} onChange={(e) => updateSubLabel(s.id, e.target.value)}>
                   <option value="">스탯 선택</option>

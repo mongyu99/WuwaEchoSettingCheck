@@ -227,10 +227,39 @@ export async function extractText(image, onProgress) {
  * 줄 위치(bbox)가 필요 없는 경우에 사용합니다. %가 붙어있으면 isPercent: true로
  * 표시되어 화면에도 %가 그대로 유지됩니다.
  */
+// 에코 코스트는 1/3/4 셋 중 하나뿐입니다. 코스트 배지 주변 아이콘이 잡음으로 잡혀 엉뚱한
+// 숫자가 먼저 매치되는 경우가 있어서, 여러 숫자가 잡히면 실제 코스트 값과 일치하는 걸
+// 우선합니다.
+const VALID_ECHO_COSTS = ['1', '3', '4']
+
 /** "COST 3" 같은 코스트 영역 원문에서 숫자만 뽑아냅니다. 못 찾으면 null. */
 export function parseCost(rawText) {
-  const match = rawText.match(/\d+/)
-  return match ? match[0] : null
+  const digits = rawText.match(/\d+/g) ?? []
+  return digits.find((d) => VALID_ECHO_COSTS.includes(d)) ?? digits[0] ?? null
+}
+
+/**
+ * 코스트 배지 OCR이 3코스트에서 특히 자주 틀려서, 메인 스탯 중 "공격력"이 플랫(%아님)으로 100
+ * 근처면 3코스트로 간주하는 보정입니다(3코스트 에코에서만 나오는 값이라고 확인됨). 순서(2번째
+ * 줄이어야 한다는 가정)에 기대지 않고 배열 전체에서 찾아서, OCR이 줄 순서를 바꿔 읽어도 잡습니다.
+ */
+export function inferCostFromMainStats(mainStats) {
+  const flatAtk = (mainStats ?? []).find(
+    (s) => s?.label === '공격력' && s.valueText && !s.valueText.includes('%'),
+  )
+  if (!flatAtk) return null
+  const value = parseFloat(flatAtk.valueText)
+  if (!Number.isNaN(value) && Math.abs(value - 100) <= 3) return '3'
+  return null
+}
+
+/**
+ * echo.cost가 없거나(과거에 캡처된 데이터 등) OCR이 놓친 경우에도, 메인 스탯만 있으면 그때그때
+ * 다시 추론해서 보여줍니다 — 캡처를 다시 안 해도 화면에서 바로 보정됩니다.
+ */
+export function getEchoCost(echo) {
+  if (!echo) return null
+  return echo.cost ?? inferCostFromMainStats(echo.mainStats ?? [])
 }
 
 export function parseStatLines(rawText) {
