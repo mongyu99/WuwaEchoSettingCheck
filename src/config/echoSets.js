@@ -10,6 +10,47 @@
  * category 이름은 StatsPage의 합산 스탯 카테고리 이름과 정확히 같아야 합니다.
  */
 export const ECHO_SETS = {
+  'molten-rift': {
+    name: '솟구치는 용암',
+    icon: '/echo-sets/molten-rift.png',
+    pieces: {
+      2: {
+        bonuses: [{ category: '속성 피해 보너스', value: 10 }],
+        description: '용융 피해가 10% 증가된다',
+      },
+      5: {
+        description: '공명 스킬 사용 시, 용융 피해가 30% 증가되며, 15초 동안 지속된다',
+      },
+    },
+  },
+  'molten-rift': {
+    name: '솟구치는 용암',
+    icon: '/echo-sets/molten-rift.png',
+    pieces: {
+      2: {
+        bonuses: [{ category: '속성 피해 보너스', value: 10 }],
+        description: '용융 피해가 10% 증가된다',
+      },
+      5: {
+        description: '공명 스킬 사용 시, 용융 피해가 30% 증가되며, 15초 동안 지속된다',
+      },
+    },
+  },
+  'freezing-frost': {
+    name: '야밤의 서리',
+    icon: '/echo-sets/freezing-frost.png',
+    pieces: {
+      2: {
+        bonuses: [{ category: '속성 피해 보너스', value: 10 }],
+        description: '응결 피해가 10% 증가된다',
+      },
+      5: {
+        description:
+          '일반 공격이나 강공격을 사용하면, 응결 피해가 10% 증가' +
+          '해당 효과는 3스택 중첩이 가능하며, 15초간 지속된다',
+      },
+    },
+  },
   'long-journey-star': {
     name: '긴 여정을 떠나는 별',
     icon: '/echo-sets/trailblazing-star.png',
@@ -19,10 +60,6 @@ export const ECHO_SETS = {
         description: '용융 피해가 10% 증가한다',
       },
       5: {
-        bonuses: [
-          { category: '크리티컬', value: 20 },
-          { category: '속성 피해 보너스', value: 20 },
-        ],
         description:
           '캐릭터가 적에게 「불꽃 효과」 혹은 「조화 파동·이탈」 추가 시, 자신의 크리티컬이 20% 증가되고 ' +
           '용융 피해가 20% 증가되며, 8초간 지속된다',
