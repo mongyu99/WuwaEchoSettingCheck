@@ -62,11 +62,11 @@ const formatWholeStat = (n) => Math.floor(n)
 const formatPercent1 = (n) => n.toFixed(1)
 
 /**
- * 캐릭터 고유 보너스 + 무기 + 에코 세트(2세트 효과만) + 캡처된 에코(메인+서브)를 전부 더해서
- * 카테고리별 %합계/플랫합계를 냅니다. 5세트 효과는 계산에 반영하지 않고 안내 문구로만 보여줍니다.
- * 에코 세트는 캐릭터당 하나만 고르는 select라 항상 풀세트(5개)로 착용했다고 가정합니다.
+ * 캐릭터 고유 보너스 + 무기 + 에코 세트(2세트 효과만) + 메인 에코 장착 보너스 + 캡처된 에코(메인+서브)를
+ * 전부 더해서 카테고리별 %합계/플랫합계를 냅니다. 5세트 효과는 계산에 반영하지 않고 안내 문구로만
+ * 보여줍니다. 에코 세트는 캐릭터당 하나만 고르는 select라 항상 풀세트(5개)로 착용했다고 가정합니다.
  */
-function computeAggregate({ echoes, character, weaponId, echoSetId }) {
+function computeAggregate({ echoes, character, weaponId, echoSetId, mainEchoId }) {
   const raw = {}
   for (const cat of CATEGORY_ORDER) raw[cat] = { percentSum: 0, flatSum: 0, echoPercentSum: 0, echoFlatSum: 0 }
   const addPercent = (cat, val) => {
@@ -88,6 +88,11 @@ function computeAggregate({ echoes, character, weaponId, echoSetId }) {
   const twoPiece = echoSet?.pieces?.[2]
   if (twoPiece) {
     for (const b of twoPiece.bonuses ?? []) addPercent(b.category, b.value)
+  }
+
+  const mainEcho = getMainEcho(mainEchoId)
+  if (mainEcho) {
+    for (const b of mainEcho.bonuses ?? []) addPercent(b.category, b.value)
   }
 
   for (const echo of echoes) {
@@ -613,6 +618,7 @@ export default function StatsPage({
     character,
     weaponId: weapon,
     echoSetId,
+    mainEchoId,
   })
   const echoSetData = getEchoSet(echoSetId)
 
@@ -707,6 +713,10 @@ export default function StatsPage({
                 {mainEcho.icon && <img src={mainEcho.icon} alt={mainEcho.name} />}
                 <span>{mainEcho.name}</span>
               </div>
+              {mainEcho.description && <p className="stats-page__chip-effect">{mainEcho.description}</p>}
+              {mainEcho.passiveDescription && (
+                <p className="stats-page__chip-effect">{mainEcho.passiveDescription}</p>
+              )}
               {mainEchoDamageBonus != null && (
                 <p className="stats-page__chip-effect">데미지 보너스: +{formatPercent1(mainEchoDamageBonus)}%</p>
               )}

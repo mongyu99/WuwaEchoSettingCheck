@@ -1,14 +1,25 @@
 /**
- * 메인 에코(4코스트, 고유 스킬 데미지를 가진 에코) 카탈로그입니다. 지금은 UI 자리만 먼저 잡아둔
- * 상태라 이름이 자리표시자이고, 아이콘·실제 스킬 데이터는 비어 있습니다.
+ * 메인 에코(4코스트, 고유 스킬 데미지를 가진 에코) 카탈로그입니다.
  *
  * echoSetId를 채우면 그 에코 세트를 골랐을 때 자동으로 이 메인 에코가 적용됩니다(수동 선택 없이
  * "사용 에코 세트"만 고르면 메인 에코가 따라감). 세트당 메인 에코는 하나만 매칭됩니다.
+ *
+ * bonuses는 이 메인 에코를 장착하면 항상 붙는 % 보너스입니다(무기의 bonuses와 같은 방식으로
+ * 합산 스탯에 더해집니다). category 이름은 StatsPage의 합산 스탯 카테고리 이름과 정확히 같아야
+ * 합니다. 원래 게임 내 효과는 "장착 캐릭터가 OO일 경우"처럼 캐릭터 조건이 붙어 있지만, 에코 세트가
+ * 캐릭터와 1:1로 묶여서 쓰이는 걸 전제로 하고 있어 여기서는 캐릭터 조건 없이 무조건 적용합니다.
  */
 export const MAIN_ECHOES = {
-  'main-echo-a': { name: '메인 에코 A (자리표시자)' /* , echoSetId: 'long-journey-star' */ },
-  'main-echo-b': { name: '메인 에코 B (자리표시자)' },
-  'main-echo-c': { name: '메인 에코 C (자리표시자)' },
+  'z04-sigillum': {
+    name: 'Z04-시길룸',
+    icon: '/main-echoes/z04-sigillum.png',
+    echoSetId: 'long-journey-star',
+    description:
+      '에코 어빌리티를 사용하여 시길룸을 소환한 후, 적에게 1단 68.40%와 ' +
+      '2단 205.20%의 ' + '용융 피해를 입힌다.',
+    passiveDescription: '에이메스가 메인 슬롯에 장착 시 공명 해방 피해 보너스가 25.00% 증가한다.',
+    bonuses: [{ category: '공명 해방 피해', value: 25 }],
+  },
 }
 
 export function getMainEcho(id) {
