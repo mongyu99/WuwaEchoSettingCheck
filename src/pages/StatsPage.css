@@ -555,6 +555,12 @@
   color: var(--text-primary);
 }
 
+.picker-item__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .optimizer__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

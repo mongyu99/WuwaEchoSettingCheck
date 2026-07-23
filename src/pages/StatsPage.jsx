@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { getValidOptions } from '../config/characterValidOptions'
 import { getCharacterBaseStats } from '../config/characterBaseStats'
 import { WEAPONS, getWeapon } from '../config/weapons'
-import { ECHO_SETS, getEchoSet } from '../config/echoSets'
-import { getAllowedEchoSetIds } from '../config/characterEchoSets'
+import { getEchoSet } from '../config/echoSets'
+import { getCharacterEchoCombos, describeCombo } from '../config/characterEchoSets'
 import { getCharacterRecommendation } from '../config/characterRecommendations'
-import { getMainEcho, getMainEchoForSet } from '../config/mainEchoes'
+import { getMainEcho, getMainEchoForCombo } from '../config/mainEchoes'
 import { getMainEchoDamageBonus } from '../config/characterMainEchoBonus'
 import { SUB_STAT_OPTIONS } from '../config/subStatOptions'
 import { getEchoCost } from '../utils/ocr'
@@ -62,11 +62,11 @@ const formatWholeStat = (n) => Math.floor(n)
 const formatPercent1 = (n) => n.toFixed(1)
 
 /**
- * 캐릭터 고유 보너스 + 무기 + 에코 세트(2세트 효과만) + 메인 에코 장착 보너스 + 캡처된 에코(메인+서브)를
- * 전부 더해서 카테고리별 %합계/플랫합계를 냅니다. 5세트 효과는 계산에 반영하지 않고 안내 문구로만
- * 보여줍니다. 에코 세트는 캐릭터당 하나만 고르는 select라 항상 풀세트(5개)로 착용했다고 가정합니다.
+ * 캐릭터 고유 보너스 + 무기 + 에코 세트 조합(착용 개수 이하 단계 전부) + 메인 에코 장착 보너스 +
+ * 캡처된 에코(메인+서브)를 전부 더해서 카테고리별 %합계/플랫합계를 냅니다. 조건부 효과(bonuses가
+ * 없는 단계)는 계산에 반영하지 않고 안내 문구로만 보여줍니다.
  */
-function computeAggregate({ echoes, character, weaponId, echoSetId, mainEchoId }) {
+function computeAggregate({ echoes, character, weaponId, combo, mainEchoId }) {
   const raw = {}
   for (const cat of CATEGORY_ORDER) raw[cat] = { percentSum: 0, flatSum: 0, echoPercentSum: 0, echoFlatSum: 0 }
   const addPercent = (cat, val) => {
@@ -84,10 +84,14 @@ function computeAggregate({ echoes, character, weaponId, echoSetId, mainEchoId }
     for (const b of weapon.bonuses ?? []) addPercent(b.category, b.value)
   }
 
-  const echoSet = getEchoSet(echoSetId)
-  const twoPiece = echoSet?.pieces?.[2]
-  if (twoPiece) {
-    for (const b of twoPiece.bonuses ?? []) addPercent(b.category, b.value)
+  // 조합 안의 세트마다, 착용한 개수 이하의 모든 단계가 함께 적용됩니다. bonuses가 있는 단계(보통
+  // 계산 가능한 고정 스탯)만 계산에 더하고, 조건부라 bonuses가 없는 단계는 설명 문구로만 표시됩니다.
+  for (const { setId, pieceCount } of combo ?? []) {
+    const echoSet = getEchoSet(setId)
+    for (const [tier, piece] of Object.entries(echoSet?.pieces ?? {})) {
+      if (Number(tier) > pieceCount) continue
+      for (const b of piece.bonuses ?? []) addPercent(b.category, b.value)
+    }
   }
 
   const mainEcho = getMainEcho(mainEchoId)
@@ -174,14 +178,23 @@ function WeaponPickerModal({ open, onClose, onSelect, options }) {
   )
 }
 
-function EchoSetPickerModal({ open, onClose, onSelect, options }) {
+// 캐릭터의 에코 세트 "조합"(둘 이상의 세트를 섞어 쓰는 경우 포함) 중 하나를 고르는 팝업입니다.
+// 조합이 하나뿐인 캐릭터는 이 팝업을 열 일 자체가 없습니다(고정).
+function EchoComboPickerModal({ open, onClose, onSelect, combos }) {
   return (
-    <Modal open={open} title="에코 세트 선택" onClose={onClose}>
-      {options.length === 0 && <p className="uploader__hint">이 캐릭터가 쓸 수 있는 에코 세트가 카탈로그에 없어요.</p>}
-      {options.map(([id, set]) => (
-        <button key={id} className="picker-item picker-item--simple" onClick={() => onSelect(id)}>
-          {set.icon && <img src={set.icon} alt={set.name} className="picker-item__icon" />}
-          <span>{set.name}</span>
+    <Modal open={open} title="에코 세트 조합 선택" onClose={onClose}>
+      {combos.map((combo, i) => (
+        <button key={i} className="picker-item picker-item--simple" onClick={() => onSelect(i)}>
+          <div className="picker-item__body">
+            {combo.map((p) => {
+              const set = getEchoSet(p.setId)
+              return (
+                <span key={p.setId}>
+                  {set?.name ?? p.setId} ({p.pieceCount})
+                </span>
+              )
+            })}
+          </div>
         </button>
       ))}
     </Modal>
@@ -532,16 +545,16 @@ export default function StatsPage({
   echoes,
   character,
   weapon,
-  echoSetId,
+  echoComboIndex,
   onSetWeapon,
-  onSetEchoSet,
+  onSetEchoCombo,
   onUpdateSubStats,
   onGoToCharacters,
   onReset,
 }) {
   const [resetOpen, setResetOpen] = useState(false)
   const [weaponModalOpen, setWeaponModalOpen] = useState(false)
-  const [setModalOpen, setSetModalOpen] = useState(false)
+  const [comboModalOpen, setComboModalOpen] = useState(false)
   const [selectedEchoIdx, setSelectedEchoIdx] = useState(0)
   const [optimizerResults, setOptimizerResults] = useState({})
   const [blink, setBlink] = useState(null) // { echoIndex, label, value, token } — 방금 클릭한 추천의 위치
@@ -551,18 +564,18 @@ export default function StatsPage({
   const [aggregateColHeight, setAggregateColHeight] = useState(null)
   const validLabels = getValidOptions(character?.id)
   const recommendation = getCharacterRecommendation(character?.id)
-  // 메인 에코는 별도로 고르지 않고, 지금 고른 에코 세트에 연결된 걸 항상 그대로 씁니다.
-  const mainEchoId = getMainEchoForSet(echoSetId)
+
+  // 이 캐릭터가 쓸 수 있는 에코 세트 조합 목록입니다. 하나뿐이면 고정(클릭해도 안 바뀜), 둘
+  // 이상이면 "사용 에코 세트"를 클릭해서 바꿀 수 있습니다. 등록 안 된 캐릭터는 null.
+  const echoCombos = getCharacterEchoCombos(character?.id)
+  const combo = echoCombos?.[echoComboIndex] ?? echoCombos?.[0] ?? null
+  // 메인 에코는 별도로 고르지 않고, 지금 쓰는 조합에 연결된 걸 항상 그대로 씁니다.
+  const mainEchoId = getMainEchoForCombo(combo)
   const mainEcho = getMainEcho(mainEchoId)
 
   // 캐릭터의 무기 타입에 맞는 무기로만 제한합니다(타입 미지정 캐릭터는 카탈로그 전체 허용).
   const weaponOptions = Object.entries(WEAPONS).filter(
     ([, w]) => !character?.weaponType || w.type === character.weaponType,
-  )
-  // 캐릭터가 실제로 쓸 수 있는 에코 세트로 제한합니다(설정 없으면 카탈로그 전체 허용).
-  const allowedEchoSetIds = getAllowedEchoSetIds(character?.id)
-  const echoSetOptions = Object.entries(ECHO_SETS).filter(
-    ([id]) => !allowedEchoSetIds || allowedEchoSetIds.includes(id),
   )
 
   // scroll: 계산기 추천처럼 화면 아래쪽에서 눌렀을 때만 위로 스크롤합니다. 에코 점수 목록은 이미
@@ -617,10 +630,9 @@ export default function StatsPage({
     echoes,
     character,
     weaponId: weapon,
-    echoSetId,
+    combo,
     mainEchoId,
   })
-  const echoSetData = getEchoSet(echoSetId)
 
   // 메인 에코 데미지 보너스 계산식이 참고할 수 있는 최종 합산 전투 스탯입니다.
   const combatStats = {
@@ -686,24 +698,32 @@ export default function StatsPage({
           )}
 
           <h4>사용 에코 세트</h4>
-          {echoSetData ? (
+          {combo ? (
             <div className="stats-page__chip-card">
-              <button className="stats-page__chip-head stats-page__chip-head--btn" onClick={() => setSetModalOpen(true)}>
-                {echoSetData.icon && <img src={echoSetData.icon} alt={echoSetData.name} />}
-                <span>{echoSetData.name}</span>
-              </button>
-              {Object.entries(echoSetData.pieces ?? {})
-                .sort((a, b) => Number(a[0]) - Number(b[0]))
-                .map(([n, effect]) => (
-                  <p key={n} className="stats-page__chip-effect">
-                    {n}세트: {effect.description}
-                  </p>
-                ))}
+              {echoCombos.length > 1 ? (
+                <button className="stats-page__chip-head stats-page__chip-head--btn" onClick={() => setComboModalOpen(true)}>
+                  <span>{describeCombo(combo)}</span>
+                </button>
+              ) : (
+                <div className="stats-page__chip-head">
+                  <span>{describeCombo(combo)}</span>
+                </div>
+              )}
+              {combo.flatMap(({ setId, pieceCount }) => {
+                const set = getEchoSet(setId)
+                if (!set) return []
+                return Object.entries(set.pieces)
+                  .filter(([tier]) => Number(tier) <= pieceCount)
+                  .sort((a, b) => Number(a[0]) - Number(b[0]))
+                  .map(([tier, effect]) => (
+                    <p key={`${setId}-${tier}`} className="stats-page__chip-effect">
+                      {set.name} {tier}세트: {effect.description}
+                    </p>
+                  ))
+              })}
             </div>
           ) : (
-            <button className="btn btn--ghost stats-page__pick-btn" onClick={() => setSetModalOpen(true)}>
-              + 에코 세트 선택
-            </button>
+            <p className="uploader__hint">아직 이 캐릭터의 에코 세트 정보가 없어요. 알려주시면 채워드릴게요.</p>
           )}
 
           <h4>사용 메인 에코</h4>
@@ -886,12 +906,14 @@ export default function StatsPage({
         onSelect={(id) => { onSetWeapon(id); setWeaponModalOpen(false) }}
         options={weaponOptions}
       />
-      <EchoSetPickerModal
-        open={setModalOpen}
-        onClose={() => setSetModalOpen(false)}
-        onSelect={(id) => { onSetEchoSet(id); setSetModalOpen(false) }}
-        options={echoSetOptions}
-      />
+      {echoCombos?.length > 1 && (
+        <EchoComboPickerModal
+          open={comboModalOpen}
+          onClose={() => setComboModalOpen(false)}
+          onSelect={(i) => { onSetEchoCombo(i); setComboModalOpen(false) }}
+          combos={echoCombos}
+        />
+      )}
       <ConfirmDialog
         open={resetOpen}
         title="초기화"

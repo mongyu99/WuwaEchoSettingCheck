@@ -13,7 +13,7 @@ export const MAIN_ECHOES = {
   'z04-sigillum': {
     name: 'Z04-시길룸',
     icon: '/main-echoes/z04-sigillum.png',
-    echoSetId: 'long-journey-star',
+    echoSetId: 'trailblazing-star',
     description:
       '에코 어빌리티를 사용하여 시길룸을 소환한 후, 적에게 1단 68.40%와 ' +
       '2단 205.20%의 ' + '용융 피해를 입힌다.',
@@ -31,4 +31,17 @@ export function getMainEchoForSet(echoSetId) {
   if (!echoSetId) return null
   const entry = Object.entries(MAIN_ECHOES).find(([, e]) => e.echoSetId === echoSetId)
   return entry ? entry[0] : null
+}
+
+/**
+ * 조합([{ setId, pieceCount }, ...]) 안의 세트들을 순서대로 훑어서, 메인 에코가 연결된 첫 세트의
+ * 메인 에코 id를 반환합니다(없으면 null). 조합 하나에 메인 에코가 연결된 세트는 보통 하나뿐이라
+ * "제일 많이 착용한 세트를 우선한다" 같은 규칙 없이 먼저 찾은 것을 그대로 씁니다.
+ */
+export function getMainEchoForCombo(combo) {
+  for (const { setId } of combo ?? []) {
+    const mainEchoId = getMainEchoForSet(setId)
+    if (mainEchoId) return mainEchoId
+  }
+  return null
 }

@@ -23,21 +23,20 @@ import './App.css'
 
 const EMPTY_BASE_STATS = { charAtk: '', weaponAtk: '', baseHp: '', baseDef: '' }
 
-/** 예전 저장 형식(캐릭터당 에코 배열만 저장, 또는 에코 세트를 배열로 저장하던 형식)과도 호환되도록
- * 레코드 모양을 항상 통일합니다. */
+/** 예전 저장 형식(캐릭터당 에코 배열만 저장, 또는 에코 세트를 단일/배열로 저장하던 형식)과도
+ * 호환되도록 레코드 모양을 항상 통일합니다. */
 function normalizeRecord(rec) {
   if (Array.isArray(rec)) {
-    return { echoes: rec, weapon: null, echoSetId: null, baseStats: { ...EMPTY_BASE_STATS } }
+    return { echoes: rec, weapon: null, echoComboIndex: 0, baseStats: { ...EMPTY_BASE_STATS } }
   }
-  // 예전엔 에코 세트를 [{ setId, pieceCount }] 배열로 여러 개 저장했습니다. 이제는 캐릭터당 하나만
-  // 고르는 select라, 예전 데이터가 있으면 첫 번째 세트만 살려서 이어갑니다.
-  const legacyEchoSetId = Array.isArray(rec?.echoSets) ? rec.echoSets[0]?.setId ?? null : null
   return {
     echoes: rec?.echoes ?? [],
     weapon: rec?.weapon ?? null, // 무기 카탈로그 id (또는 null)
-    echoSetId: rec?.echoSetId ?? legacyEchoSetId, // 에코 세트 카탈로그 id (또는 null)
-    // 메인 에코는 더 이상 따로 저장하지 않습니다 — 고른 에코 세트에서 항상 자동으로 정해집니다
-    // (config/mainEchoes.js의 getMainEchoForSet).
+    // 캐릭터의 에코 세트 조합(config/characterEchoSets.js) 중 몇 번째를 쓰는지입니다. 조합이
+    // 하나뿐인(고정) 캐릭터는 항상 0번입니다.
+    echoComboIndex: rec?.echoComboIndex ?? 0,
+    // 메인 에코는 더 이상 따로 저장하지 않습니다 — 지금 쓰는 조합에서 항상 자동으로 정해집니다
+    // (config/mainEchoes.js의 getMainEchoForCombo).
     baseStats: { ...EMPTY_BASE_STATS, ...(rec?.baseStats ?? {}) },
   }
 }
@@ -68,7 +67,7 @@ function stripPreviewUrls(characterData) {
 export default function App() {
   const [page, setPage] = useState(saved?.page ?? 'characters') // characters | capture | edit | stats
   const [character, setCharacter] = useState(savedCharacter)
-  // 캐릭터 id별로 에코/무기/에코세트/기초스탯을 따로 보관합니다: { [characterId]: { echoes, weapon, echoSetId, baseStats } }
+  // 캐릭터 id별로 에코/무기/에코세트조합/기초스탯을 따로 보관합니다: { [characterId]: { echoes, weapon, echoComboIndex, baseStats } }
   const [characterData, setCharacterData] = useState(saved?.characterData ?? {})
   const [isProcessing, setIsProcessing] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -101,8 +100,8 @@ export default function App() {
     updateRecordForCurrent((rec) => ({ ...rec, weapon }))
   }
 
-  const setEchoSetForCurrent = (echoSetId) => {
-    updateRecordForCurrent((rec) => ({ ...rec, echoSetId }))
+  const setEchoComboForCurrent = (echoComboIndex) => {
+    updateRecordForCurrent((rec) => ({ ...rec, echoComboIndex }))
   }
 
   const setBaseStatsForCurrent = (partial) => {
@@ -227,9 +226,9 @@ export default function App() {
             echoes={echoes}
             character={character}
             weapon={record.weapon}
-            echoSetId={record.echoSetId}
+            echoComboIndex={record.echoComboIndex}
             onSetWeapon={setWeaponForCurrent}
-            onSetEchoSet={setEchoSetForCurrent}
+            onSetEchoCombo={setEchoComboForCurrent}
             onUpdateSubStats={updateSubStats}
             onGoToCharacters={goToCharacters}
             onReset={handleResetCurrent}
