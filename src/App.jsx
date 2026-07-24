@@ -36,7 +36,7 @@ function normalizeRecord(rec) {
     // 하나뿐인(고정) 캐릭터는 항상 0번입니다.
     echoComboIndex: rec?.echoComboIndex ?? 0,
     // 메인 에코는 더 이상 따로 저장하지 않습니다 — 지금 쓰는 조합에서 항상 자동으로 정해집니다
-    // (config/mainEchoes.js의 getMainEchoForCombo).
+    // (config/echoSetMainEchoes.js의 getMainEchoIdForCombo).
     baseStats: { ...EMPTY_BASE_STATS, ...(rec?.baseStats ?? {}) },
   }
 }

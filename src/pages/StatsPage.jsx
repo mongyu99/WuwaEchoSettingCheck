@@ -5,7 +5,8 @@ import { WEAPONS, getWeapon } from '../config/weapons'
 import { getEchoSet } from '../config/echoSets'
 import { getCharacterEchoCombos, describeCombo } from '../config/characterEchoSets'
 import { getCharacterRecommendation } from '../config/characterRecommendations'
-import { getMainEcho, getMainEchoForCombo } from '../config/mainEchoes'
+import { getMainEcho } from '../config/mainEchoes'
+import { getMainEchoIdForCombo } from '../config/echoSetMainEchoes'
 import { getMainEchoDamageBonus } from '../config/characterMainEchoBonus'
 import { SUB_STAT_OPTIONS } from '../config/subStatOptions'
 import { getEchoCost } from '../utils/ocr'
@@ -570,7 +571,7 @@ export default function StatsPage({
   const echoCombos = getCharacterEchoCombos(character?.id)
   const combo = echoCombos?.[echoComboIndex] ?? echoCombos?.[0] ?? null
   // 메인 에코는 별도로 고르지 않고, 지금 쓰는 조합에 연결된 걸 항상 그대로 씁니다.
-  const mainEchoId = getMainEchoForCombo(combo)
+  const mainEchoId = getMainEchoIdForCombo(combo)
   const mainEcho = getMainEcho(mainEchoId)
 
   // 캐릭터의 무기 타입에 맞는 무기로만 제한합니다(타입 미지정 캐릭터는 카탈로그 전체 허용).
