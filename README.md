@@ -27,7 +27,7 @@ src/
     CapturePage.jsx             # 캐릭터 선택 후 에코 캡처 화면 (캐릭터 사진 + 업로더)
     EditPage.jsx                # 캡처 이후 스탯 확인/수정 화면
     StatsPage.jsx                # 점수 통계 + 목표 스탯 계산기 화면 — 캐릭터/무기/에코 세트 조합/
-                                  #   합산 스탯/제작자 추천/에코 상세 편집/계산기를 한 화면에서 관리
+                                  #   합산 스탯/이잘키 추천/에코 상세 편집/계산기를 한 화면에서 관리
 
   components/
     ImageUploader.jsx           # 사진 업로드 + 자동 크롭 + 업로드 즉시 자동 추출 (CapturePage에서 사용)
@@ -44,7 +44,7 @@ src/
     characterValidOptions.js     # 캐릭터별 유효 옵션(점수에 반영할 서브스탯) 목록
     characterEchoSets.js         # 캐릭터 ↔ 에코 세트 "조합"(defineCombo) 연결 — 고정 또는 여러 조합 중 선택
     characterMainEchoBonus.js    # 캐릭터+메인에코 조합 데미지 보너스 계산식(스탯 스케일링용, 현재 빈 틀)
-    characterRecommendations.js  # 캐릭터별 "제작자 추천" 빌드 정보(무기/세트/주옵 등)
+    characterRecommendations.js  # 캐릭터별 "이잘키 추천" 빌드 정보(무기/세트/주옵 등)
     weapons.js                   # 무기 카탈로그(플랫 공격력 + 부스탯 + 패시브 보너스)
     echoSets.js                  # 에코 세트 카탈로그(defineSet 팩토리, 세트별 단계(1/2/3/5)·보너스·아이콘)
     mainEchoes.js                # 메인 에코(4코스트) 카탈로그(이름/아이콘/설명/장착 보너스)

@@ -797,29 +797,37 @@ export default function StatsPage({
               이 캐릭터는 기초 스탯 데이터가 없어서 "합산"이 0으로 나와요. 알려주시면 추가해드릴게요.
             </p>
           )}
-          <p className="stats-page__aggregate-note">※ 제작자 추천 내용입니다. 게임 내 실제 값과 다를 수 있어요.</p>
+          <p className="stats-page__aggregate-note">공식 계산 내용이 아닙니다. 자세한 스탯은 인게임을 확인하세요.</p>
 
           <div className="stats-page__recommend">
-            <h4 className="stats-page__col-title">제작자 추천</h4>
+            <h4 className="stats-page__col-title">이잘키 추천</h4>
             {recommendation ? (
               <>
-                <ul className="stats-page__recommend-list">
-                  <li><span>추천 무기</span><strong>{recommendation.weapon ?? '-'}</strong></li>
-                  <li><span>에코 세트</span><strong>{recommendation.echoSet ?? '-'}</strong></li>
-                  <li><span>에코 주옵</span><strong>{recommendation.echoMainStat ?? '-'}</strong></li>
-                  <li><span>크확크피</span><strong>{recommendation.critRatio ?? '-'}</strong></li>
-                  <li><span>공명 효율</span><strong>{recommendation.resonanceEfficiency ?? '-'}</strong></li>
-                  <li><span>공격력</span><strong>{recommendation.atk ?? '-'}</strong></li>
-                  <li><span>공명 에너지 소모</span><strong>{recommendation.energyCost ?? '-'}</strong></li>
-                </ul>
-                {recommendation.notes?.length > 0 && (
-                  <div className="stats-page__recommend-notes">
-                    <h5>참고사항</h5>
+                <div className="stats-page__recommend-grid">
+                  <div className="stats-page__recommend-row">
+                    <div className="stats-page__recommend-cell"><span>추천 무기</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.weapon ?? '-'}</strong></div>
+                    <div className="stats-page__recommend-cell"><span>에코 세트</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.echoSet ?? '-'}</strong></div>
+                  </div>
+                  <div className="stats-page__recommend-row">
+                    <div className="stats-page__recommend-cell"><span>에코 주옵</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.echoMainStat ?? '-'}</strong></div>
+                    <div className="stats-page__recommend-cell"><span>크확 크피</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.critRatio ?? '-'}</strong></div>
+                  </div>
+                  <div className="stats-page__recommend-row stats-page__recommend-row--triple">
+                    <div className="stats-page__recommend-cell"><span>공효</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.resonanceEfficiency ?? '-'}</strong></div>
+                    <div className="stats-page__recommend-cell"><span>공격력</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.atk ?? '-'}</strong></div>
+                    <div className="stats-page__recommend-cell"><span>공명 에너지 소모</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.energyCost ?? '-'}</strong></div>
+                  </div>
+                </div>
+                <div className="stats-page__recommend-notes">
+                  <h5>참고사항</h5>
+                  {recommendation.notes?.length > 0 ? (
                     <ul>
                       {recommendation.notes.map((note, i) => <li key={i}>{note}</li>)}
                     </ul>
-                  </div>
-                )}
+                  ) : (
+                    <p className="stats-page__recommend-notes-empty">-</p>
+                  )}
+                </div>
               </>
             ) : (
               <p className="uploader__hint">아직 이 캐릭터의 추천 정보가 없어요. 알려주시면 채워드릴게요.</p>

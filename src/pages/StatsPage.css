@@ -751,38 +751,60 @@
   border-top: 1px solid var(--border-hairline);
 }
 
-.stats-page__recommend-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.stats-page__recommend-grid {
   display: flex;
   flex-direction: column;
   gap: 6px;
   font-size: 12px;
 }
 
-.stats-page__recommend-list li {
+.stats-page__recommend-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.stats-page__recommend-row--triple {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.stats-page__recommend-cell {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 6px;
   background: var(--bg-surface-raised);
   border-radius: 8px;
   padding: 7px 10px;
+  min-width: 0;
 }
 
-.stats-page__recommend-list li span {
+.stats-page__recommend-cell span {
   color: var(--text-muted);
   flex-shrink: 0;
 }
 
-.stats-page__recommend-list li strong {
+.stats-page__recommend-cell .stats-page__recommend-sep {
+  color: var(--border-hairline);
+}
+
+.stats-page__recommend-cell strong {
   color: var(--text-primary);
-  text-align: right;
+  overflow-wrap: break-word;
+  min-width: 0;
 }
 
 .stats-page__recommend-notes {
   margin-top: 10px;
+  min-height: 72px;
+  background: var(--bg-surface-raised);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.stats-page__recommend-notes-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
 }
 
 .stats-page__recommend-notes h5 {
