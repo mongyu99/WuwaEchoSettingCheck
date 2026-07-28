@@ -33,11 +33,6 @@ function defineCombo(...parts) {
 }
 
 export const CHARACTER_ECHO_SETS = {
-  aemeath: {
-    combos: [
-      defineCombo(['trailblazing-star', 5]),
-    ],
-  },
   // 조합을 바꿔 쓸 수 있는 캐릭터 예시(둘 이상이면 클릭해서 고를 수 있는 팝업이 뜸):
   // someCharacter: {
   //   combos: [
@@ -45,6 +40,139 @@ export const CHARACTER_ECHO_SETS = {
   //     defineCombo(['some-set-c', 2], ['some-set-d', 2], ['some-set-e', 1]),
   //   ],
   // },
+
+  // 기류
+  jiyan: { combos: [defineCombo(['sierra-gale', 5])] },
+  ciaccona: { combos: [defineCombo(['boundless-sky', 5])] },
+  cartethyia: { combos: [defineCombo(['glorious-wind', 5])] },
+  rover_aero: {
+    combos: [
+      defineCombo(['glorious-wind', 5]),
+      defineCombo(['rejuvenating-glow', 5]),
+    ],
+  },
+  iuno: {
+    combos: [
+      defineCombo(['crown-of-valor', 3], ['sierra-gale', 2]),
+      defineCombo(['crown-of-valor', 3], ['boundless-sky', 2]),
+      defineCombo(['crown-of-valor', 3], ['glorious-wind', 2]),
+      defineCombo(['moonlit-clouds', 5]),
+    ],
+  },
+  qiuyuan: {
+    combos: [
+      defineCombo(['law-of-harmony', 3], ['sierra-gale', 2]),
+      defineCombo(['law-of-harmony', 3], ['boundless-sky', 2]),
+      defineCombo(['law-of-harmony', 3], ['glorious-wind', 2]),
+      defineCombo(['moonlit-clouds', 5]),
+    ],
+  },
+  sigrika: { combos: [defineCombo(['sound-of-true-name', 5])] },
+  // 기류
+
+  // 용융
+  encore: { combos: [defineCombo(['molten-rift', 5])] },
+  changli: { combos: [defineCombo(['molten-rift', 5])] },
+  brant: { combos: [defineCombo(['tidebreaking-courage', 5])] },
+  lupa: { combos: [defineCombo(['wailing-wolf-flame', 5])] },
+  galbrena: {
+    combos: [
+      defineCombo(['flamewings-shadow', 3], ['molten-rift', 2]),
+      defineCombo(['flamewings-shadow', 3], ['wailing-wolf-flame', 2]),
+    ],
+  },
+  mornye: { combos: [defineCombo(['halo-of-starry-radiance', 5])] },
+  aemeath: {
+    combos: [
+      defineCombo(['trailblazing-star', 5]),
+    ],
+  },
+  denia: {
+    combos: [
+      defineCombo(['chromatic-foam', 5]),
+      defineCombo(['reel-of-spliced-memories', 5]),
+    ],
+  },
+  // 용융
+
+  // 응결
+  zhezhi: {
+    combos: [
+      defineCombo(['moonlit-clouds', 5]),
+      defineCombo(['empyrean-anthem', 5]),
+    ],
+  },
+  carlotta: { combos: [defineCombo(['frosty-resolve', 5])] },
+  lingyang: { combos: [defineCombo(['freezing-frost', 5])] },
+  hiyuki: { combos: [defineCombo(['wishes-of-quiet-snowfall', 5])] },
+  lucilla: {
+    combos: [
+      defineCombo(['wishes-of-quiet-snowfall', 5]),
+      defineCombo(['moonlit-clouds', 5]),
+    ],
+  },
+  suisui: { combos: [defineCombo(['song-of-feathered-trace', 5])] },
+  // 응결
+
+  // 전도
+  yinlin: {
+    combos: [
+      defineCombo(['moonlit-clouds', 5]),
+      defineCombo(['empyrean-anthem', 5]),
+    ],
+  },
+  calcharo: { combos: [defineCombo(['void-thunder', 5])] },
+  xiangli_yao: { combos: [defineCombo(['void-thunder', 5])] },
+  augusta: { combos: [defineCombo(['crown-of-valor', 3], ['void-thunder', 2])] },
+  rebecca: {
+    combos: [
+      defineCombo(['shadow-of-shattered-dreams', 1], ['lingering-tunes', 2], ['reel-of-spliced-memories', 2]),
+    ],
+  },
+  rover_electro: { combos: [] },
+  // 전도
+
+  // 인멸
+  rover_havoc: { combos: [defineCombo(['havoc-eclipse', 5])] },
+  camellya: { combos: [defineCombo(['havoc-eclipse', 5])] },
+  roccia: { combos: [defineCombo(['abyssal-veil', 5])] },
+  cantarella: {
+    combos: [
+      defineCombo(['abyssal-veil', 5]),
+      defineCombo(['moonlit-clouds', 5]),
+    ],
+  },
+  phrolova: {
+    combos: [
+      defineCombo(['dream-of-the-lost', 3], ['havoc-eclipse', 2]),
+      defineCombo(['dream-of-the-lost', 3], ['abyssal-veil', 2]),
+    ],
+  },
+  chisa: {
+    combos: [
+      defineCombo(['thread-of-severed-fate', 3], ['havoc-eclipse', 2]),
+      defineCombo(['thread-of-severed-fate', 3], ['abyssal-veil', 2]),
+      defineCombo(['thread-of-severed-fate', 3], ['moonlit-clouds', 2]),
+    ],
+  },
+  yangyang_xuanling: { combos: [defineCombo(['song-of-feathered-trace', 5])] },
+  // 인멸
+
+  // 회절
+  rover_spectro: { combos: [defineCombo(['celestial-light', 5])] },
+  verina: { combos: [defineCombo(['rejuvenating-glow', 5])] },
+  jinhsi: { combos: [defineCombo(['celestial-light', 5])] },
+  shorekeeper: { combos: [defineCombo(['rejuvenating-glow', 5])] },
+  phoebe: { combos: [defineCombo(['eternal-radiance', 5])] },
+  zeni: { combos: [defineCombo(['eternal-radiance', 5])] },
+  lynae: { combos: [defineCombo(['pact-of-neonlight-leap', 5])] },
+  luuk_herssen: { combos: [defineCombo(['rite-of-gilded-revelation', 5])] },
+  lucy: {
+    combos: [
+      defineCombo(['shadow-of-shattered-dreams', 1], ['lingering-tunes', 2], ['reel-of-spliced-memories', 2]),
+    ],
+  },
+  // 회절
 }
 
 /** 이 캐릭터가 쓸 수 있는 에코 세트 조합 목록을 반환합니다(없으면 null). */

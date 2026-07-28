@@ -55,8 +55,11 @@ export const ECHO_SET_MAIN_ECHOES = {
   /* 1.x 버전 */
 }
 
-/** 이 에코 세트에 연결된 메인 에코 id를 반환합니다(호환 후보가 여럿이면 첫 번째, 없으면 null). */
-export function getMainEchoIdForSet(echoSetId) {
+/**
+ * 이 에코 세트에 연결된 메인 에코 id를 반환합니다(호환 후보가 여럿이면 첫 번째, 없으면 null).
+ * 파일 밖에서 쓰는 곳이 없어 export하지 않습니다 — getMainEchoIdForCombo 내부에서만 씁니다.
+ */
+function getMainEchoIdForSet(echoSetId) {
   if (!echoSetId) return null
   return ECHO_SET_MAIN_ECHOES[echoSetId]?.[0] ?? null
 }

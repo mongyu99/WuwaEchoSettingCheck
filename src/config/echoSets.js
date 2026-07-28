@@ -115,6 +115,9 @@ export const ECHO_SETS = Object.fromEntries([
   // 2.x 버전
 
   // 1.x 버전
+  defineSet('celestial-light', '빛나는 별',
+    [2, '속성 피해 보너스', 10, '회절 피해가 10% 증가된다'],
+    [5, null, null, '변주 스킬을 사용하여 등장 시, 회절 피해가 30% 증가되고, 15초 동안 지속된다']),
   defineSet('lingering-tunes', '끊임없는 잔향',
     [2, '공격력', 10, '공격력이 10% 증가된다'],
     [5, null, null, '출전 시, 자신의 공격력이 1.5초마다 5% 증가하며 해당 효과는 최대 4스택까지 중첩된다. 반주 스킬 피해가 60% 증가된다']),

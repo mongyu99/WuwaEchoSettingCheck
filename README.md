@@ -35,8 +35,6 @@ src/
     ProcessingOverlay.jsx        # 인식 중 화면 전체를 덮는 로딩 오버레이
     Modal.jsx                    # 무기/에코 세트 조합 선택 팝업에 쓰는 범용 모달 셸
     ConfirmDialog.jsx            # 초기화 등 확인이 필요한 동작에 쓰는 확인/취소 다이얼로그
-    HomePage.jsx / ScoreDisplay.jsx / SidebarNav.jsx / ExtractedForm.jsx / InfoTooltip.jsx
-                                  # 미사용(어느 페이지에서도 import되지 않음) — 정리 대상 후보
 
   config/
     characters.js                # 캐릭터 목록 (사진 경로 + 이니셜 폴백, 5성만 유지)
@@ -69,6 +67,7 @@ scripts/
 
 raw-characters/                  # 캐릭터 원본 사진 보관(리사이즈 스크립트 입력)
 raw-weapons/                     # 무기 원본 사진 보관
+archive/                         # 빌드에서 제외한 미사용 코드 보관(필요하면 원래 위치로 되돌려 재사용)
 
 public/
   characters/                    # 리사이즈된 캐릭터 사진
