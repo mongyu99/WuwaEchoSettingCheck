@@ -98,6 +98,9 @@ function computeAggregate({ echoes, character, weaponId, combo, mainEchoId }) {
   const mainEcho = getMainEcho(mainEchoId)
   if (mainEcho) {
     for (const b of mainEcho.bonuses ?? []) addPercent(b.category, b.value)
+    if (mainEcho.characterBonus?.characterIds.includes(character?.id)) {
+      for (const b of mainEcho.characterBonus.bonuses) addPercent(b.category, b.value)
+    }
   }
 
   for (const echo of echoes) {
