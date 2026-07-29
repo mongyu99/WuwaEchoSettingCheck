@@ -1,24 +1,11 @@
 /**
- * 무기 카탈로그입니다. atk는 플랫 공격력, subStat은 무기의 부스탯(% 카테고리에 더해짐),
- * bonuses는 무기 패시브로 항상 붙는 % 보너스입니다. category 이름은 StatsPage의 합산 스탯
- * 카테고리 이름과 정확히 같아야 합니다.
- *
- * 아이콘은 항상 /weapons/{id}.png 경로라 따로 안 받고 id로 자동 생성합니다 — public/weapons/에
- * 그 파일명으로 이미지를 넣어두면 자동으로 연결됩니다.
- *
- * 이름만 채워지고 나머지가 비어있는(weapon-01 등) 항목은 이름만 확정된 자리표시자입니다 — 실제
- * 타입/공격력/부스탯/패시브 데이터를 알려주시면 채워서 바로 동작하게 만들 수 있어요. id도
- * weapon-N은 임시 키라, 실제 데이터를 넣을 때 알아보기 쉬운 슬러그로 같이 바꿔주세요.
- */
-
-/**
  * @param {string} id 카탈로그 키(아이콘 파일명으로도 그대로 씀: /weapons/{id}.png)
  * @param {string} name 표시 이름
- * @param {string} type 무기 타입(직검/장검/거너/법기/... )
+ * @param {string} type 무기 타입
  * @param {number} atk 플랫 공격력
- * @param {string|null} subStatCategory 무기 부스탯 카테고리(없으면 null)
- * @param {number|null} subStatValue 무기 부스탯 값(%). subStatCategory가 null이면 무시됨.
- * @param {string|null} passiveName 패시브 이름(없으면 null)
+ * @param {string|null} subStatCategory 무기 부스탯 카테고리
+ * @param {number|null} subStatValue 무기 부스탯 값(%)
+ * @param {string|null} passiveName 패시브 이름
  * @param {[string, number][]} bonuses 항상 붙는 % 보너스 [카테고리, 값] 목록(없으면 빈 배열)
  * @param {string} description 패시브 설명
  * @param {string} [note] 계산에 반영하지 않는 부분에 대한 안내 문구(선택)
