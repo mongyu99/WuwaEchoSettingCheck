@@ -13,8 +13,20 @@
  * @param {[string, number][]} bonuses 누구나 받는 기본 % 보너스 [카테고리, 값] 목록(없으면 빈 배열)
  * @param {{ characterIds: string[], bonuses: [string, number][] }|null} [characterBonus] 특정
  *   캐릭터(최대 2명)가 장착했을 때만 bonuses에 추가로 더해지는 보너스. 없으면 null.
+ * @param {Record<string, string>|null} [characterDescriptions] 캐릭터 id별로 description을
+ *   완전히 대체하는 문구(예: 루시가 장착하면 전용 효과 문구, 레베카가 장착하면 다른 전용 효과
+ *   문구). 장착 캐릭터에 따라 에코 어빌리티 자체가 바뀌는 메인 에코에 씁니다. 없으면 null(항상
+ *   description 그대로).
  */
-function defineMainEcho(id, name, description, passiveDescription, bonuses, characterBonus = null) {
+function defineMainEcho(
+  id,
+  name,
+  description,
+  passiveDescription = null,
+  bonuses = null,
+  characterBonus = null,
+  characterDescriptions = null,
+) {
   return [
     id,
     {
@@ -22,15 +34,16 @@ function defineMainEcho(id, name, description, passiveDescription, bonuses, char
       icon: `/main-echoes/${id}.png`,
       description,
       passiveDescription,
-      bonuses: bonuses.map(([category, value]) => ({ category, value })),
+      bonuses: (bonuses ?? []).map(([category, value]) => ({ category, value })),
       ...(characterBonus
         ? {
             characterBonus: {
               characterIds: characterBonus.characterIds,
-              bonuses: characterBonus.bonuses.map(([category, value]) => ({ category, value })),
+              bonuses: (characterBonus.bonuses ?? []).map(([category, value]) => ({ category, value })),
             },
           }
         : {}),
+      ...(characterDescriptions ? { characterDescriptions } : {}),
     },
   ]
 }
@@ -39,37 +52,30 @@ export const MAIN_ECHOES = Object.fromEntries([
   defineMainEcho(
     'thundering-mephis', '뇌운의 비늘',
     '에코 어빌리티를 사용하여 지옥불 기사로 변신한 후 참격을 발동한다. (최대 연속 사용 가능 횟수: 3회) 각각 242.40%, 282.80%, 282.80%의 용융 피해를 입힌다. 마지막 공격이 적에게 명중하면 자신의 용융 피해 보너스가 12.00% 증가하고, 일반 공격 피해 보너스가 12.00% 증가하며, 15초간 지속된다. 에코 어빌리티를 길게 누르면 변신 상태를 유지하면서 라이딩 상태에 진입하며, 종료 시 전방 목표에게 282.80%의 용융 피해를 1회 입힌다.',
-    [],
   ),
   defineMainEcho(
     'inferno-rider', '지옥불 기사',
     '에코 어빌리티를 사용하여 지옥불 기사로 변신한 후 참격을 발동한다. (최대 연속 사용 가능 횟수: 3회) 각각 242.40%, 282.80%, 282.80%의 용융 피해를 입힌다. 마지막 공격이 적에게 명중하면 자신의 용융 피해 보너스가 12.00% 증가하고, 일반 공격 피해 보너스가 12.00% 증가하며, 15초간 지속된다. 에코 어빌리티를 길게 누르면 변신 상태를 유지하면서 라이딩 상태에 진입하며, 종료 시 전방 목표에게 282.80%의 용융 피해를 1회 입힌다.',
-    [],
   ),
   defineMainEcho(
     'bell-borne-geochelone', '타종 거북이',
     '에코 어빌리티를 사용하여 타종 거북이의 가호를 발동하며 근처의 적에게 자신의 방어력 145.92%에 해당하는 응결 피해를 입히고 타종의 실드를 획득한다. (지속 시간: 15초) 타종의 실드는 파티 내 등장 캐릭터에게 50.00%의 피해 감소와 10.00%의 피해 증가를 제공하며, 3회 공격을 받은 후 사라진다.',
-    [],
   ),
   defineMainEcho(
     'tempest-mephis', '천둥의 비늘',
     '에코 어빌리티를 사용하여 천둥의 비늘로 변신한다. (최대 연속 사용 가능 횟수: 2회) 꼬리 흔들기로 소환한 번개 공격은 각 단마다 102.48%의 전도 피해를, 발톱 공격은 175.68%의 전도 피해를 입힌다. 발톱 공격 명중 후 캐릭터의 전도 피해 보너스는 12.00%, 강공격 피해 보너스는 12.00% 증가한다. (지속 시간: 15초)',
-    [],
   ),
   defineMainEcho(
     'crownless', '크라운리스',
     '에코 어빌리티를 사용하여 크라운리스로 변신한 후 최대 4회 연속 사용 가능하다. 처음 1~2회차에는 1단 134.08%의 인멸 피해를 입히며, 3회차는 2단 100.56%의 인멸 피해를 입히고, 4회차에는 3단 67.04%의 인멸 피해를 입힌다. 변신 후 자신의 인멸 피해 보너스가 12.00% 증가하며, 공명 스킬 피해 보너스가 12.00% 증가한다. (지속 시간: 15초)',
-    [],
   ),
   defineMainEcho(
     'feilian-beringal', '폭주의 고릴라',
     '에코 어빌리티를 사용하여 폭주의 고릴라로 변신한 후 발차기 공격을 진행하며 명중 시 추격 1회가 추가된다. 발차기 공격은 231.84%의 기류 피해를 입히며, 추격은 283.36%의 기류 피해를 입힌다. 추격으로 목표 명중 후, 자신의 기류 피해 보너스가 12.00% 증가하며, 강공격 피해 보너스가 12.00% 증가한다. (지속 시간: 15초)',
-    [],
   ),
   defineMainEcho(
     'lampylumen-myriad', '반디의 군세',
     '에코 어빌리티를 사용하여 반디의 군세로 변신한 후 공격을 하고 최대 3회 연속 사용할 수 있다. 앞으로 내리찍어 대범위의 얼음 충격을 일으킨다. 처음 1~2단 내리찍기는 200.16%과 200.16%의 응결 피해를 입히며, 마지막 1단은 266.88%의 응결 피해를 입혀 충격에 명중된 적들은 얼어붙는다. 매번 충격은 자신의 응결 피해 보너스가 4.00% 증가시키며, 공명 스킬 피해 보너스가 4.00% 증가시킨다. (지속 시간: 15초)',
-    [],
   ),
   defineMainEcho(
     'mourning-aix', '애곡하는 아익스',
@@ -78,17 +84,14 @@ export const MAIN_ECHOES = Object.fromEntries([
   defineMainEcho(
     'mech-abomination', '조립식 로봇',
     '에코 어빌리티를 사용하여 주변 적에게 48.64%의 전도 피해를 1회 입히고, 무기 폐기물을 모아 적을 공격한다. 폐기물이 목표에 명중 시 320.00%의 전도 피해를 입히고, 일정 시간 후 폭발하여 160.00%의 전도 피해를 입힌다. 에코 어빌리티 발동 후, 자신의 공격력이 12.00% 증가하며, 15초간 지속된다. 폐기물로 인한 피해는 캐릭터의 반주 스킬 피해로 간주된다.',
-    [],
   ),
   defineMainEcho(
     'impermanence-heron', '음험한 백로',
     '에코 어빌리티를 사용하여 음험한 백로로 변신한 후 날아올라 내리찍기 공격으로 310.56%의 인멸 피해를 입힌다. 에코 어빌리티를 길게 눌러 변신한 모습으로 날아오른 후 아래로 인멸 화염을 퍼붓는다. 각 단의 공격마다 55.73%의 인멸 피해를 입힌다. 변신 후 적에게 첫 명중 시, 자신의 공명 에너지를 10pt 회복하고, 이후의 15초 내에 자신이 반주 스킬 발동 시, 다음 교체 캐릭터의 피해를 12% 증가시킨다. (지속 시간: 15초)',
-    [],
   ),
   defineMainEcho(
     'dreamless', '무망자',
     '에코 어빌리티를 사용하여 무망자로 변신한 후 전방의 목표를 6회 연속 공격한다. 처음 1~5회까지 매회 54.08%의 인멸 피해를 입히고 마지막 1회는 270.40%의 인멸 피해를 입힌다. 방랑자 · 인멸은 공명 해방 · 임연사적을 발동한 후 5초 이내에, 해당 에코 어빌리티 발동으로 인한 피해가 50.00% 증가한다. 스킬 쿨타임: 20초',
-    [],
   ),
   defineMainEcho(
     'jue', '용의 별자리',
@@ -97,7 +100,6 @@ export const MAIN_ECHOES = Object.fromEntries([
   defineMainEcho(
     'fallacy-of-no-return', '돌아갈 곳이 없는 오류',
     '에코 어빌리티를 사용하여 돌아갈 곳이 없는 오류의 일부 권능을 소환한다. 주위의 적에게 자신의 HP 최대치의 15.86%에 해당하는 회절 피해를 1회 입히고 자신의 공명 효율이 10% 증가하며, 파티 내 모든 캐릭터의 공격력을 10% 증가시킨다. 해당 효과는 20초간 지속된다. 에코 어빌리티를 길게 누르면, 쇼크 공격 종료 후 스태미나를 소모하여 지속적인 공격을 진행한다. 매번 공격이 HP 최대치의 1.58%에 해당하는 회절 피해를 입힌다. 길게 누르기 종료 후 최후의 일격이 발생하여 HP 최대치의 19.82%에 해당하는 회절 피해를 입힌다.',
-    [],
   ),
   defineMainEcho(
     'lorelei', '로렐라이',
@@ -121,7 +123,6 @@ export const MAIN_ECHOES = Object.fromEntries([
     'hecate', '헤카테',
     '에코 어빌리티를 사용하여 주변에 3개의 지속적으로 회전하며 춤추는 「명월의 시녀」를 소환한다. 「명월의 시녀」의 회전칼은 적에게 45.59%의 인멸 피해를 입힌다. 회전칼이 패링을 성공할 시 「명월의 시녀」의 존재 시간이 리셋된다.',
     '메인 슬롯에 해당 에코 어빌리티를 장착 시 자신의 협동 공격이 입히는 피해가 40.00% 증가한다.',
-    [],
   ),
   defineMainEcho(
     'nightmare-feilian-beringal', '악몽 · 폭주의 고릴라',
@@ -211,8 +212,6 @@ export const MAIN_ECHOES = Object.fromEntries([
   defineMainEcho(
     'reminiscence-denia', '공명의 메아리 · 데니아',
     '에코 어빌리티 사용하여 「속임수의 대가」를 소환한 후, 적에게 273.60%의 용융 피해를 입힌다. 이후 15초 내에 자신의 반주 스킬을 발동 시, 다음번 변주 스킬로 등장하는 캐릭터의 용융 피해 보너스를 12.00% 증가시키고, 15초간 지속된다.',
-    '',
-    [],
   ),
   defineMainEcho(
     'reminiscence-nightmare-adam-smasher', '공명의 메아리 · 악몽 아담 · 스매셔',
@@ -220,6 +219,10 @@ export const MAIN_ECHOES = Object.fromEntries([
     '메인 슬롯에 해당 에코 어빌리티 장착 시, 장착 캐릭터가 루시 혹은 레베카일 경우 자신의 크리티컬이 15% 증가되고, 에코 어빌리티 또한 장착된 캐릭터에 따라 해당하는 특수 효과로 대체된다.',
     [],
     { characterIds: ['lucy', 'rebecca'], bonuses: [['크리티컬', 15]] },
+    {
+      lucy: '에코 어빌리티를 짧게 누르면 주변 목표에게 273.60%의 회절 피해를 입힌다. 길게 누르면 주변 목표에게 273.60%의 회절 피해를 입히고, 특수 이동 상태에 진입하며 지속 기간 동안 루시의 이동 속도를 증가시키고 주변 목표의 시간 흐름을 늦춘다.',
+      rebecca: '에코 어빌리티 사용 시, 미사일을 발사하여 목표에게 16단 17.10%의 전도 피해를 입힌다.',
+    },
   ),
   defineMainEcho(
     'lioness-of-glory', '영광의 사자',
@@ -242,8 +245,6 @@ export const MAIN_ECHOES = Object.fromEntries([
   defineMainEcho(
     'hyvatia', '하이와티아',
     '에코 어빌리티를 사용하여 하이와티아를 소환한 후, 공중에서 레이저를 발사하여 적에게 10단 27.36%의 회절 피해를 입힌다. 이후 15초 내에 자신이 반주 스킬 발동 시, 다음번 변주 스킬로 등장하는 캐릭터의 전체 속성 피해 보너스를 10.00% 증가시키고, 15초간 지속된다.',
-    '',
-    [],
   ),
   defineMainEcho(
     'reactor-husk', '리액터 허스크',

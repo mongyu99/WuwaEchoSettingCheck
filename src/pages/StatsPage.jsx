@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { getValidOptions } from '../config/characterValidOptions'
 import { getCharacterBaseStats } from '../config/characterBaseStats'
 import { WEAPONS, getWeapon } from '../config/weapons'
+import { getCharacterWeaponIds } from '../config/characterWeapons'
 import { getEchoSet } from '../config/echoSets'
-import { getCharacterEchoCombos, describeCombo } from '../config/characterEchoSets'
+import { getCharacterEchoCombos } from '../config/characterEchoSets'
 import { getCharacterRecommendation } from '../config/characterRecommendations'
 import { getMainEcho } from '../config/mainEchoes'
-import { getMainEchoIdForCombo } from '../config/echoSetMainEchoes'
+import { getMainEchoIdsForCombo } from '../config/echoSetMainEchoes'
 import { getMainEchoDamageBonus } from '../config/characterMainEchoBonus'
 import { SUB_STAT_OPTIONS } from '../config/subStatOptions'
 import { getEchoCost } from '../utils/ocr'
@@ -201,6 +202,24 @@ function EchoComboPickerModal({ open, onClose, onSelect, combos }) {
           </div>
         </button>
       ))}
+    </Modal>
+  )
+}
+
+// 지금 쓰는 에코 세트 조합에 호환되는 메인 에코가 여러 개인 경우 그중 하나를 고르는 팝업입니다.
+// 후보가 하나뿐이면 이 팝업을 열 일 자체가 없습니다(고정).
+function MainEchoPickerModal({ open, onClose, onSelect, mainEchoIds }) {
+  return (
+    <Modal open={open} title="메인 에코 선택" onClose={onClose}>
+      {mainEchoIds.map((id, i) => {
+        const echo = getMainEcho(id)
+        return (
+          <button key={id} className="picker-item picker-item--simple" onClick={() => onSelect(i)}>
+            {echo?.icon && <img src={echo.icon} alt={echo?.name} className="picker-item__icon" />}
+            <span>{echo?.name ?? id}</span>
+          </button>
+        )
+      })}
     </Modal>
   )
 }
@@ -550,8 +569,10 @@ export default function StatsPage({
   character,
   weapon,
   echoComboIndex,
+  mainEchoIndex,
   onSetWeapon,
   onSetEchoCombo,
+  onSetMainEchoIndex,
   onUpdateSubStats,
   onGoToCharacters,
   onReset,
@@ -559,6 +580,7 @@ export default function StatsPage({
   const [resetOpen, setResetOpen] = useState(false)
   const [weaponModalOpen, setWeaponModalOpen] = useState(false)
   const [comboModalOpen, setComboModalOpen] = useState(false)
+  const [mainEchoModalOpen, setMainEchoModalOpen] = useState(false)
   const [selectedEchoIdx, setSelectedEchoIdx] = useState(0)
   const [optimizerResults, setOptimizerResults] = useState({})
   const [blink, setBlink] = useState(null) // { echoIndex, label, value, token } — 방금 클릭한 추천의 위치
@@ -573,13 +595,20 @@ export default function StatsPage({
   // 이상이면 "사용 에코 세트"를 클릭해서 바꿀 수 있습니다. 등록 안 된 캐릭터는 null.
   const echoCombos = getCharacterEchoCombos(character?.id)
   const combo = echoCombos?.[echoComboIndex] ?? echoCombos?.[0] ?? null
-  // 메인 에코는 별도로 고르지 않고, 지금 쓰는 조합에 연결된 걸 항상 그대로 씁니다.
-  const mainEchoId = getMainEchoIdForCombo(combo)
+  // 지금 쓰는 조합에 호환되는 메인 에코 후보 목록입니다. 하나뿐이면 고정, 둘 이상이면 "사용
+  // 메인 에코"의 교체 아이콘으로 그중 하나를 골라 쓸 수 있습니다.
+  const mainEchoIds = getMainEchoIdsForCombo(combo)
+  const mainEchoId = mainEchoIds[mainEchoIndex] ?? mainEchoIds[0] ?? null
   const mainEcho = getMainEcho(mainEchoId)
+  // 캐릭터에 따라 에코 어빌리티 자체가 대체되는 메인 에코(예: 루시/레베카 전용 효과)는
+  // characterDescriptions에 등록된 문구가 있으면 그걸 우선 보여주고, 없으면 원래 description을 씁니다.
+  const mainEchoDescription = mainEcho?.characterDescriptions?.[character?.id] ?? mainEcho?.description ?? null
 
-  // 캐릭터의 무기 타입에 맞는 무기로만 제한합니다(타입 미지정 캐릭터는 카탈로그 전체 허용).
-  const weaponOptions = Object.entries(WEAPONS).filter(
-    ([, w]) => !character?.weaponType || w.type === character.weaponType,
+  // 캐릭터별 무기 목록이 등록돼 있으면 그 목록만, 없으면 무기 타입 기준으로 제한합니다(타입도
+  // 미지정이면 카탈로그 전체 허용).
+  const characterWeaponIds = getCharacterWeaponIds(character?.id)
+  const weaponOptions = Object.entries(WEAPONS).filter(([id, w]) =>
+    characterWeaponIds ? characterWeaponIds.includes(id) : !character?.weaponType || w.type === character.weaponType,
   )
 
   // scroll: 계산기 추천처럼 화면 아래쪽에서 눌렀을 때만 위로 스크롤합니다. 에코 점수 목록은 이미
@@ -684,10 +713,20 @@ export default function StatsPage({
           <h4>사용 무기</h4>
           {weaponData ? (
             <div className="stats-page__chip-card">
-              <button className="stats-page__chip-head stats-page__chip-head--btn" onClick={() => setWeaponModalOpen(true)}>
+              <div className="stats-page__chip-head">
                 {weaponData.icon && <img src={weaponData.icon} alt={weaponData.name} />}
                 <span>{weaponData.name}</span>
-              </button>
+                {weaponOptions.length > 1 && (
+                  <button
+                    className="stats-page__swap-btn"
+                    onClick={() => setWeaponModalOpen(true)}
+                    aria-label="무기 교체"
+                    title="무기 교체"
+                  >
+                    ⇄
+                  </button>
+                )}
+              </div>
               {weaponData.description && (
                 <>
                   {weaponData.passiveName && <p className="stats-page__chip-passive">[{weaponData.passiveName}]</p>}
@@ -704,26 +743,32 @@ export default function StatsPage({
           <h4>사용 에코 세트</h4>
           {combo ? (
             <div className="stats-page__chip-card">
-              {echoCombos.length > 1 ? (
-                <button className="stats-page__chip-head stats-page__chip-head--btn" onClick={() => setComboModalOpen(true)}>
-                  <span>{describeCombo(combo)}</span>
-                </button>
-              ) : (
-                <div className="stats-page__chip-head">
-                  <span>{describeCombo(combo)}</span>
+              {echoCombos.length > 1 && (
+                <div className="stats-page__chip-toolbar">
+                  <button
+                    className="stats-page__swap-btn"
+                    onClick={() => setComboModalOpen(true)}
+                    aria-label="에코 세트 조합 교체"
+                    title="에코 세트 조합 교체"
+                  >
+                    ⇄
+                  </button>
                 </div>
               )}
-              {combo.flatMap(({ setId, pieceCount }) => {
+              {combo.map(({ setId, pieceCount }) => {
                 const set = getEchoSet(setId)
-                if (!set) return []
-                return Object.entries(set.pieces)
+                if (!set) return null
+                const tiers = Object.entries(set.pieces)
                   .filter(([tier]) => Number(tier) <= pieceCount)
                   .sort((a, b) => Number(a[0]) - Number(b[0]))
-                  .map(([tier, effect]) => (
-                    <p key={`${setId}-${tier}`} className="stats-page__chip-effect">
-                      {set.name} {tier}세트: {effect.description}
-                    </p>
-                  ))
+                return (
+                  <div key={setId} className="stats-page__set-block">
+                    <p className="stats-page__set-name">{set.name} ({pieceCount})</p>
+                    {tiers.map(([tier, effect]) => (
+                      <p key={tier} className="stats-page__chip-effect">{tier}세트: {effect.description}</p>
+                    ))}
+                  </div>
+                )
               })}
             </div>
           ) : (
@@ -736,8 +781,18 @@ export default function StatsPage({
               <div className="stats-page__chip-head">
                 {mainEcho.icon && <img src={mainEcho.icon} alt={mainEcho.name} />}
                 <span>{mainEcho.name}</span>
+                {mainEchoIds.length > 1 && (
+                  <button
+                    className="stats-page__swap-btn"
+                    onClick={() => setMainEchoModalOpen(true)}
+                    aria-label="메인 에코 교체"
+                    title="메인 에코 교체"
+                  >
+                    ⇄
+                  </button>
+                )}
               </div>
-              {mainEcho.description && <p className="stats-page__chip-effect">{mainEcho.description}</p>}
+              {mainEchoDescription && <p className="stats-page__chip-effect">{mainEchoDescription}</p>}
               {mainEcho.passiveDescription && (
                 <p className="stats-page__chip-effect">{mainEcho.passiveDescription}</p>
               )}
@@ -924,6 +979,14 @@ export default function StatsPage({
           onClose={() => setComboModalOpen(false)}
           onSelect={(i) => { onSetEchoCombo(i); setComboModalOpen(false) }}
           combos={echoCombos}
+        />
+      )}
+      {mainEchoIds.length > 1 && (
+        <MainEchoPickerModal
+          open={mainEchoModalOpen}
+          onClose={() => setMainEchoModalOpen(false)}
+          onSelect={(i) => { onSetMainEchoIndex(i); setMainEchoModalOpen(false) }}
+          mainEchoIds={mainEchoIds}
         />
       )}
       <ConfirmDialog

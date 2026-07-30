@@ -35,8 +35,9 @@ function normalizeRecord(rec) {
     // 캐릭터의 에코 세트 조합(config/characterEchoSets.js) 중 몇 번째를 쓰는지입니다. 조합이
     // 하나뿐인(고정) 캐릭터는 항상 0번입니다.
     echoComboIndex: rec?.echoComboIndex ?? 0,
-    // 메인 에코는 더 이상 따로 저장하지 않습니다 — 지금 쓰는 조합에서 항상 자동으로 정해집니다
-    // (config/echoSetMainEchoes.js의 getMainEchoIdForCombo).
+    // 지금 쓰는 조합에 호환되는 메인 에코가 여러 개인 경우, 그중 몇 번째를 쓰는지입니다
+    // (config/echoSetMainEchoes.js). 하나뿐이면 항상 0번입니다.
+    mainEchoIndex: rec?.mainEchoIndex ?? 0,
     baseStats: { ...EMPTY_BASE_STATS, ...(rec?.baseStats ?? {}) },
   }
 }
@@ -101,7 +102,11 @@ export default function App() {
   }
 
   const setEchoComboForCurrent = (echoComboIndex) => {
-    updateRecordForCurrent((rec) => ({ ...rec, echoComboIndex }))
+    updateRecordForCurrent((rec) => ({ ...rec, echoComboIndex, mainEchoIndex: 0 }))
+  }
+
+  const setMainEchoIndexForCurrent = (mainEchoIndex) => {
+    updateRecordForCurrent((rec) => ({ ...rec, mainEchoIndex }))
   }
 
   const setBaseStatsForCurrent = (partial) => {
@@ -227,8 +232,10 @@ export default function App() {
             character={character}
             weapon={record.weapon}
             echoComboIndex={record.echoComboIndex}
+            mainEchoIndex={record.mainEchoIndex}
             onSetWeapon={setWeaponForCurrent}
             onSetEchoCombo={setEchoComboForCurrent}
+            onSetMainEchoIndex={setMainEchoIndexForCurrent}
             onUpdateSubStats={updateSubStats}
             onGoToCharacters={goToCharacters}
             onReset={handleResetCurrent}

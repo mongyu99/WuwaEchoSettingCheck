@@ -390,6 +390,48 @@
   margin-top: 6px;
 }
 
+/* 무기/에코 세트/메인 에코 중 교체 가능한(고를 수 있는 후보가 둘 이상인) 항목에만 붙는
+   작은 교체 아이콘입니다. 항상 카드 오른쪽 끝에 붙습니다. */
+.stats-page__swap-btn {
+  flex-shrink: 0;
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--border-hairline);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.stats-page__swap-btn:hover {
+  color: var(--accent-wave);
+  border-color: var(--accent-wave);
+}
+
+.stats-page__chip-toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.stats-page__set-block + .stats-page__set-block {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-hairline);
+}
+
+.stats-page__set-name {
+  margin: 0;
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 12px;
+}
+
 .stats-page__chip-card--static strong {
   color: var(--region-main);
   font-size: 12px;
