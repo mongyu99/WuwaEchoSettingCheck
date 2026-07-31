@@ -8,7 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "gh-pages -d dist",
-    "prepare-characters": "node scripts/prepare-character-images.mjs"
+    "prepare-characters": "node scripts/prepare-character-images.mjs",
+    "prepare-weapons": "node scripts/prepare-weapon-images.mjs",
+    "prepare-placeholders": "node scripts/generate-placeholder-images.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

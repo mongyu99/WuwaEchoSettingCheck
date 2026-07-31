@@ -1,5 +1,5 @@
 /**
- * @param {string} id 카탈로그 키(아이콘 파일명으로도 그대로 씀: /weapons/{id}.png)
+ * @param {string} id 카탈로그 키(아이콘 파일명으로도 그대로 씀: /weapons/{id}.webp)
  * @param {string} name 표시 이름
  * @param {string} type 무기 타입
  * @param {number} atk 플랫 공격력
@@ -16,7 +16,7 @@ function defineWeapon(id, name, type, atk, subStatCategory, subStatValue, passiv
     {
       name,
       type,
-      icon: `/weapons/${id}.png`,
+      icon: `/weapons/${id}.webp`,
       atk,
       ...(subStatCategory ? { subStat: { category: subStatCategory, value: subStatValue } } : {}),
       bonuses: bonuses.map(([category, value]) => ({ category, value })),
