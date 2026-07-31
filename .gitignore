@@ -4,3 +4,7 @@ dist
 raw-characters/*
 !raw-characters/.gitkeep
 raw-characters-backup
+raw-weapons/*
+!raw-weapons/.gitkeep
+raw-echo-sets/*
+!raw-echo-sets/.gitkeep
