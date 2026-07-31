@@ -1,12 +1,12 @@
 // raw-characters/ 폴더의 원본 캐릭터 사진들을 모두 고정 크기(610x840)로
-// 리사이즈해서 public/characters/ 에 PNG로 저장합니다.
+// 리사이즈해서 public/characters/ 에 WebP로 저장합니다(PNG보다 용량이 훨씬 작아 git에 유리).
 //
 // 사용법:
 //   1. npm install --save-dev sharp   (최초 1회)
 //   2. raw-characters/ 폴더에 원본 이미지를 넣기 (파일명이 곧 캐릭터 id가 됩니다)
 //   3. npm run prepare-characters
 //   4. src/config/characters.js 에 새 항목 추가
-//      { id: '파일이름', name: '표시할 이름', image: '/characters/파일이름.png', ... }
+//      { id: '파일이름', name: '표시할 이름', image: '/characters/파일이름.webp', ... }
 //
 // 크기는 610x840으로 고정되어 있습니다(public/characters/에 들어가는 모든 사진이 항상 이
 // 크기여야 하므로, 이미지 개수와 무관하게 매번 동일한 결과가 나옵니다). 크기를 바꾸고
@@ -14,10 +14,11 @@
 
 import { readdir, mkdir } from 'node:fs/promises'
 import { extname, basename, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
 
-const SRC_DIR = new URL('../raw-characters/', import.meta.url).pathname
-const OUT_DIR = new URL('../public/characters/', import.meta.url).pathname
+const SRC_DIR = fileURLToPath(new URL('../raw-characters/', import.meta.url))
+const OUT_DIR = fileURLToPath(new URL('../public/characters/', import.meta.url))
 const VALID_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp'])
 
 const TARGET_WIDTH = 610
@@ -37,10 +38,10 @@ async function main() {
   await Promise.all(
     files.map(async (file) => {
       const id = basename(file, extname(file))
-      const outPath = join(OUT_DIR, `${id}.png`)
+      const outPath = join(OUT_DIR, `${id}.webp`)
       await sharp(join(SRC_DIR, file))
         .resize(TARGET_WIDTH, TARGET_HEIGHT, { fit: 'cover', position: 'attention' })
-        .png()
+        .webp({ quality: 82 })
         .toFile(outPath)
       console.log(`저장됨: ${outPath}`)
     }),

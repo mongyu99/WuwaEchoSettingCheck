@@ -1,3 +1,6 @@
 node_modules
 dist
 .DS_Store
+raw-characters/*
+!raw-characters/.gitkeep
+raw-characters-backup
