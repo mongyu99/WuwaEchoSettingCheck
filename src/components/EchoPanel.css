@@ -131,9 +131,9 @@
   background: rgba(232, 197, 71, 0.12);
 }
 
-.echo-panel__sub-row--incomplete select {
-  border-color: #38bdf8;
-  box-shadow: 0 0 0 1px #38bdf8;
+select.echo-panel__sub-row--incomplete {
+  border-color: var(--score-low);
+  box-shadow: 0 0 0 1px var(--score-low);
 }
 
 .echo-panel__sub-row--valid select {

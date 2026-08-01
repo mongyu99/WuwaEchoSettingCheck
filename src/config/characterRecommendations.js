@@ -1,13 +1,13 @@
 export const CHARACTER_RECOMMENDATIONS = {
   // 예시:
   // aemeath: {
-  //   weapon: '영원한 샛별',
-  //   echoSet: '긴 여정을 떠나는 별 5세트',
-  //   echoMainStat: '크리티컬 피해 / 공격력',
-  //   critRatio: '크리티컬 50% : 크리티컬 피해 100% 이상',
+  //   weapon: '추천 무기',
+  //   echoSet: '추천 에코 세트',
+  //   echoMainStat: '크피/속/속/공/공 or 크확/속/공/공/공 등',
+  //   critRatio: '크리50% / 크피 270%',
   //   resonanceEfficiency: '120%',
-  //   atk: '2500',
-  //   energyCost: '150',
+  //   atk: '공격력 2500',
+  //   energyCost: '공효 150',
   //   notes: ['공명 해방 전 스택을 최대한 채우고 사용하세요.'],
   // },
   // 기류

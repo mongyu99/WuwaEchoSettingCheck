@@ -337,6 +337,7 @@
 .stats-page__chip-head span {
   flex: 1;
   min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .stats-page__chip-head img {
@@ -414,13 +415,21 @@
   border-color: var(--accent-wave);
 }
 
-.stats-page__chip-toolbar {
-  display: flex;
-  justify-content: flex-end;
+/* 에코 세트 카드의 [세트명 N세트] 줄은 무기 카드의 패시브명과 달리 강조하지 않고
+   설명 문구(.stats-page__chip-effect)와 동일한 스타일로 보여줍니다. */
+.stats-page__set-block .stats-page__chip-passive {
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.stats-page__set-block {
+  margin-top: 8px;
 }
 
 .stats-page__set-block + .stats-page__set-block {
-  margin-top: 8px;
   padding-top: 8px;
   border-top: 1px solid var(--border-hairline);
 }
@@ -595,6 +604,22 @@
 .picker-item--simple span {
   font-size: 14px;
   color: var(--text-primary);
+}
+
+/* 캐릭터에게 맞는(추천) 무기/메인 에코 항목에 붙는 태그입니다. 전체 카탈로그 목록에서
+   추천 항목을 한눈에 구분할 수 있도록 이름 오른쪽에 붙입니다. */
+.picker-item__tag {
+  flex-shrink: 0;
+  margin-left: auto;
+  border: 1px solid var(--score-low);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.picker-item--simple .picker-item__tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--score-low);
 }
 
 .picker-item__body {
