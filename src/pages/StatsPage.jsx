@@ -1060,14 +1060,14 @@ export default function StatsPage({
         options={weaponOptions}
         recommendedIds={recommendedWeaponIds}
       />
-      <EchoComboPickerModal
-        open={comboModalOpen}
-        onClose={() => setComboModalOpen(false)}
-        onSelectPreset={(presetCombo) => { applyEchoPreset(presetCombo); setComboModalOpen(false) }}
-        onAddPart={addEchoSetPart}
-        presetEntries={presetEntries}
-        addableSets={addableSets}
-      />
+      {echoCombos?.length > 1 && (
+        <EchoComboPickerModal
+          open={comboModalOpen}
+          onClose={() => setComboModalOpen(false)}
+          onSelect={(i) => { onSetEchoCombo(i); setComboModalOpen(false) }}
+          combos={echoCombos}
+        />
+      )}
       {mainEchoIds.length > 1 && (
         <MainEchoPickerModal
           open={mainEchoModalOpen}
