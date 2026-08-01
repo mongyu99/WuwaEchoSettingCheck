@@ -77,6 +77,10 @@ export default function App() {
 
   const record = normalizeRecord(character ? characterData[character.id] ?? {} : {})
   const echoes = record.echoes
+  // 캐릭터 선택 화면에서 에코가 하나라도 등록된 캐릭터를 구분해 보여주기 위한 목록입니다.
+  const charactersWithData = new Set(
+    Object.keys(characterData).filter((id) => normalizeRecord(characterData[id]).echoes.length > 0),
+  )
 
   // 진행 상태가 바뀔 때마다 저장해서, 브라우저를 나갔다 들어와도 이어서 볼 수 있게 합니다.
   useEffect(() => {
@@ -244,7 +248,7 @@ export default function App() {
         )
       case 'characters':
       default:
-        return <CharacterSelectPage onSelect={handleSelectCharacter} />
+        return <CharacterSelectPage onSelect={handleSelectCharacter} charactersWithData={charactersWithData} />
     }
   }
 

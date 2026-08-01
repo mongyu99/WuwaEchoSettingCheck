@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { CHARACTERS, ELEMENTS, ELEMENT_COLORS } from '../config/characters'
 import './CharacterSelectPage.css'
 
-export default function CharacterSelectPage({ onSelect }) {
+export default function CharacterSelectPage({ onSelect, charactersWithData }) {
   const [element, setElement] = useState('all') // 'all' | ELEMENTS[i]
   const [query, setQuery] = useState('')
 
@@ -57,9 +57,16 @@ export default function CharacterSelectPage({ onSelect }) {
           >
             <div className="char-card__photo-wrap">
               {c.image ? (
-                <img className="char-card__photo" src={c.image} alt={c.name} />
+                <img
+                  className={`char-card__photo ${charactersWithData?.has(c.id) ? '' : 'char-card__photo--empty'}`}
+                  src={c.image}
+                  alt={c.name}
+                />
               ) : (
-                <div className="char-card__photo char-card__photo--fallback" style={{ background: c.color }}>
+                <div
+                  className={`char-card__photo char-card__photo--fallback ${charactersWithData?.has(c.id) ? '' : 'char-card__photo--empty'}`}
+                  style={{ background: c.color }}
+                >
                   {c.initials}
                 </div>
               )}
