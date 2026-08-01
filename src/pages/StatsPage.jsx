@@ -3,7 +3,7 @@ import { getValidOptions } from '../config/characterValidOptions'
 import { getCharacterBaseStats } from '../config/characterBaseStats'
 import { WEAPONS, getWeapon } from '../config/weapons'
 import { getCharacterWeaponIds } from '../config/characterWeapons'
-import { getEchoSet } from '../config/echoSets'
+import { ECHO_SETS, getEchoSet } from '../config/echoSets'
 import { getCharacterEchoCombos } from '../config/characterEchoSets'
 import { getCharacterRecommendation } from '../config/characterRecommendations'
 import { getMainEcho } from '../config/mainEchoes'
@@ -169,6 +169,7 @@ function computeCategoryTotal(cat, raw, baseStats, weapon) {
   }
 }
 
+// 이 캐릭터가 쓸 수 있는(무기 타입/지정 무기 목록에 해당하는) 무기만 보여주는 팝업입니다.
 function WeaponPickerModal({ open, onClose, onSelect, options }) {
   return (
     <Modal open={open} title="무기 선택" onClose={onClose}>
@@ -183,12 +184,12 @@ function WeaponPickerModal({ open, onClose, onSelect, options }) {
   )
 }
 
-// 캐릭터의 에코 세트 "조합"(둘 이상의 세트를 섞어 쓰는 경우 포함) 중 하나를 고르는 팝업입니다.
-// 조합이 하나뿐인 캐릭터는 이 팝업을 열 일 자체가 없습니다(고정).
-function EchoComboPickerModal({ open, onClose, onSelect, combos }) {
+// 카탈로그의 모든 에코 세트를 조합으로 고를 수 있는 팝업입니다. 캐릭터에게 등록된 조합(둘 이상의
+// 세트를 섞어 쓰는 경우 포함)에는 "추천" 태그를 붙여 구분합니다. entries: [{ combo, recommended }].
+function EchoComboPickerModal({ open, onClose, onSelect, entries }) {
   return (
     <Modal open={open} title="에코 세트 조합 선택" onClose={onClose}>
-      {combos.map((combo, i) => (
+      {entries.map(({ combo, recommended }, i) => (
         <button key={i} className="picker-item picker-item--simple" onClick={() => onSelect(i)}>
           <div className="picker-item__body">
             {combo.map((p) => {
@@ -200,21 +201,22 @@ function EchoComboPickerModal({ open, onClose, onSelect, combos }) {
               )
             })}
           </div>
+          {recommended && <span className="picker-item__tag">추천</span>}
         </button>
       ))}
     </Modal>
   )
 }
 
-// 지금 쓰는 에코 세트 조합에 호환되는 메인 에코가 여러 개인 경우 그중 하나를 고르는 팝업입니다.
+// 지금 쓰는 에코 세트 조합에 호환되는 메인 에코만 보여주는 팝업입니다(에코 세트에 종속).
 // 후보가 하나뿐이면 이 팝업을 열 일 자체가 없습니다(고정).
 function MainEchoPickerModal({ open, onClose, onSelect, mainEchoIds }) {
   return (
     <Modal open={open} title="메인 에코 선택" onClose={onClose}>
-      {mainEchoIds.map((id, i) => {
+      {mainEchoIds.map((id) => {
         const echo = getMainEcho(id)
         return (
-          <button key={id} className="picker-item picker-item--simple" onClick={() => onSelect(i)}>
+          <button key={id} className="picker-item picker-item--simple" onClick={() => onSelect(id)}>
             {echo?.icon && <img src={echo.icon} alt={echo?.name} className="picker-item__icon" />}
             <span>{echo?.name ?? id}</span>
           </button>
@@ -569,10 +571,10 @@ export default function StatsPage({
   character,
   weapon,
   echoComboIndex,
-  mainEchoIndex,
+  mainEchoId: selectedMainEchoId,
   onSetWeapon,
   onSetEchoCombo,
-  onSetMainEchoIndex,
+  onSetMainEchoId,
   onUpdateSubStats,
   onGoToCharacters,
   onReset,
@@ -591,14 +593,30 @@ export default function StatsPage({
   const validLabels = getValidOptions(character?.id)
   const recommendation = getCharacterRecommendation(character?.id)
 
-  // 이 캐릭터가 쓸 수 있는 에코 세트 조합 목록입니다. 하나뿐이면 고정(클릭해도 안 바뀜), 둘
-  // 이상이면 "사용 에코 세트"를 클릭해서 바꿀 수 있습니다. 등록 안 된 캐릭터는 null.
-  const echoCombos = getCharacterEchoCombos(character?.id)
-  const combo = echoCombos?.[echoComboIndex] ?? echoCombos?.[0] ?? null
-  // 지금 쓰는 조합에 호환되는 메인 에코 후보 목록입니다. 하나뿐이면 고정, 둘 이상이면 "사용
-  // 메인 에코"의 교체 아이콘으로 그중 하나를 골라 쓸 수 있습니다.
+  // 이 캐릭터에게 등록된(추천) 에코 세트 조합입니다. 등록 안 된 캐릭터는 null.
+  const recommendedCombos = getCharacterEchoCombos(character?.id)
+  // 조합 고르는 팝업은 카탈로그의 모든 에코 세트를 5세트 단일 조합으로도 고를 수 있게 전부
+  // 보여줍니다. 캐릭터에게 등록된 조합(추천)은 그대로 유지하고, 그중 등장하지 않는 세트만
+  // "세트 하나로 5세트" 형태로 뒤에 채워 넣습니다(추천 조합과 중복 표시되지 않도록).
+  const comboKey = (c) => c.map((p) => `${p.setId}:${p.pieceCount}`).sort().join('+')
+  const recommendedComboKeys = new Set((recommendedCombos ?? []).map(comboKey))
+  const extraCombos = Object.keys(ECHO_SETS)
+    .map((setId) => [{ setId, pieceCount: 5 }])
+    .filter((c) => !recommendedComboKeys.has(comboKey(c)))
+  const echoComboEntries = [
+    ...(recommendedCombos ?? []).map((combo) => ({ combo, recommended: true })),
+    ...extraCombos.map((combo) => ({ combo, recommended: false })),
+  ]
+  // 하나뿐이면 고정(클릭해도 안 바뀜), 둘 이상이면 "사용 에코 세트"를 클릭해서 바꿀 수 있습니다.
+  const combo = echoComboEntries[echoComboIndex]?.combo ?? echoComboEntries[0]?.combo ?? null
+  // 카드 헤더에 보여줄 대표 아이콘입니다(조합 안 첫 세트 기준) — 세트 이름을 전부 나열하던 예전
+  // 헤더 대신, 무기/메인 에코와 같은 모양(아이콘+라벨+교체 아이콘)으로 맞추기 위한 것입니다.
+  const firstComboSet = combo ? getEchoSet(combo[0]?.setId) : null
+  // 사용 메인 에코는 지금 쓰는 에코 세트 조합에 종속됩니다 — 그 조합과 호환되는 메인 에코만
+  // 고를 수 있고(config/echoSetMainEchoes.js), 후보가 하나뿐이면 고정입니다.
   const mainEchoIds = getMainEchoIdsForCombo(combo)
-  const mainEchoId = mainEchoIds[mainEchoIndex] ?? mainEchoIds[0] ?? null
+  const mainEchoId =
+    selectedMainEchoId && mainEchoIds.includes(selectedMainEchoId) ? selectedMainEchoId : (mainEchoIds[0] ?? null)
   const mainEcho = getMainEcho(mainEchoId)
   // 캐릭터에 따라 에코 어빌리티 자체가 대체되는 메인 에코(예: 루시/레베카 전용 효과)는
   // characterDescriptions에 등록된 문구가 있으면 그걸 우선 보여주고, 없으면 원래 description을 씁니다.
@@ -743,8 +761,12 @@ export default function StatsPage({
           <h4>사용 에코 세트</h4>
           {combo ? (
             <div className="stats-page__chip-card">
-              {echoCombos.length > 1 && (
-                <div className="stats-page__chip-toolbar">
+              <div className="stats-page__chip-head">
+                {firstComboSet?.icon && <img src={firstComboSet.icon} alt={firstComboSet.name} />}
+                <span>
+                  {combo.map(({ setId, pieceCount }) => `${getEchoSet(setId)?.name ?? setId} (${pieceCount})`).join(' + ')}
+                </span>
+                {echoComboEntries.length > 1 && (
                   <button
                     className="stats-page__swap-btn"
                     onClick={() => setComboModalOpen(true)}
@@ -753,8 +775,8 @@ export default function StatsPage({
                   >
                     ⇄
                   </button>
-                </div>
-              )}
+                )}
+              </div>
               {combo.map(({ setId, pieceCount }) => {
                 const set = getEchoSet(setId)
                 if (!set) return null
@@ -763,9 +785,11 @@ export default function StatsPage({
                   .sort((a, b) => Number(a[0]) - Number(b[0]))
                 return (
                   <div key={setId} className="stats-page__set-block">
-                    <p className="stats-page__set-name">{set.name} ({pieceCount})</p>
                     {tiers.map(([tier, effect]) => (
-                      <p key={tier} className="stats-page__chip-effect">{tier}세트: {effect.description}</p>
+                      <div key={tier}>
+                        <p className="stats-page__chip-passive">[{set.name} {tier}세트]</p>
+                        <p className="stats-page__chip-effect">{effect.description}</p>
+                      </div>
                     ))}
                   </div>
                 )
@@ -973,19 +997,17 @@ export default function StatsPage({
         onSelect={(id) => { onSetWeapon(id); setWeaponModalOpen(false) }}
         options={weaponOptions}
       />
-      {echoCombos?.length > 1 && (
-        <EchoComboPickerModal
-          open={comboModalOpen}
-          onClose={() => setComboModalOpen(false)}
-          onSelect={(i) => { onSetEchoCombo(i); setComboModalOpen(false) }}
-          combos={echoCombos}
-        />
-      )}
+      <EchoComboPickerModal
+        open={comboModalOpen}
+        onClose={() => setComboModalOpen(false)}
+        onSelect={(i) => { onSetEchoCombo(i); setComboModalOpen(false) }}
+        entries={echoComboEntries}
+      />
       {mainEchoIds.length > 1 && (
         <MainEchoPickerModal
           open={mainEchoModalOpen}
           onClose={() => setMainEchoModalOpen(false)}
-          onSelect={(i) => { onSetMainEchoIndex(i); setMainEchoModalOpen(false) }}
+          onSelect={(id) => { onSetMainEchoId(id); setMainEchoModalOpen(false) }}
           mainEchoIds={mainEchoIds}
         />
       )}

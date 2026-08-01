@@ -59,7 +59,8 @@ export default function EchoPanel({
           {echo.subStats.map((s) => {
             const usedLabels = echo.subStats.map((o) => o.label).filter(Boolean)
             const options = SUB_STAT_NAMES.filter((name) => name === s.label || !usedLabels.includes(name))
-            const incomplete = highlightIncomplete && (!s.label || !s.valueText)
+            const labelIncomplete = highlightIncomplete && !s.label
+            const valueIncomplete = highlightIncomplete && !!s.label && !s.valueText
             const isValidOption = s.label && validLabels?.includes(s.label)
             const isFlatValid = isValidOption && s.valueText && !s.valueText.includes('%')
             // 계산기가 추천한 "그 당시 상태"(라벨+수치)와 지금이 여전히 같을 때만 하늘색으로 표시합니다.
@@ -72,15 +73,22 @@ export default function EchoPanel({
             return (
               <li
                 key={isBlinking ? `${s.id}-blink-${blinkToken}` : s.id}
-                className={`echo-panel__sub-row ${s.highlighted ? 'echo-panel__sub-row--highlight' : ''} ${incomplete ? 'echo-panel__sub-row--incomplete' : ''} ${isValidOption ? (isFlatValid ? 'echo-panel__sub-row--valid-flat' : 'echo-panel__sub-row--valid') : ''} ${isSuggested ? 'echo-panel__sub-row--suggested' : ''} ${isBlinking ? 'echo-panel__sub-row--blink' : ''}`}
+                className={`echo-panel__sub-row ${s.highlighted ? 'echo-panel__sub-row--highlight' : ''} ${isValidOption ? (isFlatValid ? 'echo-panel__sub-row--valid-flat' : 'echo-panel__sub-row--valid') : ''} ${isSuggested ? 'echo-panel__sub-row--suggested' : ''} ${isBlinking ? 'echo-panel__sub-row--blink' : ''}`}
               >
-                <select value={s.label} onChange={(e) => updateSubLabel(s.id, e.target.value)}>
-                  <option value="">스탯 선택</option>
+                <select
+                  className={labelIncomplete ? 'echo-panel__sub-row--incomplete' : ''}
+                  value={s.label}
+                  onChange={(e) => updateSubLabel(s.id, e.target.value)}
+                >
+                  {/* 새로 추가된 자리에서만 보이는 안내용 자리표시자로, 한 번 스탯을 고르면 다시
+                      선택할 수 없도록 목록에서 빼둡니다(disabled+hidden). */}
+                  <option value="" disabled hidden>스탯 선택</option>
                   {options.map((name) => (
                     <option key={name} value={name}>{name}</option>
                   ))}
                 </select>
                 <select
+                  className={valueIncomplete ? 'echo-panel__sub-row--incomplete' : ''}
                   value={s.valueText}
                   onChange={(e) => updateSubValue(s.id, e.target.value)}
                   disabled={!s.label}
