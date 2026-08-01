@@ -10,6 +10,8 @@
     "deploy": "gh-pages -d dist",
     "prepare-characters": "node scripts/prepare-character-images.mjs",
     "prepare-weapons": "node scripts/prepare-weapon-images.mjs",
+    "prepare-echo-sets": "node scripts/prepare-echo-set-images.mjs",
+    "prepare-main-echoes": "node scripts/prepare-main-echo-images.mjs",
     "prepare-placeholders": "node scripts/generate-placeholder-images.mjs"
   },
   "dependencies": {

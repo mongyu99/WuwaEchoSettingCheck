@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CHARACTERS, ELEMENTS } from '../config/characters'
+import { CHARACTERS, ELEMENTS, ELEMENT_COLORS } from '../config/characters'
 import './CharacterSelectPage.css'
 
 export default function CharacterSelectPage({ onSelect }) {
@@ -49,7 +49,12 @@ export default function CharacterSelectPage({ onSelect }) {
 
       <div className="char-select__grid">
         {filtered.map((c) => (
-          <button key={c.id} className="char-card" onClick={() => onSelect(c)}>
+          <button
+            key={c.id}
+            className="char-card"
+            style={{ borderColor: ELEMENT_COLORS[c.element] }}
+            onClick={() => onSelect(c)}
+          >
             <div className="char-card__photo-wrap">
               {c.image ? (
                 <img className="char-card__photo" src={c.image} alt={c.name} />
@@ -61,7 +66,8 @@ export default function CharacterSelectPage({ onSelect }) {
               <span className="char-card__rarity">{c.rarity}★</span>
             </div>
             <span className="char-card__caption">
-              {c.name} <span className="char-card__sep">|</span> {c.element}
+              {c.name} <span className="char-card__sep">|</span>{' '}
+              <span style={{ color: ELEMENT_COLORS[c.element] }}>{c.element}</span>
             </span>
           </button>
         ))}

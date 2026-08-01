@@ -8,3 +8,5 @@ raw-weapons/*
 !raw-weapons/.gitkeep
 raw-echo-sets/*
 !raw-echo-sets/.gitkeep
+raw-main-echo/*
+!raw-main-echo/.gitkeep

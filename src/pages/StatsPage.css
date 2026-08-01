@@ -416,8 +416,12 @@
 }
 
 /* 에코 세트 카드의 [세트명 N세트] 줄은 무기 카드의 패시브명과 달리 강조하지 않고
-   설명 문구(.stats-page__chip-effect)와 동일한 스타일로 보여줍니다. */
+   설명 문구(.stats-page__chip-effect)와 동일한 스타일로 보여줍니다. 삭제(×) 버튼이 붙는
+   첫 줄은 텍스트와 버튼을 양 끝으로 배치합니다. */
 .stats-page__set-block .stats-page__chip-passive {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: var(--text-muted);
   font-family: inherit;
   font-size: 11px;
@@ -434,11 +438,34 @@
   border-top: 1px solid var(--border-hairline);
 }
 
-.stats-page__set-name {
-  margin: 0;
-  color: var(--text-primary);
-  font-weight: 700;
-  font-size: 12px;
+/* 조합에서 이 세트 하나만 빼는 삭제 버튼입니다. */
+.stats-page__set-remove-btn {
+  flex-shrink: 0;
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.stats-page__set-remove-btn:hover {
+  color: var(--score-low);
+}
+
+/* 에코 세트 조합 팝업 안에서 "추천 조합"/"세트 추가" 구간을 나누는 소제목입니다. */
+.picker-section-title {
+  margin: 12px 0 6px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.picker-section-title:first-child {
+  margin-top: 0;
 }
 
 .stats-page__chip-card--static strong {
@@ -626,6 +653,41 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+/* "세트 추가" 줄은 세트 하나당 한 줄이고, 그 세트가 가질 수 있는 단계(1/2/5세트 등) 버튼을
+   오른쪽에 나열해서 그중 하나를 고르는 방식입니다. 줄 자체는 버튼이 아니라 div라 커서를
+   기본값으로 둡니다. */
+.picker-item--addable {
+  cursor: default;
+}
+
+.picker-item--addable span {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.picker-item__tier-group {
+  flex-shrink: 0;
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.picker-item__tier-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 999px;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.picker-item__tier-btn:hover {
+  border-color: var(--accent-wave);
+  color: var(--accent-wave);
 }
 
 .optimizer__grid {

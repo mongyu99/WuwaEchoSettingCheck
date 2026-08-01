@@ -5,7 +5,7 @@
  * 착용하든 그 이하 단계 효과는 전부 함께 적용됩니다. 다만 조건부 효과는 계산에는 반영하지 않고
  * 설명 문구로만 보여줍니다 — bonuses가 있는 단계만 계산에 반영됩니다(없으면 문구만 표시).
  *
- * 아이콘은 항상 /echo-sets/{id}.png 경로라 따로 안 받고 id로 자동 생성합니다 — public/echo-sets/
+ * 아이콘은 항상 /echo-sets/{id}.webp 경로라 따로 안 받고 id로 자동 생성합니다 — public/echo-sets/
  * 에 그 파일명으로 이미지를 넣어두면 자동으로 연결됩니다.
  *
  * 새 세트를 추가할 때는 defineSet(...) 호출을 목록 맨 위에 추가하세요(최근 추가한 세트를 위에서부터
@@ -13,7 +13,7 @@
  */
 
 /**
- * @param {string} id 카탈로그 키(아이콘 파일명으로도 그대로 씀: /echo-sets/{id}.png)
+ * @param {string} id 카탈로그 키(아이콘 파일명으로도 그대로 씀: /echo-sets/{id}.webp)
  * @param {string} name 표시 이름
  * @param {...[number, string|null, number|null, string]} tiers 세트 단계 목록. 하나면 그 세트에
  *   그 단계 하나만 존재하는 것이고(예: 1세트 전용), 둘 이상이면 각각 다른 단계로 정의됩니다.
@@ -35,7 +35,7 @@ function defineSet(id, name, ...tiers) {
       description,
     }
   }
-  return [id, { name, icon: `/echo-sets/${id}.png`, pieces }]
+  return [id, { name, icon: `/echo-sets/${id}.webp`, pieces }]
 }
 
 export const ECHO_SETS = Object.fromEntries([
@@ -88,13 +88,13 @@ export const ECHO_SETS = Object.fromEntries([
     [3, null, null, '캐릭터가 실드 획득 시, 자신의 공격력이 6% 증가되고 크리티컬 피해가 4% 증가된다. 해당 효과는 최대 5스택까지 중첩이 가능하며, 4초간 지속되고 0.5초마다 1회 발생할 수 있다']),
   defineSet('dream-of-the-lost', '뒤틀린 피안의 꿈',
     [3, null, null, '캐릭터의 공명 에너지가 0일 시, 자신의 크리티컬이 20% 증가되고, 에코 어빌리티 피해 보너스가 35% 증가된다']),
-  defineSet('wailing-wolf-flame', '울부짖는 늑대의 불꽃',
+  defineSet('flaming-clawprint', '울부짖는 늑대의 불꽃',
     [2, '속성 피해 보너스', 10, '용융 피해가 10% 증가된다'],
     [5, null, null, '공명 해방 발동 시, 파티 내 캐릭터의 용융 피해가 15% 증가되고, 자신의 공명 해방 피해가 20% 증가되며, 35초간 지속된다.']),
-  defineSet('glorious-wind', '영광이 깃든 바람',
+  defineSet('windward-pilgrimage', '영광이 깃든 바람',
     [2, '속성 피해 보너스', 10, '기류 피해가 10% 증가된다'],
     [5, null, null, '캐릭터가 공격으로 「풍식 효과」가 있는 목표 명중 시, 자신의 크리티컬이 10% 증가되고, 기류 피해 보너스가 30% 증가되며, 10초간 지속된다.']),
-  defineSet('boundless-sky', '끝없는 하늘',
+  defineSet('gusts-of-welkin', '끝없는 하늘',
     [2, '속성 피해 보너스', 10, '기류 피해가 10% 증가된다'],
     [5, null, null, '캐릭터가 적에게 「풍식 효과」를 추가할 경우, 파티 내 캐릭터의 기류 피해가 15% 증가되고, 자신의 기류 피해가 추가로 15% 증가되며, 20초간 지속된다']),
   defineSet('tidebreaking-courage', '파도에 맞선 용기',

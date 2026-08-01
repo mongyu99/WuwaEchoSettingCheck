@@ -7,6 +7,16 @@
  */
 export const ELEMENTS = ['응결', '용융', '전도', '기류', '회절', '인멸']
 
+// 속성 이름 글씨에 쓰는 색입니다(캐릭터 카드/스탯 페이지에서 어느 속성인지 한눈에 구분하도록).
+export const ELEMENT_COLORS = {
+  기류: '#44c4a3',
+  응결: '#4fb4cf',
+  전도: '#c154c7',
+  용융: '#d45772',
+  회절: '#b7a835',
+  인멸: '#be4981',
+}
+
 export const CHARACTERS = [
   // 기류
   { id: "jiyan", name: "기염", rarity: 5, element: "기류", weaponType: "대검", image: "/characters/jiyan.webp" },
@@ -25,8 +35,8 @@ export const CHARACTERS = [
   { id: "lupa", name: "루파", rarity: 5, element: "용융", weaponType: "대검", image: "/characters/lupa.webp" },
   { id: "galbrena", name: "갈브레나", rarity: 5, element: "용융", weaponType: "권총", image: "/characters/galbrena.webp" },
   { id: "mornye", name: "모니에", rarity: 5, element: "용융", weaponType: "대검", image: "/characters/mornye.webp" },
-  { id: "aemeath", name: "에이메스", rarity: 5, element: "용융", weaponType: "직검", image: "/characters/aemeath.webp", initials: "에이메스", color: "#f87171" },
-  { id: "denia", name: "데니아", rarity: 5, element: "회절", weaponType: "증폭기", image: "/characters/denia.webp", initials: "데니", color: "#38bdf8" },
+  { id: "aemeath", name: "에이메스", rarity: 5, element: "용융", weaponType: "직검", image: "/characters/aemeath.webp"},
+  { id: "denia", name: "데니아", rarity: 5, element: "용융", weaponType: "증폭기", image: "/characters/denia.webp" },
   // 용융
 
   // 응결
@@ -54,7 +64,7 @@ export const CHARACTERS = [
   { id: "cantarella", name: "칸타렐라", rarity: 5, element: "인멸", weaponType: "증폭기", image: "/characters/cantarella.webp" },
   { id: "phrolova", name: "플로로", rarity: 5, element: "인멸", weaponType: "증폭기", image: "/characters/phrolova.webp" },
   { id: "chisa", name: "치사", rarity: 5, element: "인멸", weaponType: "대검", image: "/characters/chisa.webp" },
-  { id: "Yangyang_Xuanling", name: "양양·현령", rarity: 5, element: "회절", weaponType: "", image: "/characters/yangyang_xuanling.webp", initials: "양양", color: "#38bdf8" },
+  { id: "Yangyang_Xuanling", name: "양양·현령", rarity: 5, element: "회절", weaponType: "", image: "/characters/yangyang_xuanling.webp"},
   // 인멸
 
   // 회절

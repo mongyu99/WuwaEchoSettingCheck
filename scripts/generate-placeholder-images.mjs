@@ -16,10 +16,10 @@ import { WEAPONS } from '../src/config/weapons.js'
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 
 // ext는 각 카탈로그의 defineXxx가 실제로 아이콘 경로에 쓰는 확장자와 반드시 같아야 합니다
-// (echoSets.js/mainEchoes.js는 아직 .png, weapons.js는 .webp로 바꿔둔 상태).
+// (echoSets.js/mainEchoes.js/weapons.js 전부 .webp로 바꿔둔 상태).
 const CATALOGS = {
-  'echo-sets': { ids: Object.keys(ECHO_SETS), dir: join(ROOT, 'public/echo-sets'), ext: 'png' },
-  'main-echoes': { ids: Object.keys(MAIN_ECHOES), dir: join(ROOT, 'public/main-echoes'), ext: 'png' },
+  'echo-sets': { ids: Object.keys(ECHO_SETS), dir: join(ROOT, 'public/echo-sets'), ext: 'webp' },
+  'main-echoes': { ids: Object.keys(MAIN_ECHOES), dir: join(ROOT, 'public/main-echoes'), ext: 'webp' },
   weapons: { ids: Object.keys(WEAPONS), dir: join(ROOT, 'public/weapons'), ext: 'webp' },
 }
 

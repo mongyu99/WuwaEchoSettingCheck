@@ -85,7 +85,7 @@
 }
 
 .char-card:hover {
-  border-color: var(--accent-wave);
+  box-shadow: 0 0 0 2px var(--accent-wave);
 }
 
 .char-card__photo-wrap {

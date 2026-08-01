@@ -43,27 +43,27 @@ export const CHARACTER_ECHO_SETS = {
 
   // 기류
   jiyan: { combos: [defineCombo(['sierra-gale', 5])] },
-  ciaccona: { combos: [defineCombo(['boundless-sky', 5])] },
-  cartethyia: { combos: [defineCombo(['glorious-wind', 5])] },
+  ciaccona: { combos: [defineCombo(['gusts-of-welkin', 5])] },
+  cartethyia: { combos: [defineCombo(['windward-pilgrimage', 5])] },
   rover_aero: {
     combos: [
-      defineCombo(['glorious-wind', 5]),
+      defineCombo(['windward-pilgrimage', 5]),
       defineCombo(['rejuvenating-glow', 5]),
     ],
   },
   iuno: {
     combos: [
       defineCombo(['crown-of-valor', 3], ['sierra-gale', 2]),
-      defineCombo(['crown-of-valor', 3], ['boundless-sky', 2]),
-      defineCombo(['crown-of-valor', 3], ['glorious-wind', 2]),
+      defineCombo(['crown-of-valor', 3], ['gusts-of-welkin', 2]),
+      defineCombo(['crown-of-valor', 3], ['windward-pilgrimage', 2]),
       defineCombo(['moonlit-clouds', 5]),
     ],
   },
   qiuyuan: {
     combos: [
       defineCombo(['law-of-harmony', 3], ['sierra-gale', 2]),
-      defineCombo(['law-of-harmony', 3], ['boundless-sky', 2]),
-      defineCombo(['law-of-harmony', 3], ['glorious-wind', 2]),
+      defineCombo(['law-of-harmony', 3], ['gusts-of-welkin', 2]),
+      defineCombo(['law-of-harmony', 3], ['windward-pilgrimage', 2]),
       defineCombo(['moonlit-clouds', 5]),
     ],
   },
@@ -74,11 +74,11 @@ export const CHARACTER_ECHO_SETS = {
   encore: { combos: [defineCombo(['molten-rift', 5])] },
   changli: { combos: [defineCombo(['molten-rift', 5])] },
   brant: { combos: [defineCombo(['tidebreaking-courage', 5])] },
-  lupa: { combos: [defineCombo(['wailing-wolf-flame', 5])] },
+  lupa: { combos: [defineCombo(['flaming-clawprint', 5])] },
   galbrena: {
     combos: [
       defineCombo(['flamewings-shadow', 3], ['molten-rift', 2]),
-      defineCombo(['flamewings-shadow', 3], ['wailing-wolf-flame', 2]),
+      defineCombo(['flamewings-shadow', 3], ['flaming-clawprint', 2]),
     ],
   },
   mornye: { combos: [defineCombo(['halo-of-starry-radiance', 5])] },

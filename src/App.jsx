@@ -27,16 +27,17 @@ const EMPTY_BASE_STATS = { charAtk: '', weaponAtk: '', baseHp: '', baseDef: '' }
  * 호환되도록 레코드 모양을 항상 통일합니다. */
 function normalizeRecord(rec) {
   if (Array.isArray(rec)) {
-    return { echoes: rec, weapon: null, echoComboIndex: 0, baseStats: { ...EMPTY_BASE_STATS } }
+    return { echoes: rec, weapon: null, echoParts: null, baseStats: { ...EMPTY_BASE_STATS } }
   }
   return {
     echoes: rec?.echoes ?? [],
     weapon: rec?.weapon ?? null, // 무기 카탈로그 id (또는 null)
-    // 캐릭터의 에코 세트 조합(config/characterEchoSets.js) 중 몇 번째를 쓰는지입니다. 조합이
-    // 하나뿐인(고정) 캐릭터는 항상 0번입니다.
-    echoComboIndex: rec?.echoComboIndex ?? 0,
-    // 사용자가 직접 고른 메인 에코 카탈로그 id입니다(카탈로그 전체 중 자유 선택). null이면 지금
-    // 쓰는 조합에 호환되는(추천) 메인 에코 중 첫 번째를 기본값으로 씁니다.
+    // 사용자가 세트 추가/삭제로 직접 조립한 에코 세트 조합([{ setId, pieceCount }, ...])입니다.
+    // null이면 캐릭터에게 등록된 추천 조합(config/characterEchoSets.js) 중 첫 번째를 기본값으로
+    // 씁니다. 전부 삭제하면 빈 배열이 되어 "선택된 세트 없음" 상태입니다.
+    echoParts: rec?.echoParts ?? null,
+    // 사용자가 직접 고른 메인 에코 카탈로그 id입니다. null이면 지금 쓰는 조합에 호환되는(추천)
+    // 메인 에코 중 첫 번째를 기본값으로 씁니다.
     mainEchoId: rec?.mainEchoId ?? null,
     baseStats: { ...EMPTY_BASE_STATS, ...(rec?.baseStats ?? {}) },
   }
@@ -68,7 +69,7 @@ function stripPreviewUrls(characterData) {
 export default function App() {
   const [page, setPage] = useState(saved?.page ?? 'characters') // characters | capture | edit | stats
   const [character, setCharacter] = useState(savedCharacter)
-  // 캐릭터 id별로 에코/무기/에코세트조합/기초스탯을 따로 보관합니다: { [characterId]: { echoes, weapon, echoComboIndex, baseStats } }
+  // 캐릭터 id별로 에코/무기/에코세트조합/기초스탯을 따로 보관합니다: { [characterId]: { echoes, weapon, echoParts, baseStats } }
   const [characterData, setCharacterData] = useState(saved?.characterData ?? {})
   const [isProcessing, setIsProcessing] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -101,8 +102,8 @@ export default function App() {
     updateRecordForCurrent((rec) => ({ ...rec, weapon }))
   }
 
-  const setEchoComboForCurrent = (echoComboIndex) => {
-    updateRecordForCurrent((rec) => ({ ...rec, echoComboIndex, mainEchoId: null }))
+  const setEchoPartsForCurrent = (echoParts) => {
+    updateRecordForCurrent((rec) => ({ ...rec, echoParts, mainEchoId: null }))
   }
 
   const setMainEchoIdForCurrent = (mainEchoId) => {
@@ -231,10 +232,10 @@ export default function App() {
             echoes={echoes}
             character={character}
             weapon={record.weapon}
-            echoComboIndex={record.echoComboIndex}
+            echoParts={record.echoParts}
             mainEchoId={record.mainEchoId}
             onSetWeapon={setWeaponForCurrent}
-            onSetEchoCombo={setEchoComboForCurrent}
+            onSetEchoParts={setEchoPartsForCurrent}
             onSetMainEchoId={setMainEchoIdForCurrent}
             onUpdateSubStats={updateSubStats}
             onGoToCharacters={goToCharacters}

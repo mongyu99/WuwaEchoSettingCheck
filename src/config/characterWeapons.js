@@ -1,12 +1,12 @@
 /**
- * 캐릭터별로 실제 사용 가능한 무기를 구체적인 목록으로 제한합니다. 여기 등록된 캐릭터는 목록에
- * 있는 무기만 고를 수 있고, 등록되지 않은 캐릭터는 기존처럼 무기 타입(config/characters.js의
- * weaponType, 예: 직검/대검/권총/권갑/증폭기) 기준으로만 넓게 제한됩니다.
+ * 캐릭터별 "추천" 무기 목록입니다. 무기 선택 팝업 자체는 항상 무기 타입(config/characters.js의
+ * weaponType, 예: 직검/대검/권총/권갑/증폭기) 기준으로 해당 타입 전체를 보여주고, 여기 등록된
+ * 무기에는 "추천" 태그만 붙습니다 — 등록되지 않았다고 못 고르는 게 아닙니다.
  */
 
 /**
  * @param {string} characterId 캐릭터 id(config/characters.js의 CHARACTERS 항목 id와 같아야 함)
- * @param {...string} weaponIds 이 캐릭터가 쓸 수 있는 무기 id 목록(config/weapons.js의 WEAPONS 키들)
+ * @param {...string} weaponIds 이 캐릭터에게 추천하는 무기 id 목록(config/weapons.js의 WEAPONS 키들)
  */
 function defineCharacterWeapons(characterId, ...weaponIds) {
   return [characterId, weaponIds]
