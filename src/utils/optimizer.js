@@ -14,6 +14,27 @@ export const PERCENT_ONLY_CATEGORIES = {
 }
 export const OPTIMIZER_CATEGORIES = { ...BASE_PERCENT_CATEGORIES, ...PERCENT_ONLY_CATEGORIES }
 
+// 공격력/방어력/HP는 %와 플랫이 둘 다 유효 옵션 목록에 들어있는 경우가 많은데, 그중 플랫 쪽은
+// "2순위"로 취급합니다 — %만 유효 옵션인 캐릭터에게는 이 규칙이 적용되지 않습니다(플랫도 그냥
+// 무효 옵션이라 기존 로직대로 처리됨).
+const SECONDARY_FLAT_TO_PERCENT = { 공격력: '공격력%', 방어력: '방어력%', HP: 'HP%' }
+
+/** 이 라벨이 "2순위"(예: %가 유효 옵션인 캐릭터의 플랫 스탯)인지 판단합니다. */
+function isSecondaryLabel(label, validLabels) {
+  const percentCounterpart = SECONDARY_FLAT_TO_PERCENT[label]
+  return percentCounterpart != null && validLabels.includes(percentCounterpart)
+}
+
+/**
+ * 이 에코에서 새 스탯을 위해 뺄 자리를 찾습니다. 완전히 무효인 옵션을 최우선으로 찾고, 없으면
+ * "2순위"(예: %가 유효 옵션인 캐릭터의 플랫 스탯) 자리를 대신 교체 대상으로 씁니다.
+ */
+function findReplaceableStat(echo, validLabels) {
+  const invalid = echo.subStats.find((s) => s.label && s.valueText && !validLabels.includes(s.label))
+  if (invalid) return invalid
+  return echo.subStats.find((s) => s.label && s.valueText && isSecondaryLabel(s.label, validLabels))
+}
+
 /**
  * sourceLabel(% 서브스탯)을 가진 서브스탯 중, 빼도 marginBudget(퍼센트 포인트) 이내라서 목표를
  * 계속 달성한 상태로 남는 것들 중 가장 큰 값을 재배치 후보로 고릅니다(여유분을 최대한 활용).
@@ -95,12 +116,13 @@ function chooseStatOption({ percentLabel, options, neededPercent, flatLabel, fla
 /**
  * 목표까지 남은 값(gapValue, 이미 "합산 스탯"의 현재 총합 기준으로 계산된 부족분)을 채우려면
  * 어떤 에코의 어떤 자리를 바꿔야 하는지 계산합니다.
- * 1순위: 유효 옵션을 희생하지 않는 자리부터 채웁니다 — 빈 자리가 있으면 거기에 추가하고, 자리가
- * 꽉 찼으면 "유효 옵션이 아닌" 스탯을 찾아 그 자리를 필요한 스탯으로 교체합니다(어차피 점수에
- * 반영 안 되던 자리라 손해가 없음). 2순위: 그래도 부족하면 이미 있는 같은 스탯을 최고 단계로
- * 올리는 민맥싱입니다. 각 단계는 "그 시점에 남은 필요량을 채우는 가장 낮은 단계"를 고릅니다 —
- * 남은 필요량보다 큰 단계만 있으면 그중 최소(=사실상 최고 단계)를 씁니다. 정확한 조합 최적화는
- * 아니고 근사치입니다.
+ * 1단계: 되도록 손해 없는 자리부터 채웁니다 — 빈 자리가 있으면 거기에 추가하고, 자리가 꽉 찼으면
+ * 완전히 무효인 스탯을 찾아 교체합니다(어차피 점수에 반영 안 되던 자리라 손해가 없음). 그마저도
+ * 없으면 "2순위" 옵션(예: %가 유효 옵션인 캐릭터의 플랫 스탯 — findReplaceableStat)을 대신
+ * 교체합니다. 진짜 1순위 유효 옵션(2순위가 아닌 것들)은 이 단계에서 절대 건드리지 않습니다.
+ * 2단계: 그래도 부족하면 이미 있는 같은 스탯을 최고 단계로 올리는 민맥싱입니다. 각 단계는 "그
+ * 시점에 남은 필요량을 채우는 가장 낮은 단계"를 고릅니다 — 남은 필요량보다 큰 단계만 있으면
+ * 그중 최소(=사실상 최고 단계)를 씁니다. 정확한 조합 최적화는 아니고 근사치입니다.
  *
  * @param base HP·공격력·방어력처럼 기준값에 곱해서 계산하는 카테고리는 그 기준값(캐릭터+무기 등
  *   합산 스탯에서 쓴 것과 동일). 공명 효율·크리티컬·크리티컬 피해처럼 그냥 더하는 카테고리는 null.
@@ -135,7 +157,8 @@ export function runOptimizerFromGap({ category, gapValue, base, echoes, validLab
     remainingPercent -= choice.isFlat && base > 0 ? (choice.gain / base) * 100 : choice.gain
   }
 
-  // 1순위: 빈 자리 채우기 → 없으면 유효 옵션이 아닌 스탯을 교체 (둘 다 기존 유효 옵션은 안 건드림)
+  // 1순위: 빈 자리 채우기 → 없으면 완전히 무효인 스탯을 교체 → 그마저도 없으면 "2순위"(예: %가
+  // 유효 옵션인 캐릭터의 플랫 스탯) 자리를 교체 (findReplaceableStat). 진짜 1순위 유효 옵션은 안 건드림.
   for (const { echo, index } of ordered) {
     if (remainingPercent <= 0) break
     // 이미 값까지 채워진 라벨은 후보에서 뺍니다("스탯 선택"/"수치 선택" 미지정인 자리는 빈 자리로 취급).
@@ -167,7 +190,7 @@ export function runOptimizerFromGap({ category, gapValue, base, echoes, validLab
       continue
     }
 
-    const invalidStat = echo.subStats.find((s) => s.label && s.valueText && !validLabels.includes(s.label))
+    const invalidStat = findReplaceableStat(echo, validLabels)
     if (invalidStat) {
       const { primary, alt } = chooseStatOption({
         percentLabel: hasPercent ? null : info.percentLabel,

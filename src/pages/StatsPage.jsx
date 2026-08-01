@@ -428,7 +428,7 @@ function OptimizerPanel({
 
   return (
     <div className="optimizer">
-      <h4 className="stats-page__col-title">목표 스탯 계산기</h4>
+      <h4 className="stats-page__col-title">목표 스탯 계산기 - 베타</h4>
       <p className="uploader__hint optimizer__hint">
         목표를 채우고 "계산하기"를 누르면, 지금 합산 스탯 기준으로 몇이 부족한지, 1순위(빈 자리
         채우기)·2순위(민맥싱)로 어떤 에코의 어떤 스탯을 바꾸면 가장 빠른지 알려드려요. 0이면 계산하지
