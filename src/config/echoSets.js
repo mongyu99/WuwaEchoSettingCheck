@@ -1,3 +1,5 @@
+import { assetPath } from './assetPath'
+
 /**
  * 에코 세트 카탈로그입니다. pieces는 세트 개수별 효과를 담는 확장 가능한 구조입니다. 세트마다
  * 몇 단계가 있는지, 몇 세트에서 발동하는지 전부 다릅니다 — 1세트에만 효과가 있는 세트, 3세트에만
@@ -35,7 +37,7 @@ function defineSet(id, name, ...tiers) {
       description,
     }
   }
-  return [id, { name, icon: `/echo-sets/${id}.webp`, pieces }]
+  return [id, { name, icon: assetPath(`echo-sets/${id}.webp`), pieces }]
 }
 
 export const ECHO_SETS = Object.fromEntries([
