@@ -1,3 +1,5 @@
+import { assetPath } from './assetPath'
+
 /**
  * 캐릭터 조건부 주의: z04-sigillum·reminiscence-fleurdelys는 원래 게임 내에서 "OO가 메인 슬롯에
  * 장착 시"처럼 특정 캐릭터 이름이 박혀 있는 효과입니다. bonuses는 누구나 받는 기본 보너스이고,
@@ -31,7 +33,7 @@ function defineMainEcho(
     id,
     {
       name,
-      icon: `/main-echoes/${id}.webp`,
+      icon: assetPath(`main-echoes/${id}.webp`),
       description,
       passiveDescription,
       bonuses: (bonuses ?? []).map(([category, value]) => ({ category, value })),
