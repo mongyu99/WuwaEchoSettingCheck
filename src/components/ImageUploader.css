@@ -95,6 +95,16 @@
   color: var(--score-low);
 }
 
+.uploader__notice-item {
+  font-size: 13px;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.uploader__notice-item strong {
+  color: var(--score-low);
+}
+
 .uploader__item-remove {
   background: transparent;
   border: none;

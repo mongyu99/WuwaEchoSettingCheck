@@ -1,11 +1,18 @@
 import { SUB_STAT_OPTIONS, SUB_STAT_NAMES, formatSubStatValue } from '../config/subStatOptions'
+import { MAIN_STAT_BONUS_NAMES } from '../config/mainStatBonusNames'
 import { getEchoCost } from '../utils/ocr'
 import './EchoPanel.css'
+
+// 메인 스탯은 항상 최대 2줄입니다: 첫 줄은 코스트 보너스(15가지 중 하나), 둘째 줄은 공격력/HP
+// 중 하나입니다(utils/ocr.js의 normalizeMainStats와 같은 규칙). 값(valueText)은 코스트별로
+// 고정돼 있지만 아직 그 수치 테이블이 없어서, 지금은 라벨만 목록에서 고르고 값은 직접 입력합니다.
+const MAIN_STAT_LABEL_OPTIONS = [MAIN_STAT_BONUS_NAMES, ['공격력', 'HP']]
 
 export default function EchoPanel({
   echo,
   index,
   onUpdateSubStats,
+  onUpdateMainStats,
   highlightIncomplete,
   validLabels,
   suggestedStats,
@@ -13,6 +20,20 @@ export default function EchoPanel({
   blinkValue,
   blinkToken,
 }) {
+  const updateMainLabel = (id, label) => {
+    onUpdateMainStats(echo.id, echo.mainStats.map((s) => (s.id === id ? { ...s, label } : s)))
+  }
+  const updateMainValue = (id, valueText) => {
+    onUpdateMainStats(echo.id, echo.mainStats.map((s) => (s.id === id ? { ...s, valueText } : s)))
+  }
+  const removeMain = (id) => {
+    onUpdateMainStats(echo.id, echo.mainStats.filter((s) => s.id !== id))
+  }
+  const addMain = () => {
+    if (echo.mainStats.length >= 2) return
+    onUpdateMainStats(echo.id, [...echo.mainStats, { id: `main-${Date.now()}`, label: '', valueText: '' }])
+  }
+
   const updateSubLabel = (id, label) => {
     onUpdateSubStats(
       echo.id,
@@ -43,13 +64,38 @@ export default function EchoPanel({
         <h3>메인 스탯</h3>
         <ul>
           {echo.mainStats.length === 0 && <li className="echo-panel__empty">인식된 메인 스탯 없음</li>}
-          {echo.mainStats.map((s) => (
-            <li key={s.id}>
-              <span>{s.label}</span>
-              <span>{s.valueText}</span>
-            </li>
-          ))}
+          {echo.mainStats.map((s, i) => {
+            const labelOptions = MAIN_STAT_LABEL_OPTIONS[i] ?? MAIN_STAT_BONUS_NAMES
+            const labelIncomplete = highlightIncomplete && !s.label
+            const valueIncomplete = highlightIncomplete && !!s.label && !s.valueText
+            return (
+              <li key={s.id} className="echo-panel__main-row">
+                <select
+                  className={labelIncomplete ? 'echo-panel__sub-row--incomplete' : ''}
+                  value={s.label}
+                  onChange={(e) => updateMainLabel(s.id, e.target.value)}
+                >
+                  <option value="" disabled hidden>스탯 선택</option>
+                  {labelOptions.map((name) => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </select>
+                <input
+                  className={valueIncomplete ? 'echo-panel__sub-row--incomplete' : ''}
+                  type="text"
+                  value={s.valueText}
+                  onChange={(e) => updateMainValue(s.id, e.target.value)}
+                  placeholder="수치 직접 입력"
+                  disabled={!s.label}
+                />
+                <button onClick={() => removeMain(s.id)} aria-label="메인 스탯 삭제">×</button>
+              </li>
+            )
+          })}
         </ul>
+        {echo.mainStats.length < 2 && (
+          <button className="echo-panel__add" onClick={addMain}>+ 메인 스탯 추가</button>
+        )}
       </section>
 
       <section className="echo-panel__block echo-panel__block--sub">

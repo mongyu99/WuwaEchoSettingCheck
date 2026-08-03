@@ -601,6 +601,8 @@ export default function StatsPage({
   onSetEchoParts,
   onSetMainEchoId,
   onUpdateSubStats,
+  onUpdateMainStats,
+  onAddEcho,
   onGoToCharacters,
   onReset,
 }) {
@@ -1006,6 +1008,17 @@ export default function StatsPage({
                   ))}
                 </ul>
               )}
+              {echoes.length < 5 && (
+                <button
+                  className="btn btn--ghost stats-page__pick-btn"
+                  onClick={() => {
+                    onAddEcho()
+                    focusEcho(echoes.length, null, false)
+                  }}
+                >
+                  + 에코 추가 (사진 없이)
+                </button>
+              )}
             </div>
 
             <div className="echo-editor__panel">
@@ -1014,6 +1027,7 @@ export default function StatsPage({
                   echo={echoes[selectedEchoIdx]}
                   index={selectedEchoIdx}
                   onUpdateSubStats={onUpdateSubStats}
+                  onUpdateMainStats={onUpdateMainStats}
                   validLabels={validLabels}
                   suggestedStats={suggestedStatsForSelected}
                   blinkLabel={blink?.echoIndex === selectedEchoIdx ? blink.label : null}

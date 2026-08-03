@@ -16,7 +16,7 @@ import {
   inferCostFromMainStats,
 } from './utils/ocr'
 import { detectHighlightedLines } from './utils/highlight'
-import { preprocessForOcr } from './utils/image'
+import { preprocessForOcr, MAX_IMAGES } from './utils/image'
 import { prepareImageForExtraction } from './utils/pipeline'
 import { saveState, loadState } from './utils/persist'
 import './App.css'
@@ -189,6 +189,20 @@ export default function App() {
     setEchoesForCurrent((prev) => prev.map((e) => (e.id === id ? { ...e, subStats } : e)))
   }
 
+  const updateMainStats = (id, mainStats) => {
+    setEchoesForCurrent((prev) => prev.map((e) => (e.id === id ? { ...e, mainStats } : e)))
+  }
+
+  // 사진 없이 빈 에코 카드를 직접 추가합니다(메인/서브 스탯을 전부 손으로 채우는 용도).
+  // 사진으로 캡처하는 것과 같은 한도(MAX_IMAGES=5)까지만 추가할 수 있습니다.
+  const addManualEcho = () => {
+    setEchoesForCurrent((prev) => {
+      if (prev.length >= MAX_IMAGES) return prev
+      const id = `manual-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+      return [...prev, { id, previewUrl: null, cost: null, mainStats: [], subStats: [], failed: false }]
+    })
+  }
+
   const handleSelectCharacter = (c) => {
     setCharacter(c)
     const rec = normalizeRecord(characterData[c.id] ?? {})
@@ -224,6 +238,7 @@ export default function App() {
           <EditPage
             echoes={echoes}
             onUpdateSubStats={updateSubStats}
+            onUpdateMainStats={updateMainStats}
             onReplaceOne={handleReplaceOne}
             replacingId={replacingId}
             onProceedToStats={() => setPage('stats')}
@@ -242,6 +257,8 @@ export default function App() {
             onSetEchoParts={setEchoPartsForCurrent}
             onSetMainEchoId={setMainEchoIdForCurrent}
             onUpdateSubStats={updateSubStats}
+            onUpdateMainStats={updateMainStats}
+            onAddEcho={addManualEcho}
             onGoToCharacters={goToCharacters}
             onReset={handleResetCurrent}
           />
