@@ -6,7 +6,7 @@ function hasIncompleteStat(echoes) {
   return echoes.some((echo) => echo.subStats.some((s) => !s.label || !s.valueText))
 }
 
-export default function EditPage({ echoes, onUpdateSubStats, onReplaceOne, replacingId, onProceedToStats, onGoToCharacters }) {
+export default function EditPage({ echoes, onUpdateSubStats, onUpdateMainStats, onReplaceOne, replacingId, onProceedToStats, onGoToCharacters }) {
   const [highlightIncomplete, setHighlightIncomplete] = useState(false)
 
   const handleProceedClick = () => {
@@ -67,6 +67,7 @@ export default function EditPage({ echoes, onUpdateSubStats, onReplaceOne, repla
               echo={echo}
               index={idx}
               onUpdateSubStats={onUpdateSubStats}
+              onUpdateMainStats={onUpdateMainStats}
               highlightIncomplete={highlightIncomplete}
             />
           </div>

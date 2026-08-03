@@ -1,10 +1,14 @@
 import { useState } from 'react'
 import { normalizeImage, cropNormalizedImage, blobToDataURL, MAX_IMAGES, TARGET_WIDTH, TARGET_HEIGHT } from '../utils/image'
 import { FIXED_REGIONS, REGION_META, SCAN_PREVIEW_REGION } from '../config/regions'
+import Modal from './Modal'
 import './ImageUploader.css'
 
 export default function ImageUploader({ onExtractAll, isProcessing, progress }) {
   const [items, setItems] = useState([]) // { id, name, dataUrl, error }
+  // 방금 올린 사진 중 인식 불가·해상도 부족으로 실패한 것들을 안내창으로 띄워줍니다
+  // (썸네일 아래 작은 빨간 글씨만으로는 놓치기 쉬워서).
+  const [errorNotice, setErrorNotice] = useState(null) // [{ name, error }] | null
 
   const runExtraction = async (validItems) => {
     if (validItems.length === 0) return
@@ -42,6 +46,11 @@ export default function ImageUploader({ onExtractAll, isProcessing, progress }) 
 
     const merged = [...items, ...newItems].slice(0, MAX_IMAGES)
     setItems(merged)
+
+    const failed = newItems.filter((it) => it.error)
+    if (failed.length > 0) {
+      setErrorNotice(failed.map((it) => ({ name: it.name, error: it.error })))
+    }
 
     // 사진이 올라오면 바로 자동으로 추출을 실행합니다 (별도 버튼 클릭 불필요).
     const validNow = merged.filter((it) => !it.error)
@@ -102,6 +111,14 @@ export default function ImageUploader({ onExtractAll, isProcessing, progress }) 
           ))}
         </ul>
       )}
+
+      <Modal open={!!errorNotice} title="사진을 인식하지 못했어요" onClose={() => setErrorNotice(null)}>
+        {errorNotice?.map((f, i) => (
+          <p key={i} className="uploader__notice-item">
+            <strong>{f.name}</strong>: {f.error}
+          </p>
+        ))}
+      </Modal>
     </section>
   )
 }

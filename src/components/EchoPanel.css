@@ -88,14 +88,17 @@
   font-family: var(--font-body);
 }
 
-.echo-panel__sub-row {
+.echo-panel__sub-row,
+.echo-panel__main-row {
   display: grid;
   grid-template-columns: 1fr 100px 24px;
   gap: 8px;
   align-items: center;
 }
 
-.echo-panel__sub-row select {
+.echo-panel__sub-row select,
+.echo-panel__main-row select,
+.echo-panel__main-row input {
   background: var(--bg-surface-raised);
   border: 1px solid var(--border-hairline);
   border-radius: 6px;
@@ -105,15 +108,19 @@
   font-size: 13px;
 }
 
-.echo-panel__sub-row select:disabled {
+.echo-panel__sub-row select:disabled,
+.echo-panel__main-row select:disabled,
+.echo-panel__main-row input:disabled {
   opacity: 0.5;
 }
 
-.echo-panel__sub-row select:last-of-type {
+.echo-panel__sub-row select:last-of-type,
+.echo-panel__main-row input {
   text-align: right;
 }
 
-.echo-panel__sub-row button {
+.echo-panel__sub-row button,
+.echo-panel__main-row button {
   background: transparent;
   border: none;
   color: var(--text-muted);
@@ -122,7 +129,8 @@
   line-height: 1;
 }
 
-.echo-panel__sub-row button:hover {
+.echo-panel__sub-row button:hover,
+.echo-panel__main-row button:hover {
   color: var(--score-low);
 }
 
@@ -131,7 +139,8 @@
   background: rgba(232, 197, 71, 0.12);
 }
 
-select.echo-panel__sub-row--incomplete {
+select.echo-panel__sub-row--incomplete,
+input.echo-panel__sub-row--incomplete {
   border-color: var(--score-low);
   box-shadow: 0 0 0 1px var(--score-low);
 }
