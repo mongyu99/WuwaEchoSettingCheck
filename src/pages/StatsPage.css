@@ -922,6 +922,39 @@
   min-width: 0;
 }
 
+.stats-page__recommend-cell--variant {
+  align-items: center;
+}
+
+/* "에코 주옵" 칸 안에 들어가는 작은 표입니다. 코스트 조합이 없거나(빈 칸)/하나거나/둘인 경우를
+   전부 이 표 하나로 그립니다(EchoMainStatCell 참고). */
+.stats-page__variant-table {
+  flex: 1;
+  min-width: 0;
+  border-collapse: collapse;
+}
+
+.stats-page__variant-table--empty {
+  height: 20px;
+}
+
+.stats-page__variant-table td {
+  border: 1px solid var(--border-hairline);
+  padding: 3px 6px;
+  color: var(--text-primary);
+  font-size: 11px;
+}
+
+.stats-page__variant-cost {
+  color: var(--text-muted);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.stats-page__variant-stats {
+  overflow-wrap: break-word;
+}
+
 .stats-page__recommend-notes {
   margin-top: 10px;
   min-height: 72px;
