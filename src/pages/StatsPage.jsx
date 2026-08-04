@@ -268,6 +268,38 @@ function describeStepParts(s) {
   return { from: `${s.label} ${s.fromValue}`, to: `${s.toValue} 교체` }
 }
 
+// "에코 주옵" 칸을 코스트 조합 개수에 따라 다르게 그립니다(스키마 확장 없이 배열 길이/cost 값만
+// 보고 판단): 0개면 빈 칸, 1개면 한 줄, 2개인데 코스트가 같으면 코스트 칸을 세로로 합쳐서 세팅
+// 두 줄, 2개인데 코스트가 다르면 완전히 독립된 두 줄로 그립니다. 예전처럼 문자열 하나만 온 경우도
+// (코스트 없이) 한 줄로 호환됩니다.
+function normalizeEchoMainStatVariants(echoMainStat) {
+  if (Array.isArray(echoMainStat)) return echoMainStat.filter((v) => v?.stats)
+  if (typeof echoMainStat === 'string' && echoMainStat) return [{ cost: null, stats: echoMainStat }]
+  return []
+}
+
+function EchoMainStatCell({ echoMainStat }) {
+  const variants = normalizeEchoMainStatVariants(echoMainStat)
+  if (variants.length === 0) {
+    return <div className="stats-page__variant-table stats-page__variant-table--empty" />
+  }
+  const mergeCost = variants.length === 2 && variants[0].cost != null && variants[0].cost === variants[1].cost
+  return (
+    <table className="stats-page__variant-table">
+      <tbody>
+        {variants.map((v, i) => (
+          <tr key={i}>
+            {(i === 0 || !mergeCost) && (
+              <td className="stats-page__variant-cost" rowSpan={mergeCost ? 2 : 1}>{v.cost ?? '-'}</td>
+            )}
+            <td className="stats-page__variant-stats">{v.stats}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
 /**
  * 이 변경을 실제로 적용하면 그 카테고리의 합산이 얼마가 될지 미리 계산합니다(적용은 안 함, 표시
  * 전용). gainIsFlat이면 gain을 그대로 더하고(플랫은 기준값 곱셈 없이 직접 더해짐), 아니면
@@ -955,7 +987,10 @@ export default function StatsPage({
                     <div className="stats-page__recommend-cell"><span>에코 세트</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.echoSet ?? '-'}</strong></div>
                   </div>
                   <div className="stats-page__recommend-row">
-                    <div className="stats-page__recommend-cell"><span>에코 주옵</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.echoMainStat ?? '-'}</strong></div>
+                    <div className="stats-page__recommend-cell stats-page__recommend-cell--variant">
+                      <span>에코 주옵</span><span className="stats-page__recommend-sep">|</span>
+                      <EchoMainStatCell echoMainStat={recommendation.echoMainStat} />
+                    </div>
                     <div className="stats-page__recommend-cell"><span>크확 크피</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.critRatio ?? '-'}</strong></div>
                   </div>
                   <div className="stats-page__recommend-row stats-page__recommend-row--triple">
