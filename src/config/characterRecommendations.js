@@ -24,7 +24,7 @@ export const CHARACTER_RECOMMENDATIONS = {
     energyCost: '125',
     notes: ['1체인 이상이면 공명 스킬 충전 1회가 추가돼서, 요구 공명 효율 수치가 낮아집니다.'],
   },
-  ciaccona: { weapon: '', echoSet: '', echoMainStat: '', critRatio: '', resonanceEfficiency: '', atk: '', energyCost: '', notes: [] },
+  ciaccona: { weapon: '숲속의 아리아[전무], 부동의 안개[상시], 화려한 악곡[4성]', echoSet: '끝없는 하늘[43311]', echoMainStat: [{ cost: '43111', stats: '크확 / 기류피증 / 공퍼'}], critRatio: '크확 75% / 크피 275%', resonanceEfficiency: '120~', atk: '2100[속공] 1800[속속]', energyCost: '125', notes: ['카르티시아 전용 서포터로 사용'] },
   cartethyia: { weapon: '', echoSet: '', echoMainStat: '', critRatio: '', resonanceEfficiency: '', atk: '', energyCost: '', notes: [] },
   rover_aero: { weapon: '', echoSet: '', echoMainStat: '', critRatio: '', resonanceEfficiency: '', atk: '', energyCost: '', notes: [] },
   iuno: { weapon: '', echoSet: '', echoMainStat: '', critRatio: '', resonanceEfficiency: '', atk: '', energyCost: '', notes: [] },
