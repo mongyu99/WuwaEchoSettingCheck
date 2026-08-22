@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import ProcessingOverlay from './components/ProcessingOverlay'
+import AuthPanel from './components/AuthPanel'
 import CharacterSelectPage from './pages/CharacterSelectPage'
 import CapturePage from './pages/CapturePage'
 import EditPage from './pages/EditPage'
@@ -279,6 +280,10 @@ export default function App() {
         <span className="app__eyebrow">ECHO SETTING CHECK</span>
         <h1>메아리 세팅, 숫자로 증명하세요</h1>
         <p>사진 최대 5장으로 서브스탯을 한 번에 읽고 확인·수정하고 점수까지 매겨보세요.</p>
+        <AuthPanel
+          characterData={stripPreviewUrls(characterData)}
+          onLoadCloudData={(loaded) => setCharacterData(loaded ?? {})}
+        />
       </header>
 
       <main className="app__flow">

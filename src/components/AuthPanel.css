@@ -1,0 +1,48 @@
+.auth-panel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  font-size: 13px;
+}
+
+.auth-panel__login {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--accent-wave);
+  color: #06131a;
+  text-decoration: none;
+}
+
+.auth-panel__user {
+  color: var(--text-muted);
+}
+
+.auth-panel__btn {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-hairline);
+  background: var(--bg-surface-raised);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.auth-panel__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.auth-panel__btn--ghost {
+  background: transparent;
+}
+
+.auth-panel__message {
+  color: var(--accent-wave);
+}

@@ -897,6 +897,10 @@
   grid-template-columns: 1fr 1fr 1fr;
 }
 
+.stats-page__recommend-row--quad {
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+
 .stats-page__recommend-cell {
   display: flex;
   align-items: baseline;
