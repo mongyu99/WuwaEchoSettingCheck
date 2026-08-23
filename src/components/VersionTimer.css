@@ -1,0 +1,16 @@
+.version-timer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 24px;
+  padding: 14px 24px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.version-timer__row strong {
+  color: var(--accent-wave);
+  font-family: var(--font-mono);
+}

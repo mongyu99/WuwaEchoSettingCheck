@@ -1,0 +1,19 @@
+.site-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.site-layout__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .site-layout {
+    flex-direction: column;
+  }
+}

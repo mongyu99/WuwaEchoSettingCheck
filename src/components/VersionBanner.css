@@ -1,0 +1,63 @@
+.version-banner {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.version-banner__image-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--bg-surface-raised);
+  overflow: hidden;
+}
+
+.version-banner__track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.version-banner__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+}
+
+.version-banner__image--empty {
+  background: linear-gradient(135deg, var(--bg-surface-raised), var(--bg-void));
+}
+
+.version-banner__dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.version-banner__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background: rgba(232, 236, 247, 0.35);
+  cursor: pointer;
+}
+
+.version-banner__dot--active {
+  background: var(--accent-wave);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .version-banner__track {
+    transition: none;
+  }
+}

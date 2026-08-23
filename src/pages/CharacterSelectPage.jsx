@@ -28,7 +28,7 @@ export default function CharacterSelectPage({ onSelect, charactersWithData }) {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="캐릭터 이름 검색 (예: 능)"
+          placeholder="캐릭터 이름 검색"
         />
 
         <div className="char-select__filter-group">

@@ -39,6 +39,7 @@
 }
 
 .page-transition {
+  margin: 16px 0;
   animation: page-slide-in 0.32s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

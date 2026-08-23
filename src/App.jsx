@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import ProcessingOverlay from './components/ProcessingOverlay'
-import AuthPanel from './components/AuthPanel'
+import TopNav from './components/TopNav'
+import SiteLayout from './components/SiteLayout'
+import HomePage from './pages/HomePage'
 import CharacterSelectPage from './pages/CharacterSelectPage'
 import CapturePage from './pages/CapturePage'
 import EditPage from './pages/EditPage'
@@ -20,6 +22,7 @@ import { detectHighlightedLines } from './utils/highlight'
 import { preprocessForOcr, MAX_IMAGES } from './utils/image'
 import { prepareImageForExtraction } from './utils/pipeline'
 import { saveState, loadState } from './utils/persist'
+import { loadTheme, applyTheme } from './utils/theme'
 import './App.css'
 
 const EMPTY_BASE_STATS = { charAtk: '', weaponAtk: '', baseHp: '', baseDef: '' }
@@ -68,13 +71,20 @@ function stripPreviewUrls(characterData) {
 }
 
 export default function App() {
-  const [page, setPage] = useState(saved?.page ?? 'characters') // characters | capture | edit | stats
+  const [page, setPage] = useState(saved?.page ?? 'home') // home | characters | capture | edit | stats
   const [character, setCharacter] = useState(savedCharacter)
   // 캐릭터 id별로 에코/무기/에코세트조합/기초스탯을 따로 보관합니다: { [characterId]: { echoes, weapon, echoParts, baseStats } }
   const [characterData, setCharacterData] = useState(saved?.characterData ?? {})
   const [isProcessing, setIsProcessing] = useState(false)
   const [progress, setProgress] = useState(0)
   const [replacingId, setReplacingId] = useState(null)
+  const [theme, setTheme] = useState(() => loadTheme())
+
+  useEffect(() => {
+    applyTheme(theme)
+  }, [theme])
+
+  const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
 
   const record = normalizeRecord(character ? characterData[character.id] ?? {} : {})
   const echoes = record.echoes
@@ -210,6 +220,7 @@ export default function App() {
     setPage(rec.echoes.length > 0 ? 'stats' : 'capture')
   }
 
+  const goHome = () => setPage('home')
   const goToCharacters = () => setPage('characters')
 
   /** 초기화: 이 캐릭터의 캡처된 에코만 지우고, 다시 캡처할 수 있도록 캡처 화면으로 이동합니다. */
@@ -265,32 +276,45 @@ export default function App() {
           />
         )
       case 'characters':
-      default:
         return <CharacterSelectPage onSelect={handleSelectCharacter} charactersWithData={charactersWithData} />
+      case 'home':
+      default:
+        return <HomePage />
     }
   }
 
+  // SideNav는 '홈'·'캐릭터 목록' 화면에서만 보이는 사이트 탐색용이라, 실제 작업 화면
+  // (캡처/수정/스탯)에서는 숨깁니다. page-transition 애니메이션이 걸리는 key={page} div
+  // 바깥에 둬서, 페이지가 전환될 때 SideNav까지 같이 리마운트·애니메이션되지 않게 합니다.
+  const showSideNav = page === 'home' || page === 'characters'
+
   return (
-    <div className="app">
-      {(isProcessing || replacingId) && (
-        <ProcessingOverlay character={character} progress={progress} />
-      )}
+    <>
+      <TopNav
+        onGoHome={goHome}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        characterData={stripPreviewUrls(characterData)}
+        onLoadCloudData={(loaded) => setCharacterData(loaded ?? {})}
+      />
 
-      <header className="app__header">
-        <span className="app__eyebrow">ECHO SETTING CHECK</span>
-        <h1>메아리 세팅, 숫자로 증명하세요</h1>
-        <p>사진 최대 5장으로 서브스탯을 한 번에 읽고 확인·수정하고 점수까지 매겨보세요.</p>
-        <AuthPanel
-          characterData={stripPreviewUrls(characterData)}
-          onLoadCloudData={(loaded) => setCharacterData(loaded ?? {})}
-        />
-      </header>
+      <div className="app">
+        {(isProcessing || replacingId) && (
+          <ProcessingOverlay character={character} progress={progress} />
+        )}
 
-      <main className="app__flow">
-        <div key={page} className="page-transition">
-          {renderPage()}
-        </div>
-      </main>
-    </div>
+        <main className="app__flow">
+          {showSideNav ? (
+            <SiteLayout currentPage={page} onGoHome={goHome} onGoToCharacterList={goToCharacters}>
+              {renderPage()}
+            </SiteLayout>
+          ) : (
+            <div key={page} className="page-transition">
+              {renderPage()}
+            </div>
+          )}
+        </main>
+      </div>
+    </>
   )
 }

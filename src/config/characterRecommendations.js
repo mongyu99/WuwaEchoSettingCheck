@@ -11,6 +11,7 @@ export const CHARACTER_RECOMMENDATIONS = {
   //   resonanceEfficiency: '120%',
   //   atk: '공격력 2500',
   //   def: '방어력 1200', // 방어력 스탯이 유효한 캐릭터만 채우면 됩니다. 없으면 빈 문자열로 두세요.
+  //   hp: '체력 40000', // 체력 스탯이 유효한 캐릭터(주로 힐러/탱커)만 채우면 됩니다.
   //   energyCost: '공효 150',
   //   notes: ['공명 해방 전 스택을 최대한 채우고 사용하세요.'],
   // },

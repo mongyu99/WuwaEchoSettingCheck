@@ -17,10 +17,31 @@
   --region-main: #e8c547;
   --region-sub: #f97066;
 
+  /* Layout */
+  --top-nav-height: 56px;
+
   /* Type */
   --font-display: 'Space Grotesk', sans-serif;
   --font-body: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+}
+
+:root[data-theme='light'] {
+  --bg-void: #f4f5fa;
+  --bg-surface: #ffffff;
+  --bg-surface-raised: #eef0f6;
+  --accent-wave: #0891a8;
+  --accent-resonance: #7c5cea;
+  --text-primary: #1a1f2e;
+  --text-muted: #5b6178;
+  --score-low: #d1453b;
+  --score-mid: #b4790a;
+  --score-high: #0891a8;
+  --border-hairline: rgba(26, 31, 46, 0.12);
+
+  --region-name: #c96e1f;
+  --region-main: #b8940e;
+  --region-sub: #d1453b;
 }
 
 * {
@@ -28,7 +49,7 @@
 }
 
 html, body, #root {
-  height: 100%;
+  min-height: 100%;
 }
 
 /* 스크롤은 그대로 되지만, 계산 결과처럼 내용이 늘어날 때 나타나는 브라우저 기본 스크롤바를

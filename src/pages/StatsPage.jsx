@@ -993,10 +993,11 @@ export default function StatsPage({
                     </div>
                     <div className="stats-page__recommend-cell"><span>크확 크피</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.critRatio ?? '-'}</strong></div>
                   </div>
-                  <div className="stats-page__recommend-row stats-page__recommend-row--quad">
+                  <div className="stats-page__recommend-row stats-page__recommend-row--penta">
                     <div className="stats-page__recommend-cell"><span>공효</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.resonanceEfficiency ?? '-'}</strong></div>
                     <div className="stats-page__recommend-cell"><span>공격력</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.atk ?? '-'}</strong></div>
                     <div className="stats-page__recommend-cell"><span>방어력</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.def ?? '-'}</strong></div>
+                    <div className="stats-page__recommend-cell"><span>체력</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.hp ?? '-'}</strong></div>
                     <div className="stats-page__recommend-cell"><span>공명 에너지 소모</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.energyCost ?? '-'}</strong></div>
                   </div>
                 </div>
