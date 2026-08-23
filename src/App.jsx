@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import ProcessingOverlay from './components/ProcessingOverlay'
 import TopNav from './components/TopNav'
 import SiteLayout from './components/SiteLayout'
+import SiteFooter from './components/SiteFooter'
 import HomePage from './pages/HomePage'
 import CharacterSelectPage from './pages/CharacterSelectPage'
 import CapturePage from './pages/CapturePage'
@@ -314,6 +315,8 @@ export default function App() {
             </div>
           )}
         </main>
+
+        <SiteFooter />
       </div>
     </>
   )
