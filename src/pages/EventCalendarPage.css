@@ -1,0 +1,84 @@
+.event-calendar__head h2 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  margin: 8px 0 20px;
+}
+
+.event-calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+.event-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 16px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.event-card:hover {
+  box-shadow: 0 0 0 2px var(--accent-wave);
+}
+
+.event-card__image-wrap {
+  position: relative;
+  width: 100%;
+  /* 메인 배너(16/9)보다 좁고 세로로 긴 비율로, 이벤트 카드가 그리드에서 더 아담하게 보이도록 합니다. */
+  aspect-ratio: 21 / 10;
+  background: var(--bg-surface-raised);
+  overflow: hidden;
+}
+
+.event-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.event-card__image--empty {
+  background: linear-gradient(135deg, var(--bg-surface-raised), var(--bg-void));
+}
+
+.event-card__badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(6, 8, 14, 0.75);
+  color: var(--accent-resonance);
+}
+
+.event-card__badge--ended {
+  color: var(--text-muted);
+}
+
+.event-card__body {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.event-card__title {
+  font-size: 14px;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.event-card__date {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}

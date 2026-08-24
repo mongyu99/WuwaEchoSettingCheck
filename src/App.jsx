@@ -4,6 +4,8 @@ import TopNav from './components/TopNav'
 import SiteLayout from './components/SiteLayout'
 import SiteFooter from './components/SiteFooter'
 import HomePage from './pages/HomePage'
+import PatchNotesPage from './pages/PatchNotesPage'
+import EventCalendarPage from './pages/EventCalendarPage'
 import CharacterSelectPage from './pages/CharacterSelectPage'
 import CapturePage from './pages/CapturePage'
 import EditPage from './pages/EditPage'
@@ -72,7 +74,7 @@ function stripPreviewUrls(characterData) {
 }
 
 export default function App() {
-  const [page, setPage] = useState(saved?.page ?? 'home') // home | characters | capture | edit | stats
+  const [page, setPage] = useState(saved?.page ?? 'home') // home | characters | patchnotes | events | capture | edit | stats
   const [character, setCharacter] = useState(savedCharacter)
   // 캐릭터 id별로 에코/무기/에코세트조합/기초스탯을 따로 보관합니다: { [characterId]: { echoes, weapon, echoParts, baseStats } }
   const [characterData, setCharacterData] = useState(saved?.characterData ?? {})
@@ -223,6 +225,8 @@ export default function App() {
 
   const goHome = () => setPage('home')
   const goToCharacters = () => setPage('characters')
+  const goToPatchNotes = () => setPage('patchnotes')
+  const goToEventCalendar = () => setPage('events')
 
   /** 초기화: 이 캐릭터의 캡처된 에코만 지우고, 다시 캡처할 수 있도록 캡처 화면으로 이동합니다. */
   const handleResetCurrent = () => {
@@ -278,16 +282,20 @@ export default function App() {
         )
       case 'characters':
         return <CharacterSelectPage onSelect={handleSelectCharacter} charactersWithData={charactersWithData} />
+      case 'patchnotes':
+        return <PatchNotesPage />
+      case 'events':
+        return <EventCalendarPage />
       case 'home':
       default:
         return <HomePage />
     }
   }
 
-  // SideNav는 '홈'·'캐릭터 목록' 화면에서만 보이는 사이트 탐색용이라, 실제 작업 화면
-  // (캡처/수정/스탯)에서는 숨깁니다. page-transition 애니메이션이 걸리는 key={page} div
-  // 바깥에 둬서, 페이지가 전환될 때 SideNav까지 같이 리마운트·애니메이션되지 않게 합니다.
-  const showSideNav = page === 'home' || page === 'characters'
+  // SideNav는 '홈'·'캐릭터 목록'·'패치노트'·'이벤트 캘린더' 화면에서만 보이는 사이트 탐색용이라,
+  // 실제 작업 화면(캡처/수정/스탯)에서는 숨깁니다. page-transition 애니메이션이 걸리는 key={page}
+  // div 바깥에 둬서, 페이지가 전환될 때 SideNav까지 같이 리마운트·애니메이션되지 않게 합니다.
+  const showSideNav = page === 'home' || page === 'characters' || page === 'patchnotes' || page === 'events'
 
   return (
     <>
@@ -306,7 +314,13 @@ export default function App() {
 
         <main className="app__flow">
           {showSideNav ? (
-            <SiteLayout currentPage={page} onGoHome={goHome} onGoToCharacterList={goToCharacters}>
+            <SiteLayout
+              currentPage={page}
+              onGoHome={goHome}
+              onGoToCharacterList={goToCharacters}
+              onGoToPatchNotes={goToPatchNotes}
+              onGoToEventCalendar={goToEventCalendar}
+            >
               {renderPage()}
             </SiteLayout>
           ) : (
