@@ -3,7 +3,7 @@ import VersionTimer from '../components/VersionTimer'
 import PatchNotesList from '../components/PatchNotesList'
 import './HomePage.css'
 
-export default function HomePage() {
+export default function HomePage({ onGoToPatchNotes }) {
   return (
     <>
       <div className="home-page__section">
@@ -13,7 +13,7 @@ export default function HomePage() {
         <VersionTimer />
       </div>
       <div className="home-page__section">
-        <PatchNotesList />
+        <PatchNotesList onGoToPatchNotes={onGoToPatchNotes} />
       </div>
     </>
   )

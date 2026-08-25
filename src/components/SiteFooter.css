@@ -47,3 +47,10 @@
 .site-footer__link:hover {
   color: var(--accent-wave);
 }
+
+@media (max-width: 480px) {
+  .site-footer {
+    gap: 24px;
+    padding: 20px 16px;
+  }
+}

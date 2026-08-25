@@ -10,6 +10,12 @@
   gap: 18px;
 }
 
+@media (max-width: 480px) {
+  .event-calendar__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .event-card {
   display: flex;
   flex-direction: column;

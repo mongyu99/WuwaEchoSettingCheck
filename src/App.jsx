@@ -288,7 +288,7 @@ export default function App() {
         return <EventCalendarPage />
       case 'home':
       default:
-        return <HomePage />
+        return <HomePage onGoToPatchNotes={goToPatchNotes} />
     }
   }
 
