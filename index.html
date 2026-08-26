@@ -4,6 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Echo Setting Check</title>
+    <script>
+      // React가 마운트되기 전에 테마를 먼저 적용해서, 기본(다크) 색으로 한 프레임 그려졌다가
+      // 저장된 테마로 넘어가는 깜빡임(+ 색 트랜지션 애니메이션까지 타는 것)을 막습니다.
+      // src/utils/theme.js의 STORAGE_KEY와 반드시 같은 값을 써야 합니다.
+      (function () {
+        try {
+          var theme = localStorage.getItem('wuwa-echo-check:theme') === 'light' ? 'light' : 'dark'
+          document.documentElement.setAttribute('data-theme', theme)
+          // CSS 파일이 아직 안 불러와졌어도(느린 네트워크 등) 브라우저 기본 흰 배경이 보이지
+          // 않도록, index.css의 --bg-void 기본값과 같은 색을 여기서도 즉시 인라인으로 칠합니다.
+          document.documentElement.style.backgroundColor = theme === 'light' ? '#f4f5fa' : '#0b0e17'
+        } catch (e) {}
+      })()
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
