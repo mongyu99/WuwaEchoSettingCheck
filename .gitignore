@@ -1,6 +1,8 @@
 node_modules
 dist
 .DS_Store
+.env
+.env.local
 raw-characters/*
 !raw-characters/.gitkeep
 raw-characters-backup
@@ -10,3 +12,5 @@ raw-echo-sets/*
 !raw-echo-sets/.gitkeep
 raw-main-echo/*
 !raw-main-echo/.gitkeep
+raw-banners/*
+!raw-banners/.gitkeep
