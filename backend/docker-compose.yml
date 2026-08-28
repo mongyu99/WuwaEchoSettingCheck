@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: wuwaecho
+      POSTGRES_USER: wuwaecho
+      POSTGRES_PASSWORD: wuwaecho
+    ports:
+      - '5432:5432'
+    volumes:
+      - wuwaecho-db:/var/lib/postgresql/data
+
+volumes:
+  wuwaecho-db:
