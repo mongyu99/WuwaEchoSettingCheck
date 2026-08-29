@@ -1,0 +1,31 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/wuwaecho}
+    username: ${DB_USER:wuwaecho}
+    password: ${DB_PASSWORD:wuwaecho}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:}
+            client-secret: ${GOOGLE_CLIENT_SECRET:}
+            scope: openid, email, profile
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-please-change-this-secret-value-3241adfasdf}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:10080}
+  frontend:
+    redirect-uri: ${FRONTEND_REDIRECT_URI:http://localhost:5173/auth/callback}
+    allowed-origins: ${FRONTEND_ALLOWED_ORIGINS:http://localhost:5173}

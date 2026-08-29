@@ -63,3 +63,39 @@
   color: var(--text-muted);
   flex-shrink: 0;
 }
+
+.patch-notes-page__pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.patch-notes-page__pager-btn {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 6px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-hairline);
+  background: var(--bg-surface-raised);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.patch-notes-page__pager-btn:hover:not(:disabled) {
+  border-color: var(--accent-wave);
+  color: var(--accent-wave);
+}
+
+.patch-notes-page__pager-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.patch-notes-page__pager-status {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}

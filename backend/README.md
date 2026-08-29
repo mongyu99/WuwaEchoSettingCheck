@@ -30,6 +30,8 @@ export JWT_SECRET=아무거나-32자-이상-랜덤-문자열
 | GET | `/api/me` | 로그인한 사용자 정보 |
 | GET | `/api/state` | 저장된 `characterData` JSON 문자열 |
 | PUT | `/api/state` | `{ "data": "<JSON 문자열>" }`로 저장 |
+| GET | `/api/patch-notes?query=&page=0&size=10` | 패치노트 목록 (제목 검색 + 페이지네이션, 인증 불필요) |
+| GET | `/api/events` | 진행 중/예정 이벤트 목록 (인증 불필요) |
 
 로그인 성공 시 `FRONTEND_REDIRECT_URI?token=<JWT>`로 리다이렉트됩니다. 이후 프런트는
 모든 API 호출에 `Authorization: Bearer <JWT>` 헤더를 실어 보냅니다.

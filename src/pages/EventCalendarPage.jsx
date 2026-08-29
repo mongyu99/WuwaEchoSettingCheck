@@ -1,4 +1,6 @@
-import { EVENTS } from '../config/eventCalendar'
+import { useEffect, useState } from 'react'
+import { assetPath } from '../config/assetPath'
+import { fetchEvents } from '../utils/api'
 import './EventCalendarPage.css'
 
 function formatEndDate(endsAt) {
@@ -15,6 +17,27 @@ function daysRemaining(endsAt) {
 }
 
 export default function EventCalendarPage() {
+  const [events, setEvents] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    fetchEvents()
+      .then((result) => {
+        if (!cancelled) setEvents(result)
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message || '이벤트를 불러오는 데 실패했어요.')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   return (
     <section className="event-calendar">
       <header className="event-calendar__head">
@@ -22,11 +45,15 @@ export default function EventCalendarPage() {
         <h2>진행 중인 이벤트</h2>
       </header>
 
-      {EVENTS.length === 0 ? (
-        <p className="uploader__hint">등록된 이벤트가 없어요.</p>
-      ) : (
+      {loading && <p className="uploader__hint">불러오는 중...</p>}
+
+      {!loading && error && <p className="uploader__hint">{error}</p>}
+
+      {!loading && !error && events.length === 0 && <p className="uploader__hint">등록된 이벤트가 없어요.</p>}
+
+      {!loading && !error && events.length > 0 && (
         <div className="event-calendar__grid">
-          {EVENTS.map((event) => {
+          {events.map((event) => {
             const remaining = daysRemaining(event.endsAt)
             return (
               <a
@@ -38,7 +65,7 @@ export default function EventCalendarPage() {
               >
                 <div className="event-card__image-wrap">
                   {event.image ? (
-                    <img className="event-card__image" src={event.image} alt={event.title} />
+                    <img className="event-card__image" src={assetPath(event.image)} alt={event.title} />
                   ) : (
                     <div className="event-card__image event-card__image--empty" />
                   )}

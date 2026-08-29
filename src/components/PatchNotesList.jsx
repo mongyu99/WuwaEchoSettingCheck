@@ -1,27 +1,46 @@
-import { PATCH_NOTES } from '../config/patchNotes'
+import { useEffect, useState } from 'react'
+import { fetchPatchNotes } from '../utils/api'
 import './PatchNotesList.css'
 
 const COLLAPSED_COUNT = 3
 
 export default function PatchNotesList({ onGoToPatchNotes }) {
-  const visible = PATCH_NOTES.slice(0, COLLAPSED_COUNT)
+  const [notes, setNotes] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchPatchNotes({ size: COLLAPSED_COUNT })
+      .then((result) => {
+        if (!cancelled) setNotes(result.items)
+      })
+      .catch(() => {
+        if (!cancelled) setNotes([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
     <div className="patch-notes">
       <div className="patch-notes__head">
         <h4 className="patch-notes__title">최신 패치노트</h4>
-        {PATCH_NOTES.length > 0 && (
+        {notes.length > 0 && (
           <button className="patch-notes__more" onClick={onGoToPatchNotes}>
             + 더보기
           </button>
         )}
       </div>
-      {PATCH_NOTES.length === 0 ? (
-        <p className="uploader__hint"></p>
+      {!loading && notes.length === 0 ? (
+        <p className="uploader__hint">등록된 패치노트가 없어요.</p>
       ) : (
         <ul className="patch-notes__list">
-          {visible.map((note) => (
-            <li key={note.url} className="patch-notes__item">
+          {notes.map((note) => (
+            <li key={note.id} className="patch-notes__item">
               <a href={note.url} target="_blank" rel="noreferrer">
                 {note.title}
               </a>
