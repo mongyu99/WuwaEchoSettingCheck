@@ -1,10 +1,13 @@
+# Docker Desktop에서 이 프로젝트 컨테이너를 "wuwaecho" 그룹으로 묶어 다른 컨테이너와 구분합니다.
+name: wuwaecho
+
 services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: wuwaecho
-      POSTGRES_USER: wuwaecho
-      POSTGRES_PASSWORD: wuwaecho
+      POSTGRES_DB: ${DB_NAME:-wuwaecho}
+      POSTGRES_USER: ${DB_USER:?backend}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?backend}
     ports:
       - '5432:5432'
     volumes:

@@ -268,6 +268,16 @@ function describeStepParts(s) {
   return { from: `${s.label} ${s.fromValue}`, to: `${s.toValue} 교체` }
 }
 
+function formatChance(s) {
+  const attempts = Number.isFinite(s.attempts) ? `약 ${Math.ceil(s.attempts).toLocaleString()}개` : '-'
+  return `뜰 확률 ${s.probability.toFixed(2)}% · 기대 시도 ${attempts}`
+}
+
+function describeAlt(alt) {
+  if (alt.action === 'upgrade') return `${alt.label} ${alt.fromValue} → ${alt.toValue}로 다시 띄우기`
+  return `${alt.label} ${alt.toValue}로 채우기`
+}
+
 // "에코 주옵" 칸을 코스트 조합 개수에 따라 다르게 그립니다(스키마 확장 없이 배열 길이/cost 값만
 // 보고 판단): 0개면 빈 칸, 1개면 한 줄, 2개인데 코스트가 같으면 코스트 칸을 세로로 합쳐서 세팅
 // 두 줄, 2개인데 코스트가 다르면 완전히 독립된 두 줄로 그립니다. 예전처럼 문자열 하나만 온 경우도
@@ -462,9 +472,9 @@ function OptimizerPanel({
     <div className="optimizer">
       <h4 className="stats-page__col-title">목표 스탯 계산기 - 베타</h4>
       <p className="uploader__hint optimizer__hint">
-        목표를 채우고 "계산하기"를 누르면, 지금 합산 스탯 기준으로 몇이 부족한지, 1순위(빈 자리
-        채우기)·2순위(민맥싱)로 어떤 에코의 어떤 스탯을 바꾸면 가장 빠른지 알려드려요. 0이면 계산하지
-        않습니다.
+        목표를 채우고 "계산하기"를 누르면, 지금 합산 스탯 기준으로 몇이 부족한지, 에코마다 % 채우기·플랫(2순위)
+        채우기·낮은 단계 다시 띄우기 중 새 에코가 뜰 확률이 가장 높은 방법을 알려드려요. 수치가 적힌 유효
+        옵션은 새 에코에도 있어야 하는 것으로 계산합니다. 0이면 계산하지 않습니다.
       </p>
 
       <div className="optimizer__grid">
@@ -599,9 +609,10 @@ function OptimizerPanel({
                                   - 현재 기준으로 {cat}이(가) <strong>{fmtVal(projected)}{unitStr}</strong> 가 됩니다.
                                 </p>
                               )}
+                              <p className="optimizer__estimate">- {formatChance(s)}</p>
                               {s.alt && (
                                 <p className="optimizer__estimate optimizer__alt">
-                                  또는 {s.alt.label} {s.alt.value}로 채워도 도움이 돼요.
+                                  또는 {describeAlt(s.alt)} ({formatChance(s.alt)})
                                 </p>
                               )}
                             </li>
