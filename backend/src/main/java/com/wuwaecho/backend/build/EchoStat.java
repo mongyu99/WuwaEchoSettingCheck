@@ -41,7 +41,8 @@ public class EchoStat {
     @Column(nullable = false)
     private short slot;
 
-    @Column(nullable = false, length = 50)
+    /** stat_labels 화이트리스트에 있는 값만 들어갑니다. 비어 있거나 목록에 없던 옵션은 null. */
+    @Column(length = 50)
     private String label;
 
     @Column(precision = 8, scale = 2)

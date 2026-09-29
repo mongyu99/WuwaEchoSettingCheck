@@ -42,6 +42,26 @@ dependencies {
 	testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
+// ./gradlew test            : 단위 테스트만 (DB 불필요, 빠름)
+// ./gradlew integrationTest : @IntegrationTest만 (Postgres의 wuwaecho_test DB 필요)
+// ./gradlew check           : 단위 테스트 → 통합 테스트 순서로 둘 다
 tasks.named('test') {
-	useJUnitPlatform()
+	useJUnitPlatform {
+		excludeTags 'integration'
+	}
+}
+
+tasks.register('integrationTest', Test) {
+	description = 'Postgres가 필요한 통합 테스트를 실행합니다.'
+	group = 'verification'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	useJUnitPlatform {
+		includeTags 'integration'
+	}
+	shouldRunAfter tasks.named('test')
+}
+
+tasks.named('check') {
+	dependsOn tasks.named('integrationTest')
 }
