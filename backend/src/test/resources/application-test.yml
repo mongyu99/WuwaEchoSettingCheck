@@ -1,0 +1,5 @@
+# 개발 DB(wuwaecho)를 건드리지 않도록 같은 Postgres의 테스트 전용 DB를 씁니다.
+# 최초 1회: docker compose exec postgres createdb -U wuwaecho wuwaecho_test
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/wuwaecho_test

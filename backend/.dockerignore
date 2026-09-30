@@ -1,0 +1,10 @@
+# 비밀값은 이미지에 넣지 않고 실행할 때 환경변수로만 넘깁니다.
+.env
+build
+.gradle
+bin
+out
+.idea
+.vscode
+*.iml
+HELP.md

@@ -12,6 +12,25 @@ services:
       - '5432:5432'
     volumes:
       - wuwaecho-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    # .env 값을 환경변수로 넘깁니다(이미지 안에는 .env가 들어가지 않음).
+    env_file: .env
+    environment:
+      # 컨테이너 안에서 localhost는 자기 자신이라, DB는 서비스 이름(postgres)으로 찾아갑니다.
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-wuwaecho}
+    ports:
+      - '8080:8080'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   wuwaecho-db:
