@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 class JwtServiceTest {
 
-    private static final String SECRET = "test-secret-at-least-32-bytes-long-0123456789";
+    private static final String SECRET = "test-secret-at-least-32-bytes-long-0123456789"; // gitleaks:allow
 
     private final JwtService jwtService = new JwtService(new JwtProperties(SECRET, 60));
 
