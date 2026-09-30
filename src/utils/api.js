@@ -1,5 +1,6 @@
 const TOKEN_KEY = 'wuwa-echo-check:auth-token'
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+// 빈 문자열이면 같은 주소(/api)로 호출합니다(Docker의 nginx가 API 서버로 넘겨줌).
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
 
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY)

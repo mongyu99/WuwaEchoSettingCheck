@@ -32,5 +32,16 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # 사이트 화면. http://localhost 로 접속하면 되고, /api 요청은 nginx가 app으로 넘깁니다.
+  web:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - '80:80'
+    depends_on:
+      - app
+    restart: unless-stopped
+
 volumes:
   wuwaecho-db:

@@ -1,0 +1,12 @@
+node_modules
+dist
+backend
+archive
+raw-*
+scripts
+.git
+.vs
+.vscode
+.claude
+.env
+.env.*
