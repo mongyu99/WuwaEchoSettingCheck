@@ -6,7 +6,6 @@ import { WEAPONS, getWeapon } from '../config/weapons'
 import { getCharacterWeaponIds } from '../config/characterWeapons'
 import { ECHO_SETS, getEchoSet } from '../config/echoSets'
 import { getCharacterEchoCombos } from '../config/characterEchoSets'
-import { getCharacterRecommendation } from '../config/characterRecommendations'
 import { getMainEcho } from '../config/mainEchoes'
 import { getMainEchoIdsForCombo } from '../config/echoSetMainEchoes'
 import { getMainEchoDamageBonus } from '../config/characterMainEchoBonus'
@@ -276,38 +275,6 @@ function formatChance(s) {
 function describeAlt(alt) {
   if (alt.action === 'upgrade') return `${alt.label} ${alt.fromValue} → ${alt.toValue}로 다시 띄우기`
   return `${alt.label} ${alt.toValue}로 채우기`
-}
-
-// "에코 주옵" 칸을 코스트 조합 개수에 따라 다르게 그립니다(스키마 확장 없이 배열 길이/cost 값만
-// 보고 판단): 0개면 빈 칸, 1개면 한 줄, 2개인데 코스트가 같으면 코스트 칸을 세로로 합쳐서 세팅
-// 두 줄, 2개인데 코스트가 다르면 완전히 독립된 두 줄로 그립니다. 예전처럼 문자열 하나만 온 경우도
-// (코스트 없이) 한 줄로 호환됩니다.
-function normalizeEchoMainStatVariants(echoMainStat) {
-  if (Array.isArray(echoMainStat)) return echoMainStat.filter((v) => v?.stats)
-  if (typeof echoMainStat === 'string' && echoMainStat) return [{ cost: null, stats: echoMainStat }]
-  return []
-}
-
-function EchoMainStatCell({ echoMainStat }) {
-  const variants = normalizeEchoMainStatVariants(echoMainStat)
-  if (variants.length === 0) {
-    return <div className="stats-page__variant-table stats-page__variant-table--empty" />
-  }
-  const mergeCost = variants.length === 2 && variants[0].cost != null && variants[0].cost === variants[1].cost
-  return (
-    <table className="stats-page__variant-table">
-      <tbody>
-        {variants.map((v, i) => (
-          <tr key={i}>
-            {(i === 0 || !mergeCost) && (
-              <td className="stats-page__variant-cost" rowSpan={mergeCost ? 2 : 1}>{v.cost ?? '-'}</td>
-            )}
-            <td className="stats-page__variant-stats">{v.stats}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  )
 }
 
 /**
@@ -663,7 +630,6 @@ export default function StatsPage({
   const aggregateColRef = useRef(null)
   const [aggregateColHeight, setAggregateColHeight] = useState(null)
   const validLabels = getValidOptions(character?.id)
-  const recommendation = getCharacterRecommendation(character?.id)
 
   // 이 캐릭터에게 등록된(추천) 에코 세트 조합입니다. 등록 안 된 캐릭터는 null.
   const recommendedCombos = getCharacterEchoCombos(character?.id)
@@ -987,46 +953,6 @@ export default function StatsPage({
             </p>
           )}
           <p className="stats-page__aggregate-note">공식 계산 내용이 아닙니다. 자세한 스탯은 인게임을 확인하세요.</p>
-
-          <div className="stats-page__recommend">
-            <h4 className="stats-page__col-title">이잘키 추천</h4>
-            {recommendation ? (
-              <>
-                <div className="stats-page__recommend-grid">
-                  <div className="stats-page__recommend-row">
-                    <div className="stats-page__recommend-cell"><span>추천 무기</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.weapon ?? '-'}</strong></div>
-                    <div className="stats-page__recommend-cell"><span>에코 세트</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.echoSet ?? '-'}</strong></div>
-                  </div>
-                  <div className="stats-page__recommend-row">
-                    <div className="stats-page__recommend-cell stats-page__recommend-cell--variant">
-                      <span>에코 주옵</span><span className="stats-page__recommend-sep">|</span>
-                      <EchoMainStatCell echoMainStat={recommendation.echoMainStat} />
-                    </div>
-                    <div className="stats-page__recommend-cell"><span>크확 크피</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.critRatio ?? '-'}</strong></div>
-                  </div>
-                  <div className="stats-page__recommend-row stats-page__recommend-row--penta">
-                    <div className="stats-page__recommend-cell"><span>공효</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.resonanceEfficiency ?? '-'}</strong></div>
-                    <div className="stats-page__recommend-cell"><span>공격력</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.atk ?? '-'}</strong></div>
-                    <div className="stats-page__recommend-cell"><span>방어력</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.def ?? '-'}</strong></div>
-                    <div className="stats-page__recommend-cell"><span>체력</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.hp ?? '-'}</strong></div>
-                    <div className="stats-page__recommend-cell"><span>공명 에너지 소모</span><span className="stats-page__recommend-sep">|</span><strong>{recommendation.energyCost ?? '-'}</strong></div>
-                  </div>
-                </div>
-                <div className="stats-page__recommend-notes">
-                  <h5>참고사항</h5>
-                  {recommendation.notes?.length > 0 ? (
-                    <ul>
-                      {recommendation.notes.map((note, i) => <li key={i}>{note}</li>)}
-                    </ul>
-                  ) : (
-                    <p className="stats-page__recommend-notes-empty">-</p>
-                  )}
-                </div>
-              </>
-            ) : (
-              <p className="uploader__hint">아직 이 캐릭터의 추천 정보가 없어요. 알려주시면 채워드릴게요.</p>
-            )}
-          </div>
         </aside>
       </div>
 
