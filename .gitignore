@@ -14,3 +14,5 @@ raw-main-echo/*
 !raw-main-echo/.gitkeep
 raw-banners/*
 !raw-banners/.gitkeep
+# 로컬 DB에 넣는 게임 데이터 시드 (저장소에는 테이블 구조만 올림)
+backend/local-seed/
