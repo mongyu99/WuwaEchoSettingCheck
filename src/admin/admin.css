@@ -1,0 +1,241 @@
+.admin-banner {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 10px 16px;
+  background: repeating-linear-gradient(-45deg, #b3261e, #b3261e 14px, #8c1d17 14px, #8c1d17 28px);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 14px;
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+.admin {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 16px 60px;
+  color: var(--text-primary);
+}
+
+.admin__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.admin__tab {
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border-hairline);
+  background: var(--bg-surface-raised);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.admin__tab--active {
+  background: var(--accent-wave);
+  border-color: var(--accent-wave);
+  color: #06131a;
+  font-weight: 700;
+}
+
+.admin__message {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--bg-surface-raised);
+  font-size: 13px;
+  margin: 0 0 16px;
+}
+
+.admin__message--error {
+  color: #ff8a80;
+}
+
+.admin__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 20px;
+  align-items: start;
+}
+
+.admin__list,
+.admin__form {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.admin__list-head {
+  display: flex;
+  gap: 8px;
+}
+
+.admin__count {
+  margin: 10px 0 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.admin__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.admin__table th {
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 500;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.admin__table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.admin__table tbody tr {
+  cursor: pointer;
+}
+
+.admin__table tbody tr:hover,
+.admin__row--selected {
+  background: var(--bg-surface-raised);
+}
+
+.admin__mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.admin__status {
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.admin__status--HIDDEN {
+  color: var(--text-muted);
+}
+
+.admin__status--UPCOMING {
+  color: var(--accent-resonance);
+}
+
+.admin__form {
+  position: sticky;
+  top: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+}
+
+.admin__form h2 {
+  margin: 0 0 4px;
+  font-size: 17px;
+}
+
+.admin__image {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin__image img,
+.admin__image-empty {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 10px;
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-hairline);
+}
+
+.admin__image-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.admin__btn--disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.admin__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.admin__field em {
+  color: #ff8a80;
+  font-style: normal;
+}
+
+.admin__input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-hairline);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.admin__input:disabled {
+  opacity: 0.6;
+}
+
+.admin__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.admin__btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-hairline);
+  background: var(--bg-surface-raised);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.admin__btn--primary {
+  background: var(--accent-wave);
+  border-color: var(--accent-wave);
+  color: #06131a;
+  font-weight: 700;
+}
+
+.admin__btn--danger {
+  margin-left: auto;
+  color: #ff8a80;
+}
+
+@media (max-width: 900px) {
+  .admin__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin__form {
+    position: static;
+    max-height: none;
+  }
+}

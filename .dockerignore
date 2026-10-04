@@ -10,3 +10,5 @@ scripts
 .claude
 .env
 .env.*
+admin.html
+src/admin
