@@ -28,36 +28,43 @@ function loadImage(file) {
   })
 }
 
+function drawScaled(source, width, height) {
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d')
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(source, 0, 0, width, height)
+  return canvas
+}
+
 /**
- * 파일을 검증하고 1920x1080으로 정규화합니다.
- * - 원본이 1920x1080보다 작으면 에러를 던집니다 (인식 실패 처리).
- * - 그 이상이면 비율을 유지한 채 1920x1080을 꽉 채우도록 잘라서(cover) 리사이즈합니다.
- *   (단순히 늘려버리면 비율이 왜곡되어 OCR 위치가 어긋나기 때문입니다.)
+ * 해상도·비율과 상관없이 1920x1080 캔버스로 맞춥니다. 인식 영역(config/regions.js)이 1920x1080
+ * 좌표 기준입니다. 게임은 화면이 넓어져도(21:9 등) UI를 높이 기준으로 키우고 스탯 패널을 오른쪽 끝에
+ * 붙이므로, 높이를 1080에 맞춘 뒤 오른쪽 끝을 기준으로 1920 너비만 남깁니다(16:9보다 좁으면 왼쪽이 빔).
+ * 4K처럼 큰 사진은 한 번에 줄이면 글자가 뭉개져서, 절반씩 단계적으로 줄인 뒤 마지막에 맞춥니다.
  */
 export async function normalizeImage(file) {
   const { img, url } = await loadImage(file)
-  const { naturalWidth: w, naturalHeight: h } = img
 
-  if (w < TARGET_WIDTH || h < TARGET_HEIGHT) {
-    URL.revokeObjectURL(url)
-    const err = new Error(
-      `해상도가 너무 낮습니다 (${w}×${h}). 최소 ${TARGET_WIDTH}×${TARGET_HEIGHT} 이상이어야 합니다.`,
-    )
-    err.code = 'RESOLUTION_TOO_LOW'
-    throw err
+  let source = img
+  let w = img.naturalWidth
+  let h = img.naturalHeight
+  while (h / 2 >= TARGET_HEIGHT) {
+    w = Math.round(w / 2)
+    h = Math.round(h / 2)
+    source = drawScaled(source, w, h)
   }
 
-  const scale = Math.max(TARGET_WIDTH / w, TARGET_HEIGHT / h)
-  const scaledW = w * scale
-  const scaledH = h * scale
-  const offsetX = (scaledW - TARGET_WIDTH) / 2
-  const offsetY = (scaledH - TARGET_HEIGHT) / 2
-
+  const scaledW = Math.round(w * (TARGET_HEIGHT / h))
   const canvas = document.createElement('canvas')
   canvas.width = TARGET_WIDTH
   canvas.height = TARGET_HEIGHT
   const ctx = canvas.getContext('2d')
-  ctx.drawImage(img, -offsetX, -offsetY, scaledW, scaledH)
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(source, TARGET_WIDTH - scaledW, 0, scaledW, TARGET_HEIGHT)
 
   URL.revokeObjectURL(url)
 

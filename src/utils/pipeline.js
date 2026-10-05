@@ -3,7 +3,7 @@ import { FIXED_REGIONS, REGION_META, SCAN_PREVIEW_REGION } from '../config/regio
 
 /**
  * 원본 파일 하나를 받아 정규화 + 고정 영역 크롭 + 미리보기까지 만들어 반환합니다.
- * 사진 한 장만 다시 인식(교체)할 때 씁니다. 해상도가 너무 낮으면 에러를 던집니다.
+ * 사진 한 장만 다시 인식(교체)할 때 씁니다.
  */
 export async function prepareImageForExtraction(file) {
   const { dataUrl } = await normalizeImage(file)

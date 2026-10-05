@@ -1,4 +1,0 @@
-# 로컬 관리자 서버 전용 설정 (SPRING_PROFILES_ACTIVE=admin).
-# Docker의 API 서버(8080)와 동시에 띄울 수 있도록 포트를 분리합니다.
-server:
-  port: 8081

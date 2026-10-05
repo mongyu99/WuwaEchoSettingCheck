@@ -16,3 +16,10 @@ raw-banners/*
 !raw-banners/.gitkeep
 # 로컬 DB에 넣는 게임 데이터 시드 (저장소에는 테이블 구조만 올림)
 backend/local-seed/
+
+# 로컬 관리자 페이지 (운영에 올리지 않음)
+admin.html
+src/admin/
+backend/src/main/java/com/wuwaecho/backend/admin/
+backend/src/main/resources/application-admin.yml
+backend/docker-compose.dev.yml
