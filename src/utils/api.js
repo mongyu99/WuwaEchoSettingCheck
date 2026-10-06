@@ -53,6 +53,10 @@ export function fetchPatchNotes({ query = '', page = 0, size = 10 } = {}) {
   return apiFetch(`/api/patch-notes?${params}`)
 }
 
+export function fetchCatalog() {
+  return apiFetch('/api/catalog')
+}
+
 export function fetchEvents() {
   return apiFetch('/api/events')
 }

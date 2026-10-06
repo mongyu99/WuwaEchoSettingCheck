@@ -1,6 +1,8 @@
-// GitHub Pages처럼 하위 경로(예: /WuwaEchoSettingCheck/)에 배포될 때도 이미지가 깨지지 않도록,
-// "/characters/x.webp" 같은 루트 절대경로 대신 이 함수로 감싸서 씁니다. vite.config.js의 base
-// 설정(현재 './')을 그대로 따라가므로, base를 바꿔도 여기는 손댈 필요 없습니다.
+// 이미지 주소를 만듭니다. VITE_ASSET_BASE_URL(예: Cloudflare 이미지 주소)이 있으면 그 뒤에 붙이고,
+// 없으면 사이트의 public/ 폴더(vite.config.js의 base)를 씁니다. DB에는 'characters/jiyan.webp' 같은
+// 상대 경로만 저장하므로, 이미지 저장소를 옮길 때는 이 환경변수만 바꾸면 됩니다.
+const ASSET_BASE = import.meta.env.VITE_ASSET_BASE_URL || import.meta.env.BASE_URL
+
 export function assetPath(relativePath) {
-  return `${import.meta.env.BASE_URL}${relativePath}`
+  return `${ASSET_BASE.replace(/\/?$/, '/')}${relativePath}`
 }

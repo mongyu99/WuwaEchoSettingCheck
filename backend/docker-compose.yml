@@ -18,17 +18,32 @@ services:
       timeout: 3s
       retries: 20
 
+  # 게임 데이터(catalog) 캐시. 캐시라 데이터 보존이 필요 없어 볼륨 없이 메모리에만 둡니다.
+  redis:
+    image: redis:7-alpine
+    command: ['redis-server', '--save', '', '--appendonly', 'no']
+    ports:
+      - '127.0.0.1:6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
   app:
     build: .
     # .env 값을 환경변수로 넘깁니다(이미지 안에는 .env가 들어가지 않음).
     env_file: .env
     environment:
-      # 컨테이너 안에서 localhost는 자기 자신이라, DB는 서비스 이름(postgres)으로 찾아갑니다.
+      # 컨테이너 안에서 localhost는 자기 자신이라, DB·Redis는 서비스 이름으로 찾아갑니다.
       DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-wuwaecho}
+      REDIS_HOST: redis
     ports:
       - '8080:8080'
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
 

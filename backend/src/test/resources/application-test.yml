@@ -3,3 +3,8 @@
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/wuwaecho_test
+
+# 테스트에서는 서버 시작 시 catalog를 Redis에 미리 채우지 않습니다(Redis 없이도 테스트가 돌도록).
+app:
+  catalog:
+    preload: false
