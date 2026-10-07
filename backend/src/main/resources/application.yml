@@ -23,6 +23,8 @@ spring:
       timeout: 2s
 
 app:
+  catalog:
+    cache-enabled: ${CATALOG_CACHE_ENABLED:true}
   jwt:
     secret: ${JWT_SECRET}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:10080}

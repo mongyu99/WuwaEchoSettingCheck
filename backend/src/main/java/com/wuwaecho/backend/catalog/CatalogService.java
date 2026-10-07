@@ -58,15 +58,22 @@ public class CatalogService implements ApplicationRunner {
     @Value("${app.catalog.preload:true}")
     private boolean preload;
 
+    /** false면 Redis를 쓰지 않고 매 요청 DB에서 읽습니다(캐시 효과 비교 측정용). */
+    @Value("${app.catalog.cache-enabled:true}")
+    private boolean cacheEnabled;
+
     @Override
     public void run(ApplicationArguments args) {
-        if (preload) {
+        if (preload && cacheEnabled) {
             refresh();
         }
     }
 
     /** 캐시된 JSON을 돌려줍니다. 비어 있으면 한 요청만 DB를 읽어 채우고, 나머지는 기다렸다가 같은 값을 받습니다. */
     public String getJson() {
+        if (!cacheEnabled) {
+            return objectMapper.writeValueAsString(loadFromDb());
+        }
         String cached = readCache();
         if (cached != null) {
             return cached;
