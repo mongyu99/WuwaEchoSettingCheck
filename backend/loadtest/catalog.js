@@ -14,10 +14,11 @@ export const options = {
       duration: '10s',
       tags: { phase: 'warmup' },
     },
-    // 본 측정: 동시 사용자 50명이 30초 동안 쉬지 않고 요청합니다.
+    // constant-vus 최대 처리량
+    // constant-arrival-rate 처리 속도
     load: {
       executor: 'constant-vus',
-      vus: 50,
+      vus: 100,
       duration: '30s',
       startTime: '10s',
       tags: { phase: 'load' },
