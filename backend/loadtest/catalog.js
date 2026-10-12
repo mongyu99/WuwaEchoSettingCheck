@@ -18,7 +18,7 @@ export const options = {
     // constant-arrival-rate 처리 속도
     load: {
       executor: 'constant-vus',
-      vus: 100,
+      vus: 50,
       duration: '30s',
       startTime: '10s',
       tags: { phase: 'load' },
