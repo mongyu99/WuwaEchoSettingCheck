@@ -13,7 +13,8 @@ RUN ./gradlew bootJar --no-daemon -x test
 # 2단계: 실행에 필요한 JRE와 jar만 담은 가벼운 이미지입니다.
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-RUN useradd --system --no-create-home app
+# catalog 백업 JSON(Redis·DB 장애 대비)을 저장할 폴더. app 사용자는 /app에 쓸 권한이 없어 따로 만듭니다.
+RUN useradd --system --no-create-home app && mkdir /app/data && chown app /app/data
 COPY --from=build /workspace/build/libs/*.jar app.jar
 USER app
 EXPOSE 8080

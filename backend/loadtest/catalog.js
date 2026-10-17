@@ -3,7 +3,8 @@
 import http from 'k6/http'
 import { check } from 'k6'
 
-const BASE_URL = __ENV.BASE_URL || 'http://host.docker.internal:8080'
+// 운영과 같은 경로(nginx 80번 → app)로 측정합니다. app 포트(8080)는 compose에서 닫혀 있습니다.
+const BASE_URL = __ENV.BASE_URL || 'http://host.docker.internal'
 
 export const options = {
   scenarios: {
@@ -32,6 +33,7 @@ export const options = {
 }
 
 export default function () {
-  const res = http.get(`${BASE_URL}/api/catalog`)
+  // 브라우저처럼 압축 응답을 받겠다고 알립니다. nginx(80번)를 거칠 때만 gzip이 적용됩니다.
+  const res = http.get(`${BASE_URL}/api/catalog`, { headers: { 'Accept-Encoding': 'gzip, deflate, br' } })
   check(res, { 'status 200': (r) => r.status === 200 })
 }

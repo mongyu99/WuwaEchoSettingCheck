@@ -25,6 +25,7 @@ spring:
 app:
   catalog:
     cache-enabled: ${CATALOG_CACHE_ENABLED:true}
+    fallback-file: ${CATALOG_FALLBACK_FILE:catalog-fallback.json}
   jwt:
     secret: ${JWT_SECRET}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:10080}
