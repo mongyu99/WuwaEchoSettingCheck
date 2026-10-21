@@ -1,6 +1,7 @@
 package com.wuwaecho.backend.catalog;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
@@ -93,5 +94,24 @@ class CatalogServiceTest {
 
         // 3) 파일에 저장된 최신본이 나와야 함
         assertThat(service.getJson()).contains("\"id\":777");
+    }
+
+    @Test
+    @DisplayName("Redis·DB가 죽고 백업 파일도 없으면 CatalogUnavailableException(→ 503 점검 중)을 던진다")
+    @SuppressWarnings("unchecked")
+    void checkAllUnavailable(@TempDir Path dir) {
+        StringRedisTemplate redis = mock(StringRedisTemplate.class);
+        ValueOperations<String, String> valueOps = mock(ValueOperations.class);
+        JdbcClient jdbc = mock(JdbcClient.class, RETURNS_DEEP_STUBS);
+        when(redis.opsForValue()).thenReturn(valueOps);
+        when(valueOps.get(anyString())).thenThrow(new RedisConnectionFailureException("redis down"));
+        when(jdbc.sql(anyString()).query().listOfRows()).thenThrow(new CannotGetJdbcConnectionException("db down"));
+
+        CatalogService service = new CatalogService(jdbc, new ObjectMapper(), redis);
+        ReflectionTestUtils.setField(service, "cacheEnabled", true);
+        // refresh()를 한 번도 못 한 상황: 백업 파일이 없음
+        ReflectionTestUtils.setField(service, "fallbackFile", dir.resolve("none.json").toString());
+
+        assertThatThrownBy(service::getJson).isInstanceOf(CatalogUnavailableException.class);
     }
 }

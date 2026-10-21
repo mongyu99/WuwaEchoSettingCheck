@@ -1,16 +1,17 @@
 package com.wuwaecho.backend.catalog;
 
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * 사이트가 처음 열릴 때 한 번 받아가는 게임 기준 데이터 전체입니다. 테이블별 행 목록을 그대로 돌려주고,
- * 화면에서 쓰는 모양으로 묶는 건 프론트(src/config/catalog.js)가 합니다. 숨김(HIDDEN) 항목은 뺍니다.
- * Redis에 캐시된 JSON 문자열을 그대로 내려보내서, 요청마다 DB 조회나 JSON 변환을 하지 않습니다.
- */
+@Slf4j
 @RestController
 @RequestMapping("/api/catalog")
 @RequiredArgsConstructor
@@ -21,5 +22,13 @@ public class CatalogController {
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public String catalog() {
         return catalogService.getJson();
+    }
+
+    /** 전부 실패 시 503 반환 */
+    @ExceptionHandler(CatalogUnavailableException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public Map<String, String> unavailable(CatalogUnavailableException e) {
+        log.error("catalog 응답 불가: {}", e.getMessage(), e);
+        return Map.of("message", "점검 중입니다. 잠시 후 다시 접속해 주세요.");
     }
 }

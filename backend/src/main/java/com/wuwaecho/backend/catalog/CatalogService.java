@@ -161,8 +161,8 @@ public class CatalogService implements ApplicationRunner {
         try {
             return Files.readString(Path.of(fallbackFile));
         } catch (IOException e) {
-            IllegalStateException failure =
-                    new IllegalStateException("catalog를 DB와 로컬 백업 파일 모두에서 읽지 못했습니다", dbError);
+            CatalogUnavailableException failure =
+                    new CatalogUnavailableException("catalog를 DB와 로컬 백업 파일 모두에서 읽지 못했습니다", dbError);
             failure.addSuppressed(e);
             throw failure;
         }
