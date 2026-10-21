@@ -18,6 +18,8 @@ services:
       interval: 3s
       timeout: 3s
       retries: 20
+    restart: unless-stopped
+
 
   # 게임 데이터(catalog) 캐시. 캐시라 데이터 보존이 필요 없어 볼륨 없이 메모리에만 둡니다.
   redis:
@@ -28,6 +30,8 @@ services:
       interval: 3s
       timeout: 3s
       retries: 20
+    restart: unless-stopped
+
 
   app:
     build: .
