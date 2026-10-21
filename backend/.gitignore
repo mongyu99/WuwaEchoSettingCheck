@@ -35,3 +35,8 @@ out/
 
 ### VS Code ###
 .vscode/
+
+
+### JSON Data ###
+catalog-fallback.json
+catalog-fallback.json.tmp
