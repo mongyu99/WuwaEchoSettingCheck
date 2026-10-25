@@ -33,7 +33,9 @@ services:
     restart: unless-stopped
 
 
+  # 로컬은 --build로 직접 빌드하고, 서버는 CI가 GHCR에 올린 같은 이름의 이미지를 받아서 씁니다(deploy.sh).
   app:
+    image: ghcr.io/mongyu99/wuwaecho-app:latest
     build: .
     # .env 값을 환경변수로 넘깁니다(이미지 안에는 .env가 들어가지 않음).
     env_file: .env
@@ -56,6 +58,7 @@ services:
 
   # 사이트 화면. http://localhost 로 접속하면 되고, /api 요청은 nginx가 app으로 넘깁니다.
   web:
+    image: ghcr.io/mongyu99/wuwaecho-web:latest
     build:
       context: ..
       dockerfile: Dockerfile
