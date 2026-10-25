@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { loginUrl, fetchCloudState, saveCloudState } from '../utils/api'
+import { fetchCloudState, saveCloudState } from '../utils/api'
 import './AuthPanel.css'
 
 /** 소셜 로그인 상태 표시 + 클라우드 저장/불러오기 버튼입니다. characterData를 그대로 JSON
@@ -10,17 +10,8 @@ export default function AuthPanel({ characterData, onLoadCloudData }) {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
 
-  if (loading) return null
-
-  if (!user) {
-    return (
-      <div className="auth-panel">
-        <a className="auth-panel__login" href={loginUrl('google')}>
-          Google로 로그인
-        </a>
-      </div>
-    )
-  }
+  // 로그인 기능을 열기 전이라 로그인 버튼은 보여주지 않습니다.
+  if (loading || !user) return null
 
   const handleSave = async () => {
     setBusy(true)
