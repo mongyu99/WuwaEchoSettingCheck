@@ -20,7 +20,6 @@ export default defineConfig({
         '**/dist/**',
         '**/archive/**',
         '**/raw-*/**',
-        '**/public/**',
       ],
     },
   },
