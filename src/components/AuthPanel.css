@@ -7,17 +7,6 @@
   font-size: 13px;
 }
 
-.auth-panel__login {
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 13px;
-  padding: 8px 14px;
-  border-radius: 8px;
-  background: var(--accent-wave);
-  color: #06131a;
-  text-decoration: none;
-}
-
 .auth-panel__user {
   color: var(--text-muted);
 }
