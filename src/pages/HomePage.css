@@ -36,42 +36,76 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
 }
 
 .home-page__panel-head .home-page__panel-title {
   margin: 0;
 }
 
-.home-page__naver {
+.home-page__links {
+  display: flex;
+  gap: 8px;
+}
+
+.home-page__link {
   display: inline-flex;
   border-radius: 6px;
   transition: transform 0.2s ease;
 }
 
-.home-page__naver:hover {
+.home-page__link:hover {
   transform: translateY(-1px);
 }
 
-.home-page__naver:focus-visible {
+.home-page__link:focus-visible {
   outline: 2px solid var(--accent-wave);
   outline-offset: 2px;
 }
 
-/* 네이버 브랜드 색(#03C75A) 바탕에 흰 N. */
-.home-page__naver-mark {
+.home-page__link-mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 26px;
   height: 26px;
   border-radius: 6px;
-  background: #03c75a;
   color: #fff;
   font-family: Arial, Helvetica, sans-serif;
   font-size: 15px;
   font-weight: 900;
   line-height: 1;
+}
+
+/* 공식 홈페이지: 사이트 강조색 바탕에 '명'. */
+.home-page__link-mark--site {
+  background: var(--accent-resonance);
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+
+/* YouTube 브랜드 색(#FF0000) 바탕에 흰 재생 삼각형(글자 대신 CSS로 그려 이모지로 바뀌지 않게). */
+.home-page__link-mark--youtube {
+  background: #ff0000;
+}
+
+.home-page__link-mark--youtube::before {
+  content: '';
+  margin-left: 2px;
+  border-style: solid;
+  border-width: 5px 0 5px 8px;
+  border-color: transparent transparent transparent #fff;
+}
+
+/* X: 검정 바탕에 흰 X. 다크 테마에서도 구분되도록 옅은 테두리를 둡니다. */
+.home-page__link-mark--x {
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 14px;
+}
+
+/* 네이버 브랜드 색(#03C75A) 바탕에 흰 N. */
+.home-page__link-mark--naver {
+  background: #03c75a;
 }
 
 @media (max-width: 1100px) {

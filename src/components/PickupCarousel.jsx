@@ -61,6 +61,14 @@ export default function PickupCarousel() {
           />
         ))}
       </div>
+
+      {count > 1 && (
+        <div className="pickup__dots" aria-label={`픽업 ${count}개 중 ${(index % count) + 1}번째`}>
+          {PICKUP_IMAGES.map((src, i) => (
+            <span key={src} className={`pickup__dot ${i === index % count ? 'pickup__dot--active' : ''}`} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
