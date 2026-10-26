@@ -1,0 +1,27 @@
+.x-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.x-timeline__embed {
+  min-height: 0;
+}
+
+.x-timeline__note {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.x-timeline__link {
+  align-self: flex-start;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-wave);
+  text-decoration: none;
+}
+
+.x-timeline__link:hover {
+  text-decoration: underline;
+}
