@@ -25,6 +25,12 @@
   padding: 20px 24px;
 }
 
+.home-page__panel-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  margin: 0 0 12px;
+}
+
 .home-page__panel-head {
   display: flex;
   align-items: center;
@@ -33,71 +39,39 @@
   margin-bottom: 12px;
 }
 
-.home-page__panel-title {
-  font-family: var(--font-display);
-  font-size: 16px;
-  margin: 0 0 12px;
-}
-
 .home-page__panel-head .home-page__panel-title {
   margin: 0;
 }
 
-.home-page__panel-more {
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border-hairline);
-  background: var(--bg-surface-raised);
-  color: var(--text-muted);
-  cursor: pointer;
+.home-page__naver {
+  display: inline-flex;
+  border-radius: 6px;
+  transition: transform 0.2s ease;
 }
 
-.home-page__quick {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+.home-page__naver:hover {
+  transform: translateY(-1px);
 }
 
-.home-page__card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  padding: 20px 24px;
-  text-align: left;
-  font-family: var(--font-body);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-hairline);
-  border-radius: 16px;
-  cursor: pointer;
-  transition: border-color 0.2s ease, transform 0.2s ease;
+.home-page__naver:focus-visible {
+  outline: 2px solid var(--accent-wave);
+  outline-offset: 2px;
 }
 
-.home-page__card:hover {
-  border-color: var(--accent-wave);
-  transform: translateY(-2px);
-}
-
-.home-page__card-title {
-  font-family: var(--font-display);
-  font-size: 16px;
-  color: var(--text-primary);
-}
-
-.home-page__card-desc {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.home-page__card-arrow {
-  position: absolute;
-  top: 20px;
-  right: 22px;
-  color: var(--accent-wave);
+/* 네이버 브랜드 색(#03C75A) 바탕에 흰 N. */
+.home-page__naver-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: #03c75a;
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
 }
 
 @media (max-width: 1100px) {
@@ -107,21 +81,5 @@
 
   .home-page__side {
     position: static;
-  }
-}
-
-@media (max-width: 640px) {
-  .home-page__quick {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-page__card {
-    transition: none;
-  }
-
-  .home-page__card:hover {
-    transform: none;
   }
 }

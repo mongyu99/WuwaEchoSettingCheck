@@ -22,8 +22,8 @@ function loadWidgets() {
 }
 
 /**
- * X 공식 임베드 위젯으로 계정 타임라인을 보여줍니다. 로그인하지 않은 방문자에게는 X 정책상 비어 보이거나
- * 늦게 뜰 수 있어서, 일정 시간 안에 안 뜨면 X에서 직접 보는 링크만 남깁니다.
+ * X 공식 임베드 위젯으로 계정 타임라인을 보여줍니다. 위젯 영역은 숨기지 않고, 일정 시간이 지나도 iframe이
+ * 생기지 않았을 때만(차단·네트워크 문제) 안내 문구를 띄웁니다. 아래 X 링크는 항상 남겨 둡니다.
  */
 export default function XTimeline({ handle, theme }) {
   const containerRef = useRef(null)
@@ -35,13 +35,23 @@ export default function XTimeline({ handle, theme }) {
     if (!container) return undefined
     let cancelled = false
     setStatus('loading')
-    container.innerHTML = ''
 
-    const timeout = setTimeout(() => !cancelled && setStatus((s) => (s === 'loading' ? 'failed' : s)), 8000)
+    // 실행마다 새 자리를 만들고 정리 때 통째로 떼어냅니다. 이전 실행(테마 변경, 개발 모드의 이중 실행)의
+    // 위젯이 늦게 그려져도 떼어낸 자리에 그려져서 화면에 두 개가 겹치지 않습니다.
+    const target = document.createElement('div')
+    container.appendChild(target)
+
+    // X 위젯은 iframe을 먼저 0×0·숨김으로 만들고, 안쪽 타임라인이 다 그려져야 보이게 바꿉니다.
+    // 그래서 iframe이 있는지가 아니라 실제로 높이가 생겼는지로 성공을 판단합니다.
+    const isVisible = () => (target.querySelector('iframe[id^="twitter-widget"]')?.offsetHeight ?? 0) > 0
+    const markReady = () => !cancelled && isVisible() && setStatus('ready')
+    const timeout = setTimeout(() => {
+      if (!cancelled) setStatus(isVisible() ? 'ready' : 'failed')
+    }, 8000)
 
     loadWidgets()
       .then((twttr) =>
-        twttr.widgets.createTimeline({ sourceType: 'profile', screenName: handle }, container, {
+        twttr.widgets.createTimeline({ sourceType: 'profile', screenName: handle }, target, {
           theme: theme === 'light' ? 'light' : 'dark',
           lang: 'ko',
           height: 720,
@@ -49,18 +59,19 @@ export default function XTimeline({ handle, theme }) {
           dnt: true,
         }),
       )
-      .then((el) => !cancelled && setStatus(el ? 'ready' : 'failed'))
+      .then(markReady)
       .catch(() => !cancelled && setStatus('failed'))
 
     return () => {
       cancelled = true
       clearTimeout(timeout)
+      target.remove()
     }
   }, [handle, theme])
 
   return (
     <div className="x-timeline">
-      <div ref={containerRef} className="x-timeline__embed" hidden={status === 'failed'} />
+      <div ref={containerRef} className="x-timeline__embed" />
       {status === 'loading' && <p className="x-timeline__note">공식 소식을 불러오는 중…</p>}
       {status === 'failed' && (
         <p className="x-timeline__note">

@@ -287,14 +287,7 @@ export default function App() {
         return <EventCalendarPage />
       case 'home':
       default:
-        return (
-          <HomePage
-            theme={theme}
-            onGoToCharacterList={goToCharacters}
-            onGoToPatchNotes={goToPatchNotes}
-            onGoToEventCalendar={goToEventCalendar}
-          />
-        )
+        return <HomePage theme={theme} />
     }
   }
 

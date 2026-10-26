@@ -1,17 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
-import { PICKUPS } from '../config/pickups'
-import { formatMonthDay, daysRemaining } from '../utils/eventDates'
+import { useEffect, useState } from 'react'
+import { PICKUP_IMAGES } from '../config/pickups'
 import './PickupCarousel.css'
 
 const SLIDE_INTERVAL_MS = 4000
 
 /**
- * 진행 중인 픽업을 끝없이 한 방향으로 넘기는 슬라이드입니다. 마지막 다음에 첫 장의 복제본을 붙여 두고,
+ * 픽업 이미지를 끝없이 한 방향으로 넘기는 슬라이드입니다. 마지막 다음에 첫 장의 복제본을 붙여 두고,
  * 복제본에 도착하면 애니메이션 없이 진짜 첫 장으로 순간 이동해서 끊김 없이 이어지게 합니다.
  */
 export default function PickupCarousel() {
-  const pickups = useMemo(() => PICKUPS.filter((p) => daysRemaining(p.endsAt) !== null), [])
-  const count = pickups.length
+  const count = PICKUP_IMAGES.length
   const [index, setIndex] = useState(0)
   const [animate, setAnimate] = useState(true)
   const [paused, setPaused] = useState(false)
@@ -40,70 +38,29 @@ export default function PickupCarousel() {
     return () => cancelAnimationFrame(frame)
   }, [animate])
 
-  const go = (delta) => {
-    setAnimate(true)
-    setIndex((i) => (((i % count) + delta) % count + count) % count)
-  }
-
   if (count === 0) {
     return <p className="pickup__empty">등록된 픽업 일정이 없어요.</p>
   }
 
-  const slides = count > 1 ? [...pickups, pickups[0]] : pickups
-  const current = pickups[index % count]
+  const slides = count > 1 ? [...PICKUP_IMAGES, PICKUP_IMAGES[0]] : PICKUP_IMAGES
 
   return (
     <div className="pickup" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
-      <div className="pickup__viewport">
-        <div
-          className={`pickup__track ${animate ? '' : 'pickup__track--instant'}`}
-          style={{ transform: `translateX(-${index * 100}%)` }}
-          onTransitionEnd={handleTransitionEnd}
-        >
-          {slides.map((p, i) => (
-            <div key={`${p.name}-${i}`} className="pickup__slide" aria-hidden={i % count !== index % count}>
-              <img className="pickup__image" src={p.image} alt={`${p.name} 픽업`} />
-              <div className="pickup__caption">
-                <span className="pickup__name">{p.name}</span>
-                <span className="pickup__period">
-                  {formatMonthDay(p.startsAt)} ~ {formatMonthDay(p.endsAt)} · D-{daysRemaining(p.endsAt)}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {count > 1 && (
-          <>
-            <button className="pickup__arrow pickup__arrow--prev" onClick={() => go(-1)} aria-label="이전 픽업">
-              ‹
-            </button>
-            <button className="pickup__arrow pickup__arrow--next" onClick={() => go(1)} aria-label="다음 픽업">
-              ›
-            </button>
-          </>
-        )}
+      <div
+        className={`pickup__track ${animate ? '' : 'pickup__track--instant'}`}
+        style={{ transform: `translateX(-${index * 100}%)` }}
+        onTransitionEnd={handleTransitionEnd}
+      >
+        {slides.map((src, i) => (
+          <img
+            key={`${src}-${i}`}
+            className="pickup__image"
+            src={src}
+            alt={`픽업 일정 ${(i % count) + 1}`}
+            aria-hidden={i === count}
+          />
+        ))}
       </div>
-
-      {count > 1 && (
-        <div className="pickup__dots">
-          {pickups.map((p, i) => (
-            <button
-              key={p.name}
-              className={`pickup__dot ${i === index % count ? 'pickup__dot--active' : ''}`}
-              onClick={() => {
-                setAnimate(true)
-                setIndex(i)
-              }}
-              aria-label={`${p.name} 픽업 보기`}
-              aria-current={i === index % count ? 'true' : undefined}
-            />
-          ))}
-        </div>
-      )}
-      <span className="sr-only" aria-live="polite">
-        {current.name} 픽업
-      </span>
     </div>
   )
 }

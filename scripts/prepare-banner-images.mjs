@@ -1,4 +1,4 @@
-// raw-banners/ 폴더의 원본 배너 이미지를 WebP로 변환해서 public/banners/ 에 저장합니다.
+// raw-banners/ 폴더의 원본 메인 배너 이미지를 WebP로 변환해서 public/main/ 에 저장합니다.
 // 캐릭터/무기 아이콘과 달리 정사각형으로 자르지 않고 원본 비율을 그대로 유지하되, 폭이
 // TARGET_MAX_WIDTH보다 크면 줄여서 파일 용량(원본 PNG는 수 MB대)을 크게 낮춥니다.
 //
@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
 
 const SRC_DIR = fileURLToPath(new URL('../raw-banners/', import.meta.url))
-const OUT_DIR = fileURLToPath(new URL('../public/banners/', import.meta.url))
+const OUT_DIR = fileURLToPath(new URL('../public/main/', import.meta.url))
 const VALID_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp'])
 
 const TARGET_MAX_WIDTH = 1600
