@@ -1,20 +1,8 @@
 import { useEffect, useState } from 'react'
 import { assetPath } from '../config/assetPath'
 import { fetchEvents } from '../utils/api'
+import { formatDate, daysRemaining } from '../utils/eventDates'
 import './EventCalendarPage.css'
-
-function formatEndDate(endsAt) {
-  const d = new Date(endsAt)
-  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`
-}
-
-// 남은 일수는 "오늘부터 종료일까지 며칠 남았는지"를 보여주는 용도라 초 단위 실시간 카운트다운
-// 대신 날짜 단위로만 올림해서 계산합니다(예: 23시간 남아도 D-1로 표시).
-function daysRemaining(endsAt) {
-  const ms = new Date(endsAt).getTime() - Date.now()
-  if (ms <= 0) return null
-  return Math.ceil(ms / (1000 * 60 * 60 * 24))
-}
 
 export default function EventCalendarPage() {
   const [events, setEvents] = useState([])
@@ -75,7 +63,7 @@ export default function EventCalendarPage() {
                 </div>
                 <div className="event-card__body">
                   <p className="event-card__title">{event.title}</p>
-                  <p className="event-card__date">{formatEndDate(event.endsAt)}까지</p>
+                  <p className="event-card__date">{formatDate(event.endsAt)}까지</p>
                 </div>
               </a>
             )

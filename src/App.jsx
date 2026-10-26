@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import ProcessingOverlay from './components/ProcessingOverlay'
 import TopNav from './components/TopNav'
-import SiteLayout from './components/SiteLayout'
 import SiteFooter from './components/SiteFooter'
 import HomePage from './pages/HomePage'
 import PatchNotesPage from './pages/PatchNotesPage'
@@ -288,19 +287,18 @@ export default function App() {
         return <EventCalendarPage />
       case 'home':
       default:
-        return <HomePage onGoToPatchNotes={goToPatchNotes} />
+        return <HomePage />
     }
   }
-
-  // SideNav는 '홈'·'캐릭터 목록'·'패치노트'·'이벤트 캘린더' 화면에서만 보이는 사이트 탐색용이라,
-  // 실제 작업 화면(캡처/수정/스탯)에서는 숨깁니다. page-transition 애니메이션이 걸리는 key={page}
-  // div 바깥에 둬서, 페이지가 전환될 때 SideNav까지 같이 리마운트·애니메이션되지 않게 합니다.
-  const showSideNav = page === 'home' || page === 'characters' || page === 'patchnotes' || page === 'events'
 
   return (
     <>
       <TopNav
+        currentPage={page}
         onGoHome={goHome}
+        onGoToCharacterList={goToCharacters}
+        onGoToPatchNotes={goToPatchNotes}
+        onGoToEventCalendar={goToEventCalendar}
         theme={theme}
         onToggleTheme={toggleTheme}
         characterData={stripPreviewUrls(characterData)}
@@ -313,21 +311,9 @@ export default function App() {
         )}
 
         <main className="app__flow">
-          {showSideNav ? (
-            <SiteLayout
-              currentPage={page}
-              onGoHome={goHome}
-              onGoToCharacterList={goToCharacters}
-              onGoToPatchNotes={goToPatchNotes}
-              onGoToEventCalendar={goToEventCalendar}
-            >
-              {renderPage()}
-            </SiteLayout>
-          ) : (
-            <div key={page} className="page-transition">
-              {renderPage()}
-            </div>
-          )}
+          <div key={page} className="page-transition">
+            {renderPage()}
+          </div>
         </main>
 
         <SiteFooter />

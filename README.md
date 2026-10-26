@@ -77,6 +77,7 @@
 │       └── theme.js
 │
 ├── public/
+│   ├── main/
 │   ├── banners/
 │   ├── characters/
 │   ├── weapons/

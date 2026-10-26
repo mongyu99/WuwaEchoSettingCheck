@@ -1,3 +1,121 @@
-.home-page__section {
-  padding: 0;
+/* 넓은 화면은 본문 + 오른쪽 소식 두 칸, 좁은 화면은 한 칸으로 쌓습니다. */
+.home-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 24px;
+  align-items: start;
+}
+
+.home-page__main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.home-page__side {
+  position: sticky;
+  top: calc(var(--top-nav-height) + 16px);
+}
+
+.home-page__panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 16px;
+  padding: 20px 24px;
+}
+
+.home-page__panel-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  margin: 0 0 12px;
+}
+
+.home-page__panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.home-page__panel-head .home-page__panel-title {
+  margin: 0;
+}
+
+.home-page__links {
+  display: flex;
+  gap: 8px;
+}
+
+.home-page__link {
+  display: inline-flex;
+  border-radius: 6px;
+  transition: transform 0.2s ease;
+}
+
+.home-page__link:hover {
+  transform: translateY(-1px);
+}
+
+.home-page__link:focus-visible {
+  outline: 2px solid var(--accent-wave);
+  outline-offset: 2px;
+}
+
+.home-page__link-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* 공식 홈페이지: 파비콘 이미지를 다른 버튼과 같은 크기·모서리로. */
+.home-page__link-icon {
+  display: block;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+/* YouTube 브랜드 색(#FF0000) 바탕에 흰 재생 삼각형(글자 대신 CSS로 그려 이모지로 바뀌지 않게). */
+.home-page__link-mark--youtube {
+  background: #ff0000;
+}
+
+.home-page__link-mark--youtube::before {
+  content: '';
+  margin-left: 2px;
+  border-style: solid;
+  border-width: 5px 0 5px 8px;
+  border-color: transparent transparent transparent #fff;
+}
+
+/* X: 검정 바탕에 흰 X. 다크 테마에서도 구분되도록 옅은 테두리를 둡니다. */
+.home-page__link-mark--x {
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 14px;
+}
+
+/* 네이버 브랜드 색(#03C75A) 바탕에 흰 N. */
+.home-page__link-mark--naver {
+  background: #03c75a;
+}
+
+@media (max-width: 1100px) {
+  .home-page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-page__side {
+    position: static;
+  }
 }

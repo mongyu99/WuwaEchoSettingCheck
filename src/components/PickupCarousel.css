@@ -1,0 +1,57 @@
+.pickup {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--bg-surface-raised);
+}
+
+.pickup__track {
+  display: flex;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pickup__track--instant {
+  transition: none;
+}
+
+.pickup__image {
+  flex: 0 0 100%;
+  width: 100%;
+  display: block;
+}
+
+/* 오른쪽 아래 물방울 점: 이미지 개수만큼, 지금 보이는 장은 진하게. */
+.pickup__dots {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  display: flex;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.pickup__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.45);
+  transition: background 0.3s ease;
+}
+
+.pickup__dot--active {
+  background: #fff;
+}
+
+.pickup__empty {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pickup__track {
+    transition: none;
+  }
+}
