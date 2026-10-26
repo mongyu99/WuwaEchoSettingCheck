@@ -3,10 +3,12 @@ import VersionTimer from '../components/VersionTimer'
 import PickupCarousel from '../components/PickupCarousel'
 import EventSchedule from '../components/EventSchedule'
 import { OFFICIAL_X_HANDLE, NAVER_LOUNGE_URL, OFFICIAL_SITE_URL, YOUTUBE_URL } from '../config/officialNews'
+import { assetPath } from '../config/assetPath'
 import './HomePage.css'
 
 const OFFICIAL_LINKS = [
-  { key: 'site', mark: '명', href: OFFICIAL_SITE_URL, label: '명조 공식 홈페이지' },
+  // 공식 홈페이지 파비콘(36×36)을 public/icons/에 받아 둔 이미지를 씁니다.
+  { key: 'site', icon: assetPath('icons/wuwa-official.png'), href: OFFICIAL_SITE_URL, label: '명조 공식 홈페이지' },
   { key: 'youtube', mark: '', href: YOUTUBE_URL, label: '명조 공식 YouTube' },
   { key: 'x', mark: 'X', href: `https://x.com/${OFFICIAL_X_HANDLE}`, label: `X 공식 계정 @${OFFICIAL_X_HANDLE}` },
   { key: 'naver', mark: 'N', href: NAVER_LOUNGE_URL, label: '네이버 게임 라운지' },
@@ -46,9 +48,13 @@ export default function HomePage() {
                   aria-label={`${link.label}에서 보기`}
                   title={link.label}
                 >
-                  <span className={`home-page__link-mark home-page__link-mark--${link.key}`} aria-hidden="true">
-                    {link.mark}
-                  </span>
+                  {link.icon ? (
+                    <img className="home-page__link-icon" src={link.icon} alt="" aria-hidden="true" />
+                  ) : (
+                    <span className={`home-page__link-mark home-page__link-mark--${link.key}`} aria-hidden="true">
+                      {link.mark}
+                    </span>
+                  )}
                 </a>
               ))}
             </div>
