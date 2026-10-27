@@ -65,3 +65,8 @@ export function fetchEvents() {
 export function fetchBanners() {
   return apiFetch('/api/banners')
 }
+
+/** 지금 노출 기간 안에 있는 픽업 배너 목록. */
+export function fetchPickups() {
+  return apiFetch('/api/pickups')
+}

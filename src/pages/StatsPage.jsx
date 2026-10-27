@@ -643,7 +643,9 @@ export default function StatsPage({
   // 지금 조합에 없는 세트 중 남은 자리 수에 들어가는 단계만 "추가" 후보로 보여줍니다. 세트마다
   // 정의된 단계가 다르므로(1세트 전용, 2·5세트 등) 무조건 5세트로 취급하지 않고, 세트 하나당
   // 한 줄에 그 세트가 가질 수 있는 단계 버튼들을 같이 묶어서 보여줍니다.
+  // 최근에 등록한 세트가 먼저 오도록 DB 정렬 순서(sort_order)를 뒤집습니다(관리자 페이지와 같은 순서).
   const addableSets = Object.entries(ECHO_SETS)
+    .reverse()
     .filter(([id]) => !usedSetIds.has(id))
     .map(([id, set]) => ({
       setId: id,
@@ -672,9 +674,10 @@ export default function StatsPage({
   // 태그로 구분합니다.
   const characterWeaponIds = getCharacterWeaponIds(character?.id)
   const recommendedWeaponIds = new Set(characterWeaponIds ?? [])
-  const weaponOptions = Object.entries(WEAPONS).filter(
-    ([, w]) => !character?.weaponType || w.type === character.weaponType,
-  )
+  // 최근에 등록한 무기가 먼저 오도록 DB 정렬 순서(sort_order)를 뒤집습니다(관리자 페이지와 같은 순서).
+  const weaponOptions = Object.entries(WEAPONS)
+    .reverse()
+    .filter(([, w]) => !character?.weaponType || w.type === character.weaponType)
   // 사용자가 직접 고른 무기가 없으면(null), 캐릭터별 추천 무기 목록의 첫 번째를 기본으로 씁니다.
   // 추천 목록이 없는 캐릭터는 그대로 미선택 상태(+ 무기 선택)로 남습니다.
   const weaponId = weapon ?? characterWeaponIds?.[0] ?? null

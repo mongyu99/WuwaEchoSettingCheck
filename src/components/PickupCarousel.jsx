@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { PICKUP_IMAGES } from '../config/pickups'
+import { assetPath } from '../config/assetPath'
+import { fetchPickups } from '../utils/api'
 import './PickupCarousel.css'
 
 const SLIDE_INTERVAL_MS = 4000
@@ -9,7 +11,22 @@ const SLIDE_INTERVAL_MS = 4000
  * 복제본에 도착하면 애니메이션 없이 진짜 첫 장으로 순간 이동해서 끊김 없이 이어지게 합니다.
  */
 export default function PickupCarousel() {
-  const count = PICKUP_IMAGES.length
+  // 관리자 페이지에서 기간을 정해 활성화한 픽업 배너(/api/pickups). 조회가 실패하면 config의 로컬 이미지를 씁니다.
+  const [images, setImages] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchPickups()
+      .then((result) => {
+        if (!cancelled) setImages(result.filter((p) => p.imagePath).map((p) => assetPath(p.imagePath)))
+      })
+      .catch(() => !cancelled && setImages(PICKUP_IMAGES))
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const count = images?.length ?? 0
   const [index, setIndex] = useState(0)
   const [animate, setAnimate] = useState(true)
   const [paused, setPaused] = useState(false)
@@ -38,11 +55,15 @@ export default function PickupCarousel() {
     return () => cancelAnimationFrame(frame)
   }, [animate])
 
+  if (images === null) {
+    return <p className="pickup__empty">불러오는 중...</p>
+  }
+
   if (count === 0) {
     return <p className="pickup__empty">등록된 픽업 일정이 없어요.</p>
   }
 
-  const slides = count > 1 ? [...PICKUP_IMAGES, PICKUP_IMAGES[0]] : PICKUP_IMAGES
+  const slides = count > 1 ? [...images, images[0]] : images
 
   return (
     <div className="pickup" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
@@ -64,7 +85,7 @@ export default function PickupCarousel() {
 
       {count > 1 && (
         <div className="pickup__dots" aria-label={`픽업 ${count}개 중 ${(index % count) + 1}번째`}>
-          {PICKUP_IMAGES.map((src, i) => (
+          {images.map((src, i) => (
             <span key={src} className={`pickup__dot ${i === index % count ? 'pickup__dot--active' : ''}`} />
           ))}
         </div>

@@ -8,11 +8,15 @@ export default function CharacterSelectPage({ onSelect, charactersWithData }) {
 
   const filtered = useMemo(() => {
     const q = query.trim()
+    // 최근에 등록한 캐릭터가 먼저 오도록 DB 정렬 순서(sort_order, 새로 등록할수록 커짐)를 뒤집고,
+    // 그중 픽업 예정 캐릭터를 맨 앞으로 올립니다.
     return CHARACTERS.filter((c) => {
       if (element !== 'all' && c.element !== element) return false
       if (q && !c.name.includes(q)) return false
       return true
     })
+      .reverse()
+      .sort((a, b) => Number(b.upcoming) - Number(a.upcoming))
   }, [element, query])
 
   return (
@@ -51,8 +55,10 @@ export default function CharacterSelectPage({ onSelect, charactersWithData }) {
         {filtered.map((c) => (
           <button
             key={c.id}
-            className="char-card"
+            className={`char-card ${c.upcoming ? 'char-card--upcoming' : ''}`}
             style={{ borderColor: ELEMENT_COLORS[c.element] }}
+            // 픽업 예정 캐릭터는 아직 빌드를 등록할 수 없어 선택을 막습니다.
+            disabled={c.upcoming}
             onClick={() => onSelect(c)}
           >
             <div className="char-card__photo-wrap">
@@ -70,11 +76,18 @@ export default function CharacterSelectPage({ onSelect, charactersWithData }) {
                   {c.initials}
                 </div>
               )}
-              <span className="char-card__rarity">{c.rarity}★</span>
+              {c.rarity && <span className="char-card__rarity">{c.rarity}★</span>}
+              {c.upcoming && <span className="char-card__upcoming">픽업 예정</span>}
             </div>
             <span className="char-card__caption">
-              {c.name} <span className="char-card__sep">|</span>{' '}
-              <span style={{ color: ELEMENT_COLORS[c.element] }}>{c.element}</span>
+              {c.name}
+              {c.element && (
+                <>
+                  {' '}
+                  <span className="char-card__sep">|</span>{' '}
+                  <span style={{ color: ELEMENT_COLORS[c.element] }}>{c.element}</span>
+                </>
+              )}
             </span>
           </button>
         ))}
