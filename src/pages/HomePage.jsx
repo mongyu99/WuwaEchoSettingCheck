@@ -1,5 +1,4 @@
 import VersionBanner from '../components/VersionBanner'
-import VersionTimer from '../components/VersionTimer'
 import PickupCarousel from '../components/PickupCarousel'
 import EventSchedule from '../components/EventSchedule'
 import { OFFICIAL_X_HANDLE, NAVER_LOUNGE_URL, OFFICIAL_SITE_URL, YOUTUBE_URL } from '../config/officialNews'
@@ -20,7 +19,6 @@ export default function HomePage() {
     <div className="home-page">
       <div className="home-page__main">
         <VersionBanner />
-        <VersionTimer />
 
         <section className="home-page__panel">
           <h4 className="home-page__panel-title">픽업 일정</h4>

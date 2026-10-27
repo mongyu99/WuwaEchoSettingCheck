@@ -18,7 +18,9 @@ export default function PickupCarousel() {
     let cancelled = false
     fetchPickups()
       .then((result) => {
-        if (!cancelled) setImages(result.filter((p) => p.imagePath).map((p) => assetPath(p.imagePath)))
+        if (!cancelled) {
+          setImages(result.filter((p) => p.imagePath).map((p) => assetPath(p.imagePath)))
+        }
       })
       .catch(() => !cancelled && setImages(PICKUP_IMAGES))
     return () => {
