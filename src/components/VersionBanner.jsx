@@ -39,20 +39,14 @@ export default function VersionBanner() {
       <div className="version-banner__image-wrap">
         {banners.length > 0 ? (
           <div className="version-banner__track" style={{ transform: `translateX(-${index * 100}%)` }}>
-            {banners.map((banner) => {
-              const image = (
-                <img className="version-banner__image" src={assetPath(banner.imagePath)} alt={banner.title} />
-              )
-              return banner.url ? (
-                <a key={banner.id} className="version-banner__link" href={banner.url} target="_blank" rel="noreferrer">
-                  {image}
-                </a>
-              ) : (
-                <div key={banner.id} className="version-banner__link">
-                  {image}
-                </div>
-              )
-            })}
+            {banners.map((banner) => (
+              <img
+                key={banner.id}
+                className="version-banner__image"
+                src={assetPath(banner.imagePath)}
+                alt={banner.title}
+              />
+            ))}
           </div>
         ) : (
           <div className="version-banner__image version-banner__image--empty" />

@@ -24,8 +24,6 @@ public class MainBanner {
     @Column(name = "image_path")
     private String imagePath;
 
-    private String url;
-
     @Column(name = "starts_at", nullable = false)
     private OffsetDateTime startsAt;
 
