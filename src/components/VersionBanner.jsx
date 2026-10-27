@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { VERSION_BANNER } from '../config/versionBanner'
+import { fetchBanners } from '../utils/api'
+import { assetPath } from '../config/assetPath'
+import { FALLBACK_BANNERS } from '../config/versionBanner'
 import './VersionBanner.css'
 
 const SLIDE_INTERVAL_MS = 5000
@@ -16,28 +18,51 @@ function useAutoSlide(count) {
   return [index, setIndex]
 }
 
+/** 관리자 페이지에서 기간을 정해 등록한 배너 중 지금 노출 중인 것만 받아 슬라이드합니다. */
 export default function VersionBanner() {
-  const { version, images } = VERSION_BANNER
-  const [index, setIndex] = useAutoSlide(images.length)
+  const [banners, setBanners] = useState([])
+  const [index, setIndex] = useAutoSlide(banners.length)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchBanners()
+      .then((result) => !cancelled && setBanners(result.filter((b) => b.imagePath)))
+      // 서버나 DB 조회가 실패하면 public/main/의 로컬 배너를 대신 보여줍니다.
+      .catch(() => !cancelled && setBanners(FALLBACK_BANNERS))
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
     <div className="version-banner">
       <div className="version-banner__image-wrap">
-        {images.length > 0 ? (
+        {banners.length > 0 ? (
           <div className="version-banner__track" style={{ transform: `translateX(-${index * 100}%)` }}>
-            {images.map((src, i) => (
-              <img key={src} className="version-banner__image" src={src} alt={`${version} 버전 배너 ${i + 1}`} />
-            ))}
+            {banners.map((banner) => {
+              const image = (
+                <img className="version-banner__image" src={assetPath(banner.imagePath)} alt={banner.title} />
+              )
+              return banner.url ? (
+                <a key={banner.id} className="version-banner__link" href={banner.url} target="_blank" rel="noreferrer">
+                  {image}
+                </a>
+              ) : (
+                <div key={banner.id} className="version-banner__link">
+                  {image}
+                </div>
+              )
+            })}
           </div>
         ) : (
           <div className="version-banner__image version-banner__image--empty" />
         )}
 
-        {images.length > 1 && (
+        {banners.length > 1 && (
           <div className="version-banner__dots">
-            {images.map((src, i) => (
+            {banners.map((banner, i) => (
               <button
-                key={src}
+                key={banner.id}
                 className={`version-banner__dot ${i === index ? 'version-banner__dot--active' : ''}`}
                 onClick={() => setIndex(i)}
                 aria-label={`${i + 1}번째 배너`}

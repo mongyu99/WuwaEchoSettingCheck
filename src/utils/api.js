@@ -60,3 +60,8 @@ export function fetchCatalog() {
 export function fetchEvents() {
   return apiFetch('/api/events')
 }
+
+/** 지금 노출 기간 안에 있는 메인 배너 목록. */
+export function fetchBanners() {
+  return apiFetch('/api/banners')
+}
