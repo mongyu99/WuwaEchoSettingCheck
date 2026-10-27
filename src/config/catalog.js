@@ -42,6 +42,7 @@ export async function loadCatalog() {
     rarity: c.rarity,
     element: c.element,
     weaponType: c.weapon_type ?? '',
+    upcoming: c.status === 'UPCOMING',
     image: c.image_path ? assetPath(c.image_path) : null,
   }))
 

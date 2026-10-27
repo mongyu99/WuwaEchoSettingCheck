@@ -1,5 +1,3 @@
-import { assetPath } from './assetPath'
-
 const DAY_MS = 24 * 60 * 60 * 1000
 
 function addDays(isoDateTime, days) {
@@ -9,12 +7,14 @@ function addDays(isoDateTime, days) {
 const STARTS_AT = '2026-09-30T10:00:00+09:00'
 const PASS_DURATION_DAYS = 41
 
-// 메인 배너 이미지들입니다(public/main/). raw-banners/에 넣고 npm run prepare-banners로
-// 변환한 뒤, 여기 images 배열에 경로를 추가하면 자동으로 슬라이드에 섞여 넘어갑니다.
-export const VERSION_BANNER = {
-  version: '3.6',
-  title: '메인 배너',
-  images: [assetPath('main/3.7.webp')],
-  startsAt: STARTS_AT,
-  endsAt: addDays(STARTS_AT, PASS_DURATION_DAYS),
-}
+// 메인 배너와 버전 타이머는 관리자 페이지에서 등록한 배너의 기간(/api/banners)을 씁니다.
+// 아래는 그 조회가 실패했을 때만 쓰는 로컬 대체 배너(public/main/)와 기간입니다.
+export const FALLBACK_BANNERS = [
+  {
+    id: 'fallback',
+    title: '메인 배너',
+    imagePath: 'main/3.7.webp',
+    startsAt: STARTS_AT,
+    endsAt: addDays(STARTS_AT, PASS_DURATION_DAYS),
+  },
+]

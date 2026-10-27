@@ -34,6 +34,8 @@ class SecurityConfigTest {
     void publicEndpointsDoNotNeedLogin() throws Exception {
         mockMvc.perform(get("/api/patch-notes")).andExpect(status().isOk());
         mockMvc.perform(get("/api/events")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/banners")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/pickups")).andExpect(status().isOk());
     }
 
     @Test
