@@ -19,13 +19,12 @@ public class PatchNoteController {
 
     @GetMapping
     public PatchNotePageResponse list(
-            @RequestParam(defaultValue = "") String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         int cappedSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
         int safePage = Math.max(page, 0);
-        Page<PatchNote> result = repository.findByTitleContainingIgnoreCaseOrderByPublishedDateDescIdDesc(
-                query, PageRequest.of(safePage, cappedSize));
+        Page<PatchNote> result = repository.findByStatusOrderByPublishedDateDescIdDesc(
+                "ACTIVE", PageRequest.of(safePage, cappedSize));
         return PatchNotePageResponse.from(result);
     }
 }

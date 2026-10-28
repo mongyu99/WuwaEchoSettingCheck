@@ -17,6 +17,19 @@
   --region-main: #e8c547;
   --region-sub: #f97066;
 
+  /* 명조 인게임 UI 토큰(다크: 밤하늘 + 어두운 유리 패널) */
+  --ww-panel: rgba(14, 22, 36, 0.72);
+  --ww-panel-border: rgba(255, 255, 255, 0.08);
+  --ww-row: rgba(255, 255, 255, 0.04);
+  --ww-row-hover: rgba(255, 255, 255, 0.09);
+  --ww-ink: #eef1f6;
+  --ww-muted: rgba(238, 241, 246, 0.6);
+  --ww-gold: #d9b56c;
+  --ww-gold-soft: rgba(217, 181, 108, 0.35);
+  --ww-red: #e0424f;
+  --ww-pill: rgba(0, 0, 0, 0.45);
+  --ww-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+
   /* Layout */
   --top-nav-height: 56px;
 
@@ -42,6 +55,18 @@
   --region-name: #c96e1f;
   --region-main: #b8940e;
   --region-sub: #d1453b;
+
+  /* 명조 인게임 UI 토큰(라이트: 활약도 화면의 밝은 하늘 + 회백색 패널) */
+  --ww-panel: rgba(232, 237, 242, 0.88);
+  --ww-panel-border: rgba(27, 34, 48, 0.08);
+  --ww-row: rgba(255, 255, 255, 0.7);
+  --ww-row-hover: #fff;
+  --ww-ink: #1b2230;
+  --ww-muted: #5d6676;
+  --ww-gold: #b8913f;
+  --ww-gold-soft: rgba(184, 145, 63, 0.4);
+  --ww-pill: rgba(21, 27, 38, 0.85);
+  --ww-shadow: 0 10px 30px rgba(40, 60, 90, 0.15);
 }
 
 * {
@@ -65,13 +90,25 @@ html::-webkit-scrollbar {
 
 body {
   margin: 0;
-  background: var(--bg-void);
-  background-image:
-    radial-gradient(circle at 15% 0%, rgba(110, 231, 249, 0.08), transparent 45%),
-    radial-gradient(circle at 85% 20%, rgba(167, 139, 250, 0.08), transparent 40%);
+  /* 다크는 밤하늘, 라이트는 활약도 화면의 밝은 구름 하늘. */
+  background:
+    radial-gradient(ellipse at 70% 0%, rgba(110, 160, 200, 0.18), transparent 55%),
+    radial-gradient(ellipse at 15% 100%, rgba(150, 190, 220, 0.2), transparent 60%),
+    linear-gradient(180deg, #0a1424 0%, #13243b 55%, #2a4a66 100%);
+  background-color: #0a1424;
+  background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+}
+
+:root[data-theme='light'] body {
+  background:
+    radial-gradient(ellipse at 80% 0%, rgba(255, 255, 255, 0.9), transparent 55%),
+    radial-gradient(ellipse at 10% 90%, rgba(255, 255, 255, 0.7), transparent 60%),
+    linear-gradient(180deg, #b9cad8 0%, #d6e0e8 50%, #eef2f5 100%);
+  background-color: #d6e0e8;
+  background-attachment: fixed;
 }
 
 button {

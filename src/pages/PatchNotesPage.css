@@ -4,64 +4,91 @@
   margin: 8px 0 20px;
 }
 
-.patch-notes-page__search {
-  display: block;
-  width: 100%;
-  max-width: 320px;
-  background: var(--bg-surface-raised);
-  border: 1px solid var(--border-hairline);
-  border-radius: 8px;
-  padding: 10px 12px;
-  color: var(--text-primary);
-  font-size: 14px;
-  margin-bottom: 20px;
-}
-
-.patch-notes-page__search:focus-visible {
-  border-color: var(--accent-wave);
-}
-
+/* 인게임 활약도 목록처럼 한 줄씩 떨어진 카드. 펼친 글은 위쪽 금색 선 + 본문. */
 .patch-notes-page__list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-hairline);
-  border-radius: 16px;
-  padding: 8px;
+  gap: 8px;
+  max-width: 820px;
 }
 
 .patch-notes-page__item {
+  border-radius: 4px;
+  border: 1px solid var(--ww-panel-border);
+  background: var(--ww-panel);
+  color: var(--ww-ink);
+  box-shadow: var(--ww-shadow);
+  backdrop-filter: blur(8px);
+  transition: border-color 0.2s ease;
+}
+
+.patch-notes-page__item--open {
+  border-top-color: var(--ww-gold);
+}
+
+.patch-notes-page__summary {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  font-size: 14px;
-  padding: 12px 16px;
-  border-radius: 10px;
+  width: 100%;
+  padding: 14px 18px;
+  border: none;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
-.patch-notes-page__item:hover {
-  background: var(--bg-surface-raised);
+.patch-notes-page__summary:hover {
+  background: var(--ww-row-hover);
 }
 
-.patch-notes-page__item a {
-  color: var(--text-primary);
-  text-decoration: none;
+/* 버전 앞 금색 마름모(열린 글은 채워짐). */
+.patch-notes-page__version {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
 }
 
-.patch-notes-page__item a:hover {
-  color: var(--accent-wave);
+.patch-notes-page__version::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--ww-gold);
+  transform: rotate(45deg);
+  transition: background 0.2s ease;
+}
+
+.patch-notes-page__item--open .patch-notes-page__version::before {
+  background: var(--ww-gold);
 }
 
 .patch-notes-page__date {
   font-family: var(--font-mono);
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--ww-muted);
   flex-shrink: 0;
+}
+
+/* 본문: 관리자 페이지에서 쓴 줄바꿈을 그대로 보여줍니다. */
+.patch-notes-page__content {
+  margin: 0 18px;
+  padding: 14px 0 18px;
+  border-top: 1px solid var(--ww-panel-border);
+  font-size: 14px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 .patch-notes-page__pager {
@@ -70,23 +97,25 @@
   justify-content: center;
   gap: 16px;
   margin-top: 16px;
+  max-width: 820px;
 }
 
 .patch-notes-page__pager-btn {
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 13px;
-  padding: 6px 16px;
-  border-radius: 8px;
-  border: 1px solid var(--border-hairline);
-  background: var(--bg-surface-raised);
-  color: var(--text-primary);
+  padding: 7px 20px;
+  border-radius: 999px;
+  border: none;
+  background: var(--ww-pill);
+  color: #fff;
   cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .patch-notes-page__pager-btn:hover:not(:disabled) {
-  border-color: var(--accent-wave);
-  color: var(--accent-wave);
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px var(--ww-gold);
 }
 
 .patch-notes-page__pager-btn:disabled {
@@ -97,5 +126,13 @@
 .patch-notes-page__pager-status {
   font-family: var(--font-mono);
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--ww-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .patch-notes-page__item,
+  .patch-notes-page__summary,
+  .patch-notes-page__pager-btn {
+    transition: none;
+  }
 }

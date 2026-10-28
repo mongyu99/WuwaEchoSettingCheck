@@ -1,4 +1,4 @@
-/* 넓은 화면은 본문 + 오른쪽 소식 두 칸, 좁은 화면은 한 칸으로 쌓습니다. */
+/* 홈 화면: 명조 인게임 단말기 화면 배치. 색(--ww-*)과 배경은 index.css 공통 토큰을 씁니다. */
 .home-page {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 380px;
@@ -6,7 +6,8 @@
   align-items: start;
 }
 
-.home-page__main {
+.home-page__main,
+.home-page__side {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -18,52 +19,115 @@
   top: calc(var(--top-nav-height) + 16px);
 }
 
+/* 패널: 유리판 + 위쪽 금색 가는 선 + 왼쪽 위·오른쪽 아래 모서리 장식. */
 .home-page__panel {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-hairline);
-  border-radius: 16px;
-  padding: 20px 24px;
+  position: relative;
+  padding: 18px 22px 20px;
+  border-radius: 6px;
+  border: 1px solid var(--ww-panel-border);
+  border-top: 1px solid var(--ww-gold-soft);
+  background: var(--ww-panel);
+  color: var(--ww-ink);
+  box-shadow: var(--ww-shadow);
+  backdrop-filter: blur(8px);
 }
 
+.home-page__panel::before,
+.home-page__panel::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+
+.home-page__panel::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid var(--ww-gold);
+  border-left: 2px solid var(--ww-gold);
+  border-top-left-radius: 6px;
+}
+
+.home-page__panel::after {
+  right: -1px;
+  bottom: -1px;
+  border-bottom: 2px solid var(--ww-gold);
+  border-right: 2px solid var(--ww-gold);
+  border-bottom-right-radius: 6px;
+}
+
+/* 패널 제목: 앞에 금색 마름모, 뒤로 가는 선이 이어지는 인게임 섹션 헤더. */
 .home-page__panel-title {
-  font-family: var(--font-display);
-  font-size: 16px;
-  margin: 0 0 12px;
-}
-
-.home-page__panel-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.04em;
 }
 
-.home-page__panel-head .home-page__panel-title {
-  margin: 0;
+.home-page__panel-title::before {
+  content: '';
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--ww-gold);
+  transform: rotate(45deg);
 }
 
+.home-page__panel-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--ww-gold-soft), transparent);
+}
+
+/* 공식 소식: 단말기 메뉴처럼 아이콘 + 이름 타일 격자. */
 .home-page__links {
-  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
 .home-page__link {
-  display: inline-flex;
-  border-radius: 6px;
-  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: var(--ww-row);
+  color: var(--ww-ink);
+  text-decoration: none;
+  font-size: 13px;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
 .home-page__link:hover {
-  transform: translateY(-1px);
+  background: var(--ww-row-hover);
+  border-color: var(--ww-gold-soft);
+  transform: translateY(-2px);
 }
 
 .home-page__link:focus-visible {
-  outline: 2px solid var(--accent-wave);
+  outline: 2px solid var(--ww-gold);
   outline-offset: 2px;
+}
+
+.home-page__link-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .home-page__link-mark {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: 26px;
@@ -76,9 +140,10 @@
   line-height: 1;
 }
 
-/* 공식 홈페이지: 파비콘 이미지를 다른 버튼과 같은 크기·모서리로. */
+/* 공식 홈페이지: 파비콘 이미지를 다른 아이콘과 같은 크기·모서리로. */
 .home-page__link-icon {
   display: block;
+  flex-shrink: 0;
   width: 26px;
   height: 26px;
   border-radius: 6px;
@@ -117,5 +182,11 @@
 
   .home-page__side {
     position: static;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-page__link {
+    transition: none;
   }
 }

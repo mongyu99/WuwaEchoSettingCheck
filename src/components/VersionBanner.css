@@ -1,14 +1,44 @@
+/* 홈 패널과 같은 인게임 프레임: 위쪽 금색 선 + 왼쪽 위·오른쪽 아래 금색 모서리. */
 .version-banner {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-hairline);
-  border-radius: 16px;
-  overflow: hidden;
+  position: relative;
+  background: var(--ww-panel, var(--bg-surface));
+  border: 1px solid var(--ww-panel-border, var(--border-hairline));
+  border-top-color: var(--ww-gold-soft, var(--border-hairline));
+  border-radius: 6px;
+  box-shadow: var(--ww-shadow, none);
+}
+
+.version-banner::before,
+.version-banner::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+}
+
+.version-banner::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid var(--ww-gold, var(--accent-wave));
+  border-left: 2px solid var(--ww-gold, var(--accent-wave));
+  border-top-left-radius: 6px;
+}
+
+.version-banner::after {
+  right: -1px;
+  bottom: -1px;
+  border-bottom: 2px solid var(--ww-gold, var(--accent-wave));
+  border-right: 2px solid var(--ww-gold, var(--accent-wave));
+  border-bottom-right-radius: 6px;
 }
 
 .version-banner__image-wrap {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
+  border-radius: 5px;
   background: var(--bg-surface-raised);
   overflow: hidden;
 }
@@ -53,7 +83,7 @@
 }
 
 .version-banner__dot--active {
-  background: var(--accent-wave);
+  background: var(--ww-gold, var(--accent-wave));
 }
 
 @media (prefers-reduced-motion: reduce) {

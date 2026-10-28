@@ -5,6 +5,7 @@ export const LEGAL_NOTICES = {
     title: '저작권 안내',
     body: [
       '본 사이트는 Guangzhou Kuro Technology Co. Ltd.와 제휴 관계가 없으며 승인을 받지 않았습니다.',
+      '이미지: © KURO GAMES. All Rights Reserved.',
       '이 사이트는 수익을 창출하지 않습니다.',
     ],
   },

@@ -48,8 +48,8 @@ export function saveCloudState(dataJson) {
   return apiFetch('/api/state', { method: 'PUT', body: JSON.stringify({ data: dataJson }) })
 }
 
-export function fetchPatchNotes({ query = '', page = 0, size = 10 } = {}) {
-  const params = new URLSearchParams({ query, page: String(page), size: String(size) })
+export function fetchPatchNotes({ page = 0, size = 10 } = {}) {
+  const params = new URLSearchParams({ page: String(page), size: String(size) })
   return apiFetch(`/api/patch-notes?${params}`)
 }
 
