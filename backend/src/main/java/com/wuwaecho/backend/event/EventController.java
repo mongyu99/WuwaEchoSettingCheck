@@ -15,6 +15,6 @@ public class EventController {
 
     @GetMapping
     public List<EventResponse> list() {
-        return repository.findAllByOrderByStartsAtAsc().stream().map(EventResponse::from).toList();
+        return repository.findByStatusOrderByStartsAtAsc("ACTIVE").stream().map(EventResponse::from).toList();
     }
 }

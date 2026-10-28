@@ -3,7 +3,7 @@ package com.wuwaecho.backend.event;
 import java.time.OffsetDateTime;
 
 public record EventResponse(
-        Long id, String title, String image, OffsetDateTime startsAt, OffsetDateTime endsAt, String url) {
+        String id, String title, String image, OffsetDateTime startsAt, OffsetDateTime endsAt, String url) {
 
     static EventResponse from(EventItem entity) {
         return new EventResponse(

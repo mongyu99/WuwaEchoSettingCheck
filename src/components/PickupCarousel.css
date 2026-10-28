@@ -1,8 +1,8 @@
 .pickup {
   position: relative;
   overflow: hidden;
-  border-radius: 12px;
-  background: var(--bg-surface-raised);
+  border-radius: 4px;
+  background: var(--ww-row, var(--bg-surface-raised));
 }
 
 .pickup__track {
@@ -41,13 +41,13 @@
 }
 
 .pickup__dot--active {
-  background: #fff;
+  background: var(--ww-gold, #fff);
 }
 
 .pickup__empty {
   margin: 0;
   font-size: 14px;
-  color: var(--text-muted);
+  color: var(--ww-muted, var(--text-muted));
 }
 
 @media (prefers-reduced-motion: reduce) {

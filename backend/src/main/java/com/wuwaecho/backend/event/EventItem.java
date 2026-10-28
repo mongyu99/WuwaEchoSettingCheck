@@ -2,8 +2,6 @@ package com.wuwaecho.backend.event;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
@@ -22,9 +20,9 @@ import lombok.Setter;
 @Builder
 public class EventItem {
 
+    /** 관리자 페이지가 등록 시각으로 만드는 글자 ID(event_1761550000000). */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
     @Column(nullable = false, length = 255)
     private String title;
@@ -40,4 +38,7 @@ public class EventItem {
 
     @Column(length = 2048)
     private String url;
+
+    @Column(nullable = false, length = 10)
+    private String status;
 }

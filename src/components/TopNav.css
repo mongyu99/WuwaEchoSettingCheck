@@ -8,19 +8,33 @@
   gap: 12px;
   min-height: var(--top-nav-height);
   padding: 0 32px;
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border-hairline);
+  /* 인게임 상단바처럼 반투명 어두운 유리 + 아래쪽 금색 가는 선. */
+  background: var(--ww-panel);
+  border-bottom: 1px solid var(--ww-gold-soft);
+  backdrop-filter: blur(10px);
 }
 
 .top-nav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   font-family: var(--font-display);
   font-size: 15px;
   letter-spacing: 0.04em;
-  color: var(--text-primary);
+  color: var(--ww-ink);
   background: none;
   border: none;
   padding: 0;
   cursor: pointer;
+}
+
+/* 로고 앞 금색 마름모(패널 제목과 같은 장식). */
+.top-nav__brand::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid var(--ww-gold);
+  transform: rotate(45deg);
 }
 
 .top-nav__right {
@@ -39,27 +53,41 @@
 }
 
 .top-nav__link {
+  position: relative;
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-muted);
+  color: var(--ww-muted);
   background: none;
   border: none;
-  border-radius: 8px;
-  padding: 8px 12px;
+  border-radius: 4px;
+  padding: 8px 14px;
   cursor: pointer;
   white-space: nowrap;
   transition: color 0.2s ease, background 0.2s ease;
 }
 
 .top-nav__link:hover {
-  color: var(--text-primary);
-  background: var(--bg-surface-raised);
+  color: var(--ww-ink);
+  background: var(--ww-row-hover);
 }
 
+/* 지금 페이지: 글자가 밝아지고 아래에 빛나는 금색 선(인게임 탭 선택 표시). */
 .top-nav__link--active {
-  color: var(--accent-wave);
-  background: var(--bg-surface-raised);
+  color: var(--ww-ink);
+  font-weight: 700;
+  background: linear-gradient(0deg, var(--ww-gold-soft), transparent 70%);
+}
+
+.top-nav__link--active::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--ww-gold);
+  box-shadow: 0 0 8px var(--ww-gold);
 }
 
 .theme-switch {
@@ -69,8 +97,8 @@
   height: 28px;
   padding: 0 6px;
   border-radius: 999px;
-  border: 1px solid var(--border-hairline);
-  background: var(--bg-surface-raised);
+  border: 1px solid var(--ww-panel-border);
+  background: var(--ww-row);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -79,7 +107,7 @@
 }
 
 .theme-switch:hover {
-  border-color: var(--accent-wave);
+  border-color: var(--ww-gold);
 }
 
 .theme-switch__icon {
@@ -112,7 +140,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--accent-wave);
+  background: var(--ww-gold);
   transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

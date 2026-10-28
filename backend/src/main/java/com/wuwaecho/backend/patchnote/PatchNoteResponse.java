@@ -2,9 +2,10 @@ package com.wuwaecho.backend.patchnote;
 
 import java.time.LocalDate;
 
-public record PatchNoteResponse(Long id, String title, LocalDate date, String url) {
+public record PatchNoteResponse(String id, String version, LocalDate date, String content) {
 
     static PatchNoteResponse from(PatchNote entity) {
-        return new PatchNoteResponse(entity.getId(), entity.getTitle(), entity.getPublishedDate(), entity.getUrl());
+        return new PatchNoteResponse(
+                entity.getId(), entity.getVersion(), entity.getPublishedDate(), entity.getContent());
     }
 }

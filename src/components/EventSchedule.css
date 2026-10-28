@@ -1,9 +1,11 @@
+/* 인게임 활약도 목록처럼: 한 줄씩 떨어진 카드, 마우스를 올리면 밝아지고 왼쪽에 금색 막대. */
 .event-schedule__list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
+  gap: 6px;
 }
 
 .event-schedule__item {
@@ -11,30 +13,42 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
-  padding: 10px 4px;
-  border-bottom: 1px solid var(--border-hairline);
-  color: var(--text-primary);
+  padding: 11px 14px;
+  border-radius: 4px;
+  background: var(--ww-row, var(--bg-surface-raised));
+  color: var(--ww-ink, var(--text-primary));
   text-decoration: none;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-li:last-child > .event-schedule__item {
-  border-bottom: none;
+a.event-schedule__item:hover {
+  background: var(--ww-row-hover, var(--bg-surface-raised));
+  box-shadow: inset 3px 0 0 var(--ww-gold, var(--accent-wave));
+  transform: translateX(2px);
 }
 
-a.event-schedule__item:hover .event-schedule__title {
-  color: var(--accent-wave);
-}
-
+/* 남은 날짜: 어두운 알약 + 앞에 빨간 마름모(인게임 알림 표시). */
 .event-schedule__badge {
-  min-width: 44px;
-  padding: 3px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 56px;
+  padding: 3px 10px 3px 8px;
   border-radius: 999px;
-  background: var(--bg-surface-raised);
-  color: var(--accent-wave);
+  background: var(--ww-pill, var(--bg-surface));
+  color: #fff;
   font-family: var(--font-mono, monospace);
   font-size: 12px;
   font-weight: 700;
-  text-align: center;
+}
+
+.event-schedule__badge::before {
+  content: '';
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  background: var(--ww-red, #e0424f);
+  transform: rotate(45deg);
 }
 
 .event-schedule__title {
@@ -42,17 +56,22 @@ a.event-schedule__item:hover .event-schedule__title {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  transition: color 0.2s ease;
 }
 
 .event-schedule__date {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--ww-muted, var(--text-muted));
   white-space: nowrap;
 }
 
 .event-schedule__empty {
   margin: 0;
   font-size: 14px;
-  color: var(--text-muted);
+  color: var(--ww-muted, var(--text-muted));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-schedule__item {
+    transition: none;
+  }
 }

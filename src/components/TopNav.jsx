@@ -5,9 +5,11 @@ import './TopNav.css'
 const MENU = [
   { page: 'home', label: '홈', handler: 'onGoHome' },
   { page: 'characters', label: '캐릭터 빌드 체크', handler: 'onGoToCharacterList' },
-  { page: 'patchnotes', label: '패치노트', handler: 'onGoToPatchNotes' },
   { page: 'events', label: '이벤트 캘린더', handler: 'onGoToEventCalendar' },
 ]
+
+// 사이트 자체의 업데이트 기록이라 게임 메뉴와 떨어뜨려 오른쪽 끝(테마 스위치 앞)에 둡니다.
+const PATCH_NOTES = { page: 'patchnotes', label: '패치노트', handler: 'onGoToPatchNotes' }
 
 export default function TopNav({ currentPage, theme, onToggleTheme, characterData, onLoadCloudData, ...handlers }) {
   const isDark = theme === 'dark'
@@ -30,6 +32,13 @@ export default function TopNav({ currentPage, theme, onToggleTheme, characterDat
         ))}
       </nav>
       <div className="top-nav__right">
+        <button
+          className={`top-nav__link ${currentPage === PATCH_NOTES.page ? 'top-nav__link--active' : ''}`}
+          aria-current={currentPage === PATCH_NOTES.page ? 'page' : undefined}
+          onClick={handlers[PATCH_NOTES.handler]}
+        >
+          {PATCH_NOTES.label}
+        </button>
         <button
           className={`theme-switch ${isDark ? 'theme-switch--dark' : 'theme-switch--light'}`}
           onClick={onToggleTheme}
