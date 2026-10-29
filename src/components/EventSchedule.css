@@ -51,11 +51,9 @@ a.event-schedule__item:hover {
   transform: rotate(45deg);
 }
 
+/* 긴 제목은 MarqueeText가 흘려서 보여줍니다. */
 .event-schedule__title {
   font-size: 14px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .event-schedule__date {

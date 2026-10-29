@@ -1,12 +1,16 @@
-/* 인게임 활약도 화면의 '◷ 8시간 51분 후 새로고침'처럼, 시계 아이콘이 붙은 얇은 알약 두 개. */
+/*
+ * 인게임 활약도 화면의 '◷ 8시간 51분 후 새로고침'처럼, 시계 아이콘이 붙은 얇은 알약 두 개.
+ * 두 알약을 위아래로 쌓고 폭을 긴 쪽에 맞춥니다. 오른쪽은 비워 둡니다(다른 내용 자리).
+ */
 .version-timer {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: max-content;
+  justify-content: start;
   gap: 8px;
 }
 
 .version-timer__row {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
   padding: 7px 16px 7px 12px;
@@ -37,4 +41,5 @@
   color: var(--ww-ink, var(--text-primary));
   font-family: var(--font-mono);
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }

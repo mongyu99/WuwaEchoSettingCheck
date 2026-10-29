@@ -34,9 +34,10 @@
   --top-nav-height: 56px;
 
   /* Type */
-  --font-display: 'Space Grotesk', sans-serif;
-  --font-body: 'Inter', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  /* 영문·숫자는 각 글꼴로, 한글은 모두 Pretendard로 맞춥니다(index.html에서 불러옴). */
+  --font-display: 'Space Grotesk', 'Pretendard Variable', Pretendard, sans-serif;
+  --font-body: 'Inter', 'Pretendard Variable', Pretendard, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Pretendard Variable', Pretendard, monospace;
 }
 
 :root[data-theme='light'] {
