@@ -159,3 +159,47 @@
 .char-card__sep {
   color: var(--text-muted);
 }
+
+/* 모바일: 세로로 긴 카드 대신 사진 윗부분(얼굴)만 보이는 작은 정사각형 카드를 3열로 보여줍니다. */
+@media (max-width: 600px) {
+  .char-select__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .char-card {
+    gap: 6px;
+    padding: 5px;
+    border-radius: 10px;
+  }
+
+  .char-card__photo {
+    aspect-ratio: 1;
+    object-position: center top;
+    border-radius: 7px;
+  }
+
+  .char-card__photo--fallback {
+    font-size: 20px;
+  }
+
+  .char-card__rarity {
+    top: 4px;
+    left: 4px;
+    font-size: 9px;
+    padding: 1px 6px;
+  }
+
+  .char-card__upcoming {
+    bottom: 6px;
+    padding: 2px 8px;
+    font-size: 10px;
+  }
+
+  .char-card__caption {
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

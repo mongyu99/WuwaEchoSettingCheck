@@ -1,0 +1,128 @@
+/* PC: 감싼 요소가 없는 것처럼 동작합니다. */
+.mobile-section,
+.mobile-section__body,
+.mobile-section__inner,
+.mobile-section__content {
+  display: contents;
+}
+
+.mobile-section__toggle {
+  display: none;
+}
+
+/* 모바일: 제목 줄(누르면 펼침/접힘) + 내용 */
+@media (max-width: 700px) {
+  .mobile-section {
+    display: block;
+  }
+
+  .mobile-section--card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-hairline);
+    border-radius: 14px;
+    padding: 0 14px;
+  }
+
+  .mobile-section__toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 0;
+    border: none;
+    background: none;
+    color: var(--text-primary);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .mobile-section__title {
+    flex: 0 0 auto;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .mobile-section__summary {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  /* 오른쪽 화살표: 접힘 ▾ / 펼침 ▴ */
+  .mobile-section__chevron {
+    flex: 0 0 auto;
+    margin-left: auto;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--text-muted);
+    border-bottom: 2px solid var(--text-muted);
+    transform: translateY(-2px) rotate(45deg);
+    transition: transform 0.2s ease;
+  }
+
+  .mobile-section--open .mobile-section__chevron {
+    transform: translateY(2px) rotate(-135deg);
+  }
+
+  /*
+   * 펼침/접힘: 높이를 0fr ↔ 1fr 로 바꿔서 실제 내용 높이까지 부드럽게 늘어나고 줄어듭니다.
+   * 접힌 동안은 visibility: hidden 이라 안쪽 버튼에 탭 키로 들어가지 않습니다(닫힐 때는 애니메이션이 끝난 뒤 숨김).
+   */
+  .mobile-section__body {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      grid-template-rows 0.25s ease,
+      opacity 0.2s ease,
+      visibility 0s linear 0.25s;
+  }
+
+  .mobile-section--open .mobile-section__body {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    visibility: visible;
+    transition:
+      grid-template-rows 0.25s ease,
+      opacity 0.25s ease 0.05s,
+      visibility 0s;
+  }
+
+  .mobile-section__inner {
+    display: block;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .mobile-section__content {
+    display: block;
+    padding-bottom: 12px;
+  }
+
+  .mobile-section .mobile-section__heading {
+    display: none;
+  }
+
+  /* 한 카드 안에 섹션이 여러 개면 구분선을 넣습니다. */
+  .mobile-section + .mobile-section {
+    border-top: 1px solid var(--border-hairline);
+  }
+
+  .mobile-section--card + .mobile-section--card {
+    border-top: 1px solid var(--border-hairline);
+  }
+}
+
+@media (max-width: 700px) and (prefers-reduced-motion: reduce) {
+  .mobile-section__chevron,
+  .mobile-section__body,
+  .mobile-section--open .mobile-section__body {
+    transition: none;
+  }
+}

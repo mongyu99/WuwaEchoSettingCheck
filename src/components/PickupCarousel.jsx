@@ -5,6 +5,8 @@ import { fetchPickups } from '../utils/api'
 import './PickupCarousel.css'
 
 const SLIDE_INTERVAL_MS = 4000
+// PickupCarousel.css .pickup__track 의 transition 시간(0.6s)과 같아야 합니다.
+const TRANSITION_MS = 600
 
 /**
  * 픽업 이미지를 끝없이 한 방향으로 넘기는 슬라이드입니다. 마지막 다음에 첫 장의 복제본을 붙여 두고,
@@ -38,18 +40,28 @@ export default function PickupCarousel() {
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined
     const timer = setInterval(() => {
       setAnimate(true)
-      setIndex((i) => i + 1)
+      // 복제본(count)보다 더 가면 빈 칸이 보이므로 복제본에서 멈춥니다. 되돌리는 건 아래 효과가 맡습니다.
+      setIndex((i) => Math.min(i + 1, count))
     }, SLIDE_INTERVAL_MS)
     return () => clearInterval(timer)
   }, [count, paused])
 
   // 복제본(index === count)에 도착하면 애니메이션을 끄고 0으로 되돌린 뒤, 다음 프레임에 다시 켭니다.
-  const handleTransitionEnd = () => {
-    if (index === count) {
-      setAnimate(false)
-      setIndex(0)
-    }
+  const resetToFirst = () => {
+    setAnimate(false)
+    setIndex(0)
   }
+
+  const handleTransitionEnd = () => {
+    if (index >= count) resetToFirst()
+  }
+
+  // 백그라운드 탭에서는 transitionend가 오지 않을 수 있어서, 애니메이션 시간이 지나면 직접 되돌립니다.
+  useEffect(() => {
+    if (count <= 1 || index < count) return undefined
+    const timer = setTimeout(resetToFirst, TRANSITION_MS + 100)
+    return () => clearTimeout(timer)
+  }, [index, count])
 
   useEffect(() => {
     if (animate) return undefined

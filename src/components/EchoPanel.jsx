@@ -139,7 +139,7 @@ export default function EchoPanel({
                   onChange={(e) => updateSubValue(s.id, e.target.value)}
                   disabled={!s.label}
                 >
-                  <option value="">수치 선택</option>
+                  <option value="">수치</option>
                   {s.label && SUB_STAT_OPTIONS[s.label].map((num) => {
                     const text = formatSubStatValue(s.label, num)
                     return <option key={text} value={text}>{text}</option>

@@ -10,6 +10,29 @@
   gap: 8px;
 }
 
+/* 초기화(지우는 동작)는 빨간색, 캐릭터 선택(돌아가기)은 강조색으로 구분합니다. */
+.stats-page__reset-btn {
+  color: var(--score-low);
+  border-color: color-mix(in srgb, var(--score-low) 55%, transparent);
+}
+
+.stats-page__reset-btn:hover {
+  color: #fff;
+  background: var(--score-low);
+  border-color: var(--score-low);
+}
+
+.stats-page__back-btn {
+  color: var(--accent-wave);
+  border-color: color-mix(in srgb, var(--accent-wave) 55%, transparent);
+}
+
+.stats-page__back-btn:hover {
+  color: #06131a;
+  background: var(--accent-wave);
+  border-color: var(--accent-wave);
+}
+
 /* 목표 계산기 칸 맨 위, 투명 헤더 스페이서보다 앞에 옵니다(초기화/캐릭터 선택으로 버튼). */
 .stats-page__optimizer-wrap > .stats-page__head-actions {
   justify-content: flex-end;
@@ -279,8 +302,10 @@
   margin: 10px 0 2px;
 }
 
+/* 무기/에코 세트/메인 에코는 각각 MobileSection(PC에서는 display: contents)으로 감싸져 있어서
+   첫 번째 섹션의 제목만 위 여백을 없앱니다. */
 .stats-page__char h4:first-of-type,
-.stats-page__loadout h4:first-child {
+.stats-page__loadout > .mobile-section:first-child h4 {
   margin-top: 0;
 }
 
@@ -908,5 +933,174 @@
 @media (max-width: 480px) {
   .optimizer__grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/*
+ * 모바일: 위에서 아래로 한 줄씩 쌓고, 섹션마다 제목을 눌러 펼치고 접습니다(MobileSection).
+ * 카드 안 위아래 여백은 섹션 제목 줄이 맡아서, 카드에는 좌우 여백만 둡니다.
+ */
+@media (max-width: 700px) {
+  .stats-page__head h2 {
+    font-size: 18px;
+  }
+
+  .stats-page__head--spacer {
+    display: none;
+  }
+
+  .stats-page__columns {
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .stats-page__char-loadout {
+    gap: 12px;
+  }
+
+  .stats-page__loadout,
+  .stats-page__aggregate-col,
+  .stats-page__optimizer-col {
+    padding: 0 14px;
+    border-radius: 14px;
+  }
+
+  .stats-page__optimizer-col {
+    overflow: visible;
+  }
+
+  /* PC용 flex: 1 1 240px 이 세로로 쌓이면 최소 높이 240px가 되어, 섹션을 다 접어도 카드가 안 줄어듭니다.
+     모바일에서는 내용 높이만큼만 차지합니다. */
+  .stats-page__char,
+  .stats-page__loadout {
+    flex: 0 0 auto;
+  }
+
+  /* 캐릭터: 사진(얼굴 쪽 정사각형)을 왼쪽에, 이름·속성·유효 옵션을 오른쪽에 */
+  /* 이름과 속성은 한 줄에, "유효 옵션" 글자는 빼고 알약만 보여줍니다. */
+  .stats-page__char {
+    display: grid;
+    grid-template-columns: 56px auto minmax(0, 1fr);
+    column-gap: 10px;
+    row-gap: 6px;
+    align-items: center;
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .stats-page__char > * {
+    grid-column: 2 / -1;
+  }
+
+  .stats-page__char .stats-page__char-photo {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: start;
+    aspect-ratio: 1;
+    object-position: center top;
+    border-radius: 8px;
+  }
+
+  .stats-page__char h3 {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+    font-size: 15px;
+  }
+
+  .stats-page__char-element {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: start;
+    font-size: 11px;
+  }
+
+  .stats-page__char h4 {
+    display: none;
+  }
+
+  .stats-page__valid-list {
+    grid-row: 2;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+    font-size: 10px;
+  }
+
+  .stats-page__valid-list li {
+    padding: 2px 7px;
+    border-radius: 999px;
+  }
+
+  .echo-editor-wrap {
+    margin-top: 12px;
+  }
+
+  /* 에코 상세 설정은 섹션 자체가 카드라, 안쪽 두 칸의 카드 테두리는 뺍니다. */
+  .echo-editor {
+    gap: 12px;
+    margin-top: 0;
+  }
+
+  .echo-editor__panel,
+  .echo-editor__scores {
+    padding: 0;
+    border: none;
+    background: none;
+    min-height: 0;
+  }
+
+  /* 에코 1~5 버튼은 한 줄에 5칸으로, 각 버튼은 "에코 1" 아래에 코스트 */
+  .echo-editor__scores .stats-page__chip-list {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .echo-editor__scores .stats-page__chip-card {
+    width: 100%;
+    padding: 8px 2px;
+  }
+
+  .echo-editor__scores .stats-page__chip-head {
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .echo-editor__scores .stats-page__chip-cost {
+    margin-left: 0;
+    padding: 0 5px;
+    font-size: 9px;
+  }
+
+  .echo-editor__scores .stats-page__chip-arrow {
+    display: none;
+  }
+
+  /* 위 선택 버튼에 이미 "에코 N · COST" 가 있어서, 편집 패널 머리의 같은 표시는 뺍니다. */
+  .echo-editor__panel .echo-panel__header {
+    display: none;
+  }
+
+  /*
+   * 초기화 / 캐릭터 선택 버튼: 계산기 카드 아래(화면 맨 아래)로 보내고, 잘못 누르지 않게
+   * 양 끝으로 떨어뜨립니다. 초기화는 확인 창을 한 번 거칩니다(ConfirmDialog).
+   */
+  .stats-page__optimizer-wrap {
+    margin-top: 12px;
+  }
+
+  .stats-page__optimizer-wrap > .stats-page__head-actions {
+    order: 1;
+    justify-content: space-between;
+    margin-top: 28px;
+  }
+
+  .stats-page__optimizer-wrap > .stats-page__head-actions .capture-page__back {
+    padding: 10px 16px;
+    font-size: 14px;
   }
 }

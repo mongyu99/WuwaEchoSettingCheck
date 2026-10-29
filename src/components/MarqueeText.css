@@ -1,0 +1,30 @@
+.marquee {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.marquee__track {
+  display: inline-block;
+}
+
+.marquee__text {
+  display: inline-block;
+}
+
+/* 뒤에 이어 붙는 복사본과의 간격 (MarqueeText.jsx GAP_PX 와 같아야 함) */
+.marquee__copy {
+  margin-left: 48px;
+}
+
+/* 흐르는 애니메이션은 MarqueeText.jsx(Web Animations API)가 만듭니다. 애니메이션을 끈 사람에게는 … 로 자릅니다. */
+@media (prefers-reduced-motion: reduce) {
+  .marquee--scrolling {
+    text-overflow: ellipsis;
+  }
+
+  .marquee__copy {
+    display: none;
+  }
+}

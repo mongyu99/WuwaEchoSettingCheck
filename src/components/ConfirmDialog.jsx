@@ -1,6 +1,8 @@
+import { useScrollLock } from '../utils/useScrollLock'
 import './ConfirmDialog.css'
 
 export default function ConfirmDialog({ open, title, message, confirmLabel = '예', cancelLabel = '아니요', onConfirm, onCancel }) {
+  useScrollLock(open)
   if (!open) return null
 
   return (
