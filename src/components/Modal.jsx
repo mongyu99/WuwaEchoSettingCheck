@@ -1,6 +1,8 @@
+import { useScrollLock } from '../utils/useScrollLock'
 import './Modal.css'
 
 export default function Modal({ open, title, onClose, children }) {
+  useScrollLock(open)
   if (!open) return null
   return (
     <div className="modal" role="dialog" aria-modal="true">

@@ -88,10 +88,11 @@
   font-family: var(--font-body);
 }
 
+/* minmax(0, 1fr): 긴 옵션 이름 때문에 드롭다운이 칸보다 넓어져 오른쪽 입력칸을 밀어내지 않게 합니다. */
 .echo-panel__sub-row,
 .echo-panel__main-row {
   display: grid;
-  grid-template-columns: 1fr 100px 24px;
+  grid-template-columns: minmax(0, 1fr) 100px 24px;
   gap: 8px;
   align-items: center;
 }
@@ -99,6 +100,9 @@
 .echo-panel__sub-row select,
 .echo-panel__main-row select,
 .echo-panel__main-row input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   background: var(--bg-surface-raised);
   border: 1px solid var(--border-hairline);
   border-radius: 6px;
@@ -186,4 +190,23 @@ input.echo-panel__sub-row--incomplete {
 .echo-panel__add:hover {
   color: var(--text-primary);
   border-color: var(--region-sub);
+}
+
+@media (max-width: 700px) {
+  .echo-panel__block {
+    padding-left: 10px;
+  }
+
+  .echo-panel__sub-row,
+  .echo-panel__main-row {
+    grid-template-columns: minmax(0, 1fr) 72px 18px;
+    gap: 6px;
+  }
+
+  .echo-panel__sub-row select,
+  .echo-panel__main-row select,
+  .echo-panel__main-row input {
+    padding: 6px;
+    font-size: 12px;
+  }
 }

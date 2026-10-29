@@ -14,6 +14,7 @@ import { getEchoCost } from '../utils/ocr'
 import { runOptimizerFromGap, OPTIMIZER_CATEGORIES, findReallocationCandidate } from '../utils/optimizer'
 import ConfirmDialog from '../components/ConfirmDialog'
 import EchoPanel from '../components/EchoPanel'
+import MobileSection from '../components/MobileSection'
 import Modal from '../components/Modal'
 import './StatsPage.css'
 
@@ -437,7 +438,7 @@ function OptimizerPanel({
 
   return (
     <div className="optimizer">
-      <h4 className="stats-page__col-title">목표 스탯 계산기 - 베타</h4>
+      <h4 className="stats-page__col-title mobile-section__heading">목표 스탯 계산기 - 베타</h4>
       <p className="uploader__hint optimizer__hint">
         목표를 채우고 "계산하기"를 누르면, 지금 합산 스탯 기준으로 몇이 부족한지, 에코마다 % 채우기·플랫(2순위)
         채우기·낮은 단계 다시 띄우기 중 새 에코가 뜰 확률이 가장 높은 방법을 알려드려요. 수치가 적힌 유효
@@ -620,6 +621,12 @@ export default function StatsPage({
   const [weaponModalOpen, setWeaponModalOpen] = useState(false)
   const [comboModalOpen, setComboModalOpen] = useState(false)
   const [mainEchoModalOpen, setMainEchoModalOpen] = useState(false)
+  // 모바일: 무기/에코 세트/메인 에코 중 하나만 펼칩니다. 처음엔 무기, 다른 걸 누르면 그쪽이 열리고 원래 건 닫힘.
+  const [openLoadout, setOpenLoadout] = useState('weapon')
+  const loadoutSection = (key) => ({
+    open: openLoadout === key,
+    onToggle: () => setOpenLoadout((current) => (current === key ? null : key)),
+  })
   const openWeaponModal = () => setWeaponModalOpen(true)
   const openComboModal = () => setComboModalOpen(true)
   const [selectedEchoIdx, setSelectedEchoIdx] = useState(0)
@@ -787,7 +794,8 @@ export default function StatsPage({
         </aside>
 
         <aside className="stats-page__loadout">
-          <h4>사용 무기</h4>
+          <MobileSection title="사용 무기" summary={weaponData?.name} {...loadoutSection('weapon')}>
+          <h4 className="mobile-section__heading">사용 무기</h4>
           {weaponData ? (
             <div className="stats-page__chip-card">
               <div className="stats-page__chip-head">
@@ -816,8 +824,14 @@ export default function StatsPage({
               + 무기 선택
             </button>
           )}
+          </MobileSection>
 
-          <h4>사용 에코 세트</h4>
+          <MobileSection
+            title="사용 에코 세트"
+            summary={comboParts.map((p) => `${getEchoSet(p.setId)?.name ?? p.setId} ${p.pieceCount}`).join(' · ')}
+            {...loadoutSection('echoSet')}
+          >
+          <h4 className="mobile-section__heading">사용 에코 세트</h4>
           {comboParts.length > 0 ? (
             <div className="stats-page__chip-card">
               <div className="stats-page__chip-head">
@@ -874,8 +888,10 @@ export default function StatsPage({
               </button>
             </>
           )}
+          </MobileSection>
 
-          <h4>사용 메인 에코</h4>
+          <MobileSection title="사용 메인 에코" summary={mainEcho?.name} {...loadoutSection('mainEcho')}>
+          <h4 className="mobile-section__heading">사용 메인 에코</h4>
           {mainEcho ? (
             <div className="stats-page__chip-card">
               <div className="stats-page__chip-head">
@@ -903,11 +919,13 @@ export default function StatsPage({
           ) : (
             <p className="uploader__hint">고른 에코 세트에 연결된 메인 에코가 아직 없어요.</p>
           )}
+          </MobileSection>
         </aside>
         </div>
 
         <aside className="stats-page__aggregate-col" ref={aggregateColRef}>
-          <h4 className="stats-page__col-title">합산 스탯</h4>
+          <MobileSection title="합산 스탯" defaultOpen>
+          <h4 className="stats-page__col-title mobile-section__heading">합산 스탯</h4>
           <table className="full-aggregate-table">
             <thead>
               <tr>
@@ -956,11 +974,13 @@ export default function StatsPage({
             </p>
           )}
           <p className="stats-page__aggregate-note">공식 계산 내용이 아닙니다. 자세한 스탯은 인게임을 확인하세요.</p>
+          </MobileSection>
         </aside>
       </div>
 
       <div className="echo-editor-wrap" ref={echoEditorRef}>
-        <h4 className="echo-editor__title">에코 상세 설정</h4>
+        <MobileSection title="에코 상세 설정" defaultOpen card>
+        <h4 className="echo-editor__title mobile-section__heading">에코 상세 설정</h4>
 
         <div className="echo-editor">
             <div className="echo-editor__scores">
@@ -1014,13 +1034,14 @@ export default function StatsPage({
               )}
             </div>
         </div>
+        </MobileSection>
       </div>
       </div>
 
       <div className="stats-page__optimizer-wrap">
         <div className="stats-page__head-actions">
-          <button className="capture-page__back" onClick={() => setResetOpen(true)}>초기화</button>
-          <button className="capture-page__back" onClick={onGoToCharacters}>← 캐릭터 선택으로</button>
+          <button className="capture-page__back stats-page__reset-btn" onClick={() => setResetOpen(true)}>초기화</button>
+          <button className="capture-page__back stats-page__back-btn" onClick={onGoToCharacters}>← 캐릭터 선택으로</button>
         </div>
         <header className="stats-page__head stats-page__head--spacer" aria-hidden="true">
           <div className="stats-page__head-top">
@@ -1030,6 +1051,7 @@ export default function StatsPage({
           <p className="uploader__hint">여기서 바로 스탯을 수정할 수 있어요. 노란색 항목만 유효 옵션입니다.</p>
         </header>
         <aside className="stats-page__optimizer-col">
+          <MobileSection title="목표 스탯 계산기 - 베타">
           <OptimizerPanel
             echoes={echoes}
             validLabels={validLabels}
@@ -1040,6 +1062,7 @@ export default function StatsPage({
             onFocusEcho={focusEcho}
             onUpdateSubStats={onUpdateSubStats}
           />
+          </MobileSection>
         </aside>
       </div>
       </div>
@@ -1071,8 +1094,8 @@ export default function StatsPage({
         open={resetOpen}
         title="초기화"
         message="누르게 되면 이 캐릭터의 에코 데이터가 초기화되고, 캡처 화면으로 이동합니다."
-        confirmLabel="예"
-        cancelLabel="아니요"
+        confirmLabel="확인"
+        cancelLabel="취소"
         onConfirm={() => { setResetOpen(false); onReset() }}
         onCancel={() => setResetOpen(false)}
       />

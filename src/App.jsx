@@ -29,8 +29,9 @@ import { applyDesktopViewport } from './utils/viewport'
 import './App.css'
 
 const EMPTY_BASE_STATS = { charAtk: '', weaponAtk: '', baseHp: '', baseDef: '' }
-// 모바일에서 PC 화면을 축소해서 보여주는 빌드 체크 화면들 (utils/viewport.js). 캐릭터 선택은 모바일 배치가 있어서 뺐습니다.
-const BUILD_CHECK_PAGES = ['capture', 'edit', 'stats']
+// 모바일에서 PC 화면을 축소해서 보여주는 빌드 체크 화면들 (utils/viewport.js).
+// 캐릭터 선택과 결과(stats) 화면은 모바일 배치가 있어서 뺐습니다.
+const BUILD_CHECK_PAGES = ['capture', 'edit']
 
 /** 예전 저장 형식(캐릭터당 에코 배열만 저장, 또는 에코 세트를 단일/배열로 저장하던 형식)과도
  * 호환되도록 레코드 모양을 항상 통일합니다. */
