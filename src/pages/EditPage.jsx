@@ -24,7 +24,7 @@ export default function EditPage({ echoes, onUpdateSubStats, onUpdateMainStats, 
       <header className="edit-page__head">
         <div className="edit-page__head-top">
           <span className="uploader__eyebrow">수정</span>
-          <button className="capture-page__back" onClick={onGoToCharacters}>
+          <button className="capture-page__back capture-page__back--nav" onClick={onGoToCharacters}>
             ← 캐릭터 선택으로
           </button>
         </div>

@@ -20,6 +20,29 @@
   border-color: var(--accent-wave);
 }
 
+/* 빌드 체크 단계 공통(캡처·편집·점수 통계): 캐릭터 선택으로 돌아가기는 강조색, 초기화(지우는 동작)는 빨간색 */
+.capture-page__back--nav {
+  color: var(--accent-wave);
+  border-color: color-mix(in srgb, var(--accent-wave) 55%, transparent);
+}
+
+.capture-page__back--nav:hover {
+  color: #06131a;
+  background: var(--accent-wave);
+  border-color: var(--accent-wave);
+}
+
+.capture-page__back--danger {
+  color: var(--score-low);
+  border-color: color-mix(in srgb, var(--score-low) 55%, transparent);
+}
+
+.capture-page__back--danger:hover {
+  color: #fff;
+  background: var(--score-low);
+  border-color: var(--score-low);
+}
+
 .capture-page__body {
   display: flex;
   gap: 20px;
@@ -67,16 +90,26 @@
   min-width: 0;
 }
 
+/* 모바일: 캐릭터는 작은 한 줄 카드(점수 통계 화면과 같은 모양), 그 아래 업로드 칸을 화면 폭 그대로 */
 @media (max-width: 700px) {
   .capture-page__body {
     flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
   }
   .capture-page__char-card {
+    flex: 0 0 auto;
+    box-sizing: border-box;
     width: 100%;
     flex-direction: row;
+    padding: 10px;
+    border-radius: 12px;
   }
   .capture-page__char-photo {
-    width: 80px;
+    width: 56px;
     flex-shrink: 0;
+    aspect-ratio: 1;
+    object-position: center top;
+    border-radius: 8px;
   }
 }
