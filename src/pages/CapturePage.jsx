@@ -6,7 +6,7 @@ export default function CapturePage({ character, onExtractAll, isProcessing, pro
     <section className="capture-page">
       <div className="capture-page__top">
         <span className="uploader__eyebrow">02 — 캡처</span>
-        <button className="capture-page__back" onClick={onGoToCharacters}>
+        <button className="capture-page__back capture-page__back--nav" onClick={onGoToCharacters}>
           ← 캐릭터 선택으로
         </button>
       </div>

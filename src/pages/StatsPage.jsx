@@ -764,6 +764,11 @@ export default function StatsPage({
       <header className="stats-page__head">
         <div className="stats-page__head-top">
           <span className="uploader__eyebrow">점수 통계</span>
+          {/* 모바일 전용: 캡처·편집 화면처럼 제목 줄 오른쪽에 둡니다. PC에서는 오른쪽 계산기 칸 위의 버튼을 씁니다. */}
+          <div className="stats-page__head-actions stats-page__head-actions--mobile">
+            <button className="capture-page__back capture-page__back--danger" onClick={() => setResetOpen(true)}>초기화</button>
+            <button className="capture-page__back capture-page__back--nav" onClick={onGoToCharacters}>← 캐릭터 선택으로</button>
+          </div>
         </div>
         <h2>캐릭터의 유효 옵션 기준으로 서브 스탯을 확인합니다</h2>
         <p className="uploader__hint">여기서 바로 스탯을 수정할 수 있어요. 노란색 항목만 유효 옵션입니다.</p>
@@ -1040,8 +1045,8 @@ export default function StatsPage({
 
       <div className="stats-page__optimizer-wrap">
         <div className="stats-page__head-actions">
-          <button className="capture-page__back stats-page__reset-btn" onClick={() => setResetOpen(true)}>초기화</button>
-          <button className="capture-page__back stats-page__back-btn" onClick={onGoToCharacters}>← 캐릭터 선택으로</button>
+          <button className="capture-page__back capture-page__back--danger" onClick={() => setResetOpen(true)}>초기화</button>
+          <button className="capture-page__back capture-page__back--nav" onClick={onGoToCharacters}>← 캐릭터 선택으로</button>
         </div>
         <header className="stats-page__head stats-page__head--spacer" aria-hidden="true">
           <div className="stats-page__head-top">
