@@ -55,7 +55,7 @@ function findGameArea(ctx, width, height) {
 }
 
 /**
- * 게임 화면을 공유해 두고, 에코 화면을 띄울 때마다 "캡처" 버튼(또는 스페이스바)으로 지금 장면을 사진처럼 넘깁니다.
+ * 게임 화면을 공유해 두고, 에코 화면을 띄울 때마다 "캡처" 버튼으로 지금 장면을 사진처럼 넘깁니다.
  * 스크린샷을 찍어 파일로 올리는 수고를 줄이기 위한 기능입니다. 공유 영상은 이 브라우저 안에서만 쓰이고 서버로 보내지 않습니다.
  *
  * onCapture(file): 캡처한 장면을 PNG File로 넘깁니다(파일 업로드와 같은 처리를 탑니다).
@@ -119,19 +119,6 @@ export default function ScreenCapture({ onCapture, remaining }) {
     onCapture(new File([blob], `화면 캡처 ${n}.png`, { type: 'image/png' }))
   }
 
-  // 공유 중에는 스페이스바로도 캡처합니다(입력칸에 글을 쓰는 중이면 제외).
-  useEffect(() => {
-    if (!sharing) return undefined
-    const onKey = (e) => {
-      if (e.code !== 'Space' || e.repeat) return
-      if (e.target.closest?.('input, textarea, select, button')) return
-      e.preventDefault()
-      capture()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  })
-
   if (!screenCaptureSupported) return null
 
   if (!sharing) {
@@ -141,7 +128,7 @@ export default function ScreenCapture({ onCapture, remaining }) {
           화면 공유로 바로 캡처 (PC 전용)
         </button>
         <p className="uploader__hint">
-          게임 창을 공유해 두면, 에코 화면을 띄울 때마다 버튼이나 스페이스바로 바로 캡처돼요. 공유 화면은 이
+          게임 창을 공유해 두면, 에코 화면을 띄울 때마다 버튼으로 바로 캡처돼요. 공유 화면은 이
           브라우저 안에서만 쓰이고 어디에도 전송되지 않아요.
         </p>
         {error && <p className="screen-capture__error">{error}</p>}
@@ -162,7 +149,7 @@ export default function ScreenCapture({ onCapture, remaining }) {
           onClick={capture}
           disabled={remaining <= 0}
         >
-          {remaining > 0 ? `지금 화면 캡처 (스페이스바) · ${remaining}장 남음` : '최대 장수를 채웠어요'}
+          {remaining > 0 ? `지금 화면 캡처 · ${remaining}장 남음` : '최대 장수를 채웠어요'}
         </button>
         <button type="button" className="btn btn--ghost" onClick={stop}>
           공유 중지

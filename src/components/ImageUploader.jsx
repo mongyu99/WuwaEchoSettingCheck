@@ -34,7 +34,8 @@ export default function ImageUploader({ onExtractAll, isProcessing, progress }) 
     onExtractAll(perImage)
   }
 
-  const addFiles = async (fileList) => {
+  // extract=false면 목록에만 쌓아 둡니다(화면 공유는 여러 장 찍은 뒤 "검토하기"로 한 번에 넘깁니다).
+  const addFiles = async (fileList, { extract = true } = {}) => {
     const files = Array.from(fileList).slice(0, MAX_IMAGES - itemsRef.current.length)
     if (files.length === 0) return
 
@@ -61,13 +62,15 @@ export default function ImageUploader({ onExtractAll, isProcessing, progress }) 
 
     // 사진이 올라오면 바로 자동으로 추출을 실행합니다 (별도 버튼 클릭 불필요).
     const validNow = merged.filter((it) => !it.error)
-    if (validNow.length > 0) {
+    if (extract && validNow.length > 0) {
       await runExtraction(validNow)
     }
   }
 
   const removeItem = (id) => {
-    setItems((prev) => prev.filter((it) => it.id !== id))
+    const next = itemsRef.current.filter((it) => it.id !== id)
+    itemsRef.current = next
+    setItems(next)
   }
 
   const handleDrop = (e) => {
@@ -104,7 +107,22 @@ export default function ImageUploader({ onExtractAll, isProcessing, progress }) 
       )}
 
       {mode === 'share' && (
-        <ScreenCapture onCapture={(file) => addFiles([file])} remaining={MAX_IMAGES - items.length} />
+        <>
+          <ScreenCapture
+            onCapture={(file) => addFiles([file], { extract: false })}
+            remaining={MAX_IMAGES - items.length}
+          />
+          {items.some((it) => !it.error) && (
+            <button
+              type="button"
+              className="btn btn--primary uploader__review"
+              disabled={isProcessing}
+              onClick={() => runExtraction(items.filter((it) => !it.error))}
+            >
+              {items.filter((it) => !it.error).length}장 검토하기
+            </button>
+          )}
+        </>
       )}
 
       {mode === 'upload' && items.length < MAX_IMAGES && (

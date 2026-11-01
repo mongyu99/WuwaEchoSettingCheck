@@ -67,24 +67,36 @@ const formatPercent1 = (n) => n.toFixed(1)
  * 캡처된 에코(메인+서브)를 전부 더해서 카테고리별 %합계/플랫합계를 냅니다. 조건부 효과(bonuses가
  * 없는 단계)는 계산에 반영하지 않고 안내 문구로만 보여줍니다.
  */
-function computeAggregate({ echoes, character, weaponId, combo, mainEchoId }) {
+// 보정치를 체크하면 공명 효율에 더하는 고정값(%)입니다.
+const ER_ADJUST_VALUE = 30
+
+function computeAggregate({ echoes, character, weaponId, combo, mainEchoId, erAdjust }) {
   const categoryBaseNames = getCategoryBaseNames(character?.element)
   const raw = {}
-  for (const cat of Object.keys(categoryBaseNames)) raw[cat] = { percentSum: 0, flatSum: 0, echoPercentSum: 0, echoFlatSum: 0 }
-  const addPercent = (cat, val) => {
+  for (const cat of Object.keys(categoryBaseNames)) raw[cat] = { percentSum: 0, flatSum: 0, echoPercentSum: 0, echoFlatSum: 0, sources: [] }
+  // 합산 내역에 "어디서 왔는지"를 보여주기 위해, 더할 때마다 출처를 같이 기록합니다(같은 출처·단위는 합칩니다).
+  const addSource = (cat, source, value, isPercent) => {
+    const list = raw[cat].sources
+    const same = list.find((x) => x.source === source && x.isPercent === isPercent)
+    if (same) same.value += value
+    else list.push({ source, value, isPercent })
+  }
+  const addPercent = (cat, val, source) => {
     const resolved = matchCategory(cat, categoryBaseNames) ?? cat
-    if (raw[resolved]) raw[resolved].percentSum += val
+    if (!raw[resolved]) return
+    raw[resolved].percentSum += val
+    addSource(resolved, source, val, true)
   }
 
   const baseStats = getCharacterBaseStats(character?.id)
   if (baseStats) {
-    for (const b of baseStats.innateBonuses ?? []) addPercent(b.category, b.value)
+    for (const b of baseStats.innateBonuses ?? []) addPercent(b.category, b.value, '캐릭터 고유')
   }
 
   const weapon = getWeapon(weaponId)
   if (weapon) {
-    if (weapon.subStat) addPercent(weapon.subStat.category, weapon.subStat.value)
-    for (const b of weapon.bonuses ?? []) addPercent(b.category, b.value)
+    if (weapon.subStat) addPercent(weapon.subStat.category, weapon.subStat.value, '무기 부옵션')
+    for (const b of weapon.bonuses ?? []) addPercent(b.category, b.value, '무기 효과')
   }
 
   // 조합 안의 세트마다, 착용한 개수 이하의 모든 단계가 함께 적용됩니다. bonuses가 있는 단계(보통
@@ -93,19 +105,19 @@ function computeAggregate({ echoes, character, weaponId, combo, mainEchoId }) {
     const echoSet = getEchoSet(setId)
     for (const [tier, piece] of Object.entries(echoSet?.pieces ?? {})) {
       if (Number(tier) > pieceCount) continue
-      for (const b of piece.bonuses ?? []) addPercent(b.category, b.value)
+      for (const b of piece.bonuses ?? []) addPercent(b.category, b.value, `${echoSet.name} ${tier}세트`)
     }
   }
 
   const mainEcho = getMainEcho(mainEchoId)
   if (mainEcho) {
-    for (const b of mainEcho.bonuses ?? []) addPercent(b.category, b.value)
+    for (const b of mainEcho.bonuses ?? []) addPercent(b.category, b.value, '메인 에코')
     if (mainEcho.characterBonus?.characterIds.includes(character?.id)) {
-      for (const b of mainEcho.characterBonus.bonuses) addPercent(b.category, b.value)
+      for (const b of mainEcho.characterBonus.bonuses) addPercent(b.category, b.value, '메인 에코 (전용)')
     }
   }
 
-  for (const echo of echoes) {
+  echoes.forEach((echo, i) => {
     for (const s of [...echo.mainStats, ...echo.subStats]) {
       if (!s.label || !s.valueText) continue
       const cat = matchCategory(s.label, categoryBaseNames)
@@ -119,8 +131,11 @@ function computeAggregate({ echoes, character, weaponId, combo, mainEchoId }) {
         raw[cat].flatSum += num
         raw[cat].echoFlatSum += num
       }
+      addSource(cat, `에코 ${i + 1}`, num, s.valueText.includes('%'))
     }
-  }
+  })
+
+  if (erAdjust?.on) addPercent('공명 효율', ER_ADJUST_VALUE, '바이크 보정치')
 
   return { raw, baseStats, weapon }
 }
@@ -611,6 +626,8 @@ export default function StatsPage({
   onSetWeapon,
   onSetEchoParts,
   onSetMainEchoId,
+  erAdjust = { on: false },
+  onSetErAdjust,
   onUpdateSubStats,
   onUpdateMainStats,
   onAddEcho,
@@ -636,6 +653,8 @@ export default function StatsPage({
   const blinkTimeoutRef = useRef(null)
   const aggregateColRef = useRef(null)
   const [aggregateColHeight, setAggregateColHeight] = useState(null)
+  // 합산 스탯 표에서 출처 내역을 펼쳐 둔 카테고리입니다.
+  const [openStatCat, setOpenStatCat] = useState(null)
   const validLabels = getValidOptions(character?.id)
 
   // 이 캐릭터에게 등록된(추천) 에코 세트 조합입니다. 등록 안 된 캐릭터는 null.
@@ -743,6 +762,7 @@ export default function StatsPage({
     weaponId,
     combo,
     mainEchoId,
+    erAdjust,
   })
   // "합산 스탯" 표에 보여줄 행 순서입니다 — 캐릭터 속성에 맞는 피해 보너스 행 이름이 여기 포함됩니다.
   const categoryOrder = Object.keys(getCategoryBaseNames(character?.element))
@@ -942,13 +962,45 @@ export default function StatsPage({
             <tbody>
               {categoryOrder.map((cat) => {
                 const raw = aggregate[cat]
+                // 기초값(캐릭터·무기 기본 스탯)도 출처 맨 앞에 넣어서, 펼치면 합산이 어디서 왔는지 전부 보이게 합니다.
+                const baseSources = []
+                if (BASE_TOTAL_CATEGORIES.has(cat)) {
+                  const charBase = { HP: baseStats?.hp, 공격력: baseStats?.atk, 방어력: baseStats?.def, '공명 효율': baseStats?.energyRegen, 크리티컬: baseStats?.critRate, '크리티컬 피해': baseStats?.critDmg }[cat]
+                  if (charBase) baseSources.push({ source: '캐릭터 기본', value: charBase, isPercent: !BASE_ONLY_CATEGORIES.has(cat), base: true })
+                  if (cat === '공격력' && weaponData?.atk) baseSources.push({ source: '무기 기본', value: weaponData.atk, isPercent: false, base: true })
+                }
+                const sources = [...baseSources, ...raw.sources]
+                const isOpen = openStatCat === cat
+                const toggle = sources.length > 0 ? () => setOpenStatCat(isOpen ? null : cat) : undefined
+                const detailRow = isOpen && (
+                  <tr key={`${cat}-detail`} className="full-aggregate-table__detail">
+                    <td colSpan={3}>
+                      <ul>
+                        {sources.map((x, i) => (
+                          <li key={i}>
+                            <span>{x.source}</span>
+                            <span className={x.base ? 'stat-base' : 'stat-additional'}>
+                              {x.base ? '' : '+'}
+                              {x.isPercent ? `${formatPercent1(x.value)}%` : formatWholeStat(x.value)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </td>
+                  </tr>
+                )
+                const rowProps = {
+                  className: toggle ? 'full-aggregate-table__row--toggle' : undefined,
+                  onClick: toggle,
+                  title: toggle ? '눌러서 출처 보기' : undefined,
+                }
                 if (BASE_TOTAL_CATEGORIES.has(cat)) {
                   const calc = computeCategoryTotal(cat, raw, baseStats, weaponData)
                   const isWholeStat = BASE_ONLY_CATEGORIES.has(cat) // HP·공격력·방어력만 정수
                   const isPercentCat = !isWholeStat
                   const fmt = (n) => (isWholeStat ? formatWholeStat(n) : formatPercent1(n))
-                  return (
-                    <tr key={cat}>
+                  return [
+                    <tr key={cat} {...rowProps}>
                       <td className="full-aggregate-table__label">{cat}</td>
                       <td className="full-aggregate-table__total">
                         {fmt(calc.total)}{isPercentCat ? '%' : ''}
@@ -958,18 +1010,20 @@ export default function StatsPage({
                         {' + '}
                         <span className="stat-additional">{fmt(calc.additional)}</span>
                       </td>
-                    </tr>
-                  )
+                    </tr>,
+                    detailRow,
+                  ]
                 }
                 const display = raw.percentSum ? `${formatPercent1(raw.percentSum)}%` : '-'
-                return (
-                  <tr key={cat}>
+                return [
+                  <tr key={cat} {...rowProps}>
                     <td className="full-aggregate-table__label">{cat}</td>
                     <td className="full-aggregate-table__values" colSpan={2}>
                       {display === '-' ? <span className="full-aggregate-table__empty">-</span> : display}
                     </td>
-                  </tr>
-                )
+                  </tr>,
+                  detailRow,
+                ]
               })}
             </tbody>
           </table>
@@ -978,6 +1032,16 @@ export default function StatsPage({
               이 캐릭터는 기초 스탯 데이터가 없어서 "합산"이 0으로 나와요. 알려주시면 추가해드릴게요.
             </p>
           )}
+          <div className="stats-page__er-adjust">
+            <label>
+              <input
+                type="checkbox"
+                checked={erAdjust.on}
+                onChange={(e) => onSetErAdjust?.({ on: e.target.checked })}
+              />
+              <span>바이크 보정치 ( 공명 효율 {ER_ADJUST_VALUE}% )</span>
+            </label>
+          </div>
           <p className="stats-page__aggregate-note">공식 계산 내용이 아닙니다. 자세한 스탯은 인게임을 확인하세요.</p>
           </MobileSection>
         </aside>
