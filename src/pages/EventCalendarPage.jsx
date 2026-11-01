@@ -41,12 +41,14 @@ export default function EventCalendarPage() {
 
       {!loading && !error && events.length > 0 && (
         <div className="event-calendar__grid">
-          {events.map((event) => {
+          {events.map((event, i) => {
             const remaining = daysRemaining(event.endsAt)
             return (
               <a
                 key={event.id}
                 className="event-card"
+                // --i: 위에서부터 주르륵 차례로 등장시키기 위한 번호
+                style={{ '--i': i }}
                 href={event.url}
                 target={event.url ? '_blank' : undefined}
                 rel={event.url ? 'noreferrer' : undefined}

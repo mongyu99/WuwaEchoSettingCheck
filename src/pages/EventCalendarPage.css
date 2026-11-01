@@ -88,3 +88,21 @@
   color: var(--text-muted);
   margin: 0;
 }
+
+/* 카드가 위에서부터 차례로 주르륵 내려앉듯 나타납니다. 많아도 1초 안에 끝나도록 지연을 묶어 둡니다. */
+.event-card {
+  animation: event-card-drop 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(min(var(--i, 0), 20) * 45ms);
+}
+
+@keyframes event-card-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+/* 페이지 공통 등장 효과가 목록 전체에도 걸리면 카드 효과와 겹쳐서, 목록 자체는 끕니다. */
+.page-transition .event-calendar__grid {
+  animation: none;
+}

@@ -203,3 +203,39 @@
     text-overflow: ellipsis;
   }
 }
+
+/* 1번 카드부터 차례로 물결치듯 튀어 올라옵니다. 캐릭터가 많아도 전체가 1초 안에 끝나도록 지연을 묶어 둡니다. */
+.char-card {
+  animation: char-card-wave 0.55s var(--ease-pop) backwards;
+  animation-delay: calc(min(var(--i, 0), 30) * 30ms);
+}
+
+@keyframes char-card-wave {
+  from {
+    opacity: 0;
+    translate: 0 18px;
+    scale: 0.9;
+  }
+}
+
+/* 마우스를 올리면 사진이 젤리처럼 꾸물꾸물 일렁입니다.
+   카드 자체에 걸면 등장 애니메이션이 다시 재생돼서, 안쪽 사진 영역에 겁니다. */
+/* 마우스를 올리면 사진이 아주 살짝 확대됩니다. */
+.char-card__photo-wrap {
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.char-card__photo {
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.char-card:not(:disabled):hover .char-card__photo {
+  transform: scale(1.04);
+}
+
+@media (max-width: 600px) {
+  .char-card__photo-wrap {
+    border-radius: 7px;
+  }
+}

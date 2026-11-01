@@ -72,8 +72,17 @@ function stripPreviewUrls(characterData) {
   return result
 }
 
+const PAGE_KEY = 'wuwa-current-page'
+
 export default function App() {
-  const [page, setPage] = useState(saved?.page ?? 'home') // home | characters | patchnotes | events | capture | edit | stats
+  // 보던 페이지는 탭 단위(sessionStorage)로만 기억합니다: 새로고침은 그대로, 새 탭·재방문은 메인부터.
+  const [page, setPage] = useState(() => {
+    try {
+      return sessionStorage.getItem(PAGE_KEY) ?? 'home'
+    } catch {
+      return 'home'
+    }
+  }) // home | characters | patchnotes | events | capture | edit | stats
   const [character, setCharacter] = useState(savedCharacter)
   // 캐릭터 id별로 에코/무기/에코세트조합/기초스탯을 따로 보관합니다: { [characterId]: { echoes, weapon, echoParts, baseStats } }
   const [characterData, setCharacterData] = useState(saved?.characterData ?? {})
@@ -99,6 +108,14 @@ export default function App() {
   useEffect(() => {
     saveState({ page, characterId: character?.id ?? null, characterData: stripPreviewUrls(characterData) })
   }, [page, character, characterData])
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(PAGE_KEY, page)
+    } catch {
+      // sessionStorage를 못 쓰면 새로고침 시 메인으로 갑니다.
+    }
+  }, [page])
 
   const updateRecordForCurrent = (patcher) => {
     if (!character) return
