@@ -52,11 +52,12 @@ export default function CharacterSelectPage({ onSelect, charactersWithData }) {
       {filtered.length === 0 && <p className="uploader__hint">조건에 맞는 캐릭터가 없어요.</p>}
 
       <div className="char-select__grid">
-        {filtered.map((c) => (
+        {filtered.map((c, i) => (
           <button
             key={c.id}
             className={`char-card ${c.upcoming ? 'char-card--upcoming' : ''}`}
-            style={{ borderColor: ELEMENT_COLORS[c.element] }}
+            // --i: 순서대로 물결치듯 등장시키기 위한 번호
+            style={{ borderColor: ELEMENT_COLORS[c.element], '--i': i }}
             // 픽업 예정 캐릭터는 아직 빌드를 등록할 수 없어 선택을 막습니다.
             disabled={c.upcoming}
             onClick={() => onSelect(c)}

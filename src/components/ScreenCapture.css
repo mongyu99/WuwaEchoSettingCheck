@@ -1,0 +1,64 @@
+.screen-capture {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.screen-capture__start {
+  align-self: flex-start;
+}
+
+.screen-capture__error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--score-low);
+}
+
+.screen-capture__preview {
+  position: relative;
+  border: 1px solid var(--border-hairline);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  transition: box-shadow 0.15s ease;
+}
+
+/* 캡처 순간 테두리가 번쩍여서 찍혔다는 걸 알려줍니다. */
+.screen-capture__preview--flash {
+  box-shadow: 0 0 0 3px var(--accent-wave);
+}
+
+.screen-capture__preview video {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+}
+
+.screen-capture__live {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(6, 8, 14, 0.75);
+  color: var(--score-low);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.screen-capture__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.screen-capture__shot {
+  flex: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen-capture__preview {
+    transition: none;
+  }
+}
