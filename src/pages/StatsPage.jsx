@@ -16,6 +16,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import EchoPanel from '../components/EchoPanel'
 import MobileSection from '../components/MobileSection'
 import Modal from '../components/Modal'
+import RetakeModal from '../components/RetakeModal'
 import './StatsPage.css'
 
 const ELEMENT_DAMAGE_LABELS = ['응결 피해 보너스', '용융 피해 보너스', '전도 피해 보너스', '기류 피해 보너스', '회절 피해 보너스', '인멸 피해 보너스']
@@ -630,11 +631,13 @@ export default function StatsPage({
   onSetErAdjust,
   onUpdateSubStats,
   onUpdateMainStats,
+  onReplaceOne,
   onAddEcho,
   onGoToCharacters,
   onReset,
 }) {
   const [resetOpen, setResetOpen] = useState(false)
+  const [retakeOpen, setRetakeOpen] = useState(false)
   const [weaponModalOpen, setWeaponModalOpen] = useState(false)
   const [comboModalOpen, setComboModalOpen] = useState(false)
   const [mainEchoModalOpen, setMainEchoModalOpen] = useState(false)
@@ -1082,7 +1085,7 @@ export default function StatsPage({
                     focusEcho(echoes.length, null, false)
                   }}
                 >
-                  + 에코 추가 (사진 없이)
+                  + 에코 추가
                 </button>
               )}
             </div>
@@ -1099,6 +1102,7 @@ export default function StatsPage({
                   blinkLabel={blink?.echoIndex === selectedEchoIdx ? blink.label : null}
                   blinkValue={blink?.echoIndex === selectedEchoIdx ? blink.value : null}
                   blinkToken={blink?.token}
+                  onRetake={() => setRetakeOpen(true)}
                 />
               )}
             </div>
@@ -1159,6 +1163,13 @@ export default function StatsPage({
           mainEchoIds={mainEchoIds}
         />
       )}
+      <RetakeModal
+        open={retakeOpen}
+        title={`에코 ${selectedEchoIdx + 1} 재촬영`}
+        onClose={() => setRetakeOpen(false)}
+        onSubmit={(file) => onReplaceOne(echoes[selectedEchoIdx].id, file)}
+      />
+
       <ConfirmDialog
         open={resetOpen}
         title="초기화"

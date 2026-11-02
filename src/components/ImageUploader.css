@@ -75,8 +75,15 @@
   color: var(--text-primary);
 }
 
+.uploader__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .uploader__mode-back {
-  margin-bottom: 14px;
+  flex-shrink: 0;
   padding: 6px 12px;
   font-size: 13px;
 }

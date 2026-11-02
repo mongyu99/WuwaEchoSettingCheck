@@ -90,7 +90,7 @@ export default function ScreenCapture({ onCapture, remaining }) {
     }
   }
 
-  // 공유가 시작되면 미리보기 영상에 연결합니다(video 요소는 sharing 이후에 그려짐).
+  // 공유가 시작되면 미리보기 영상에 연결합니다.
   useEffect(() => {
     if (sharing && videoRef.current) videoRef.current.srcObject = streamRef.current
   }, [sharing])
@@ -121,40 +121,43 @@ export default function ScreenCapture({ onCapture, remaining }) {
 
   if (!screenCaptureSupported) return null
 
-  if (!sharing) {
-    return (
-      <div className="screen-capture">
+  return (
+    <div className="screen-capture">
+      <div className={`screen-capture__preview ${flash ? 'screen-capture__preview--flash' : ''}`}>
+        <video ref={videoRef} autoPlay muted playsInline hidden={!sharing} />
+        {sharing ? (
+          <span className="screen-capture__live">● 공유 중</span>
+        ) : (
+          <div className="screen-capture__idle" />
+        )}
+      </div>
+      {sharing ? (
+        <div className="screen-capture__actions">
+          <button
+            type="button"
+            className="btn btn--primary screen-capture__shot"
+            onClick={capture}
+            disabled={remaining <= 0}
+          >
+            {remaining > 0 ? `캡처 · ${remaining}장 남음` : '캡처를 완료했어요.'}
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={stop}>
+            공유 중지
+          </button>
+        </div>
+      ) : (
+        <>
         <button type="button" className="btn btn--primary screen-capture__start" onClick={start}>
           화면 공유로 바로 캡처 (PC 전용)
         </button>
-        <p className="uploader__hint">
-          게임 창을 공유해 두면, 에코 화면을 띄울 때마다 버튼으로 바로 캡처돼요. 공유 화면은 이
-          브라우저 안에서만 쓰이고 어디에도 전송되지 않아요.
-        </p>
-        {error && <p className="screen-capture__error">{error}</p>}
-      </div>
-    )
-  }
-
-  return (
-    <div className="screen-capture screen-capture--live">
-      <div className={`screen-capture__preview ${flash ? 'screen-capture__preview--flash' : ''}`}>
-        <video ref={videoRef} autoPlay muted playsInline />
-        <span className="screen-capture__live">● 공유 중</span>
-      </div>
-      <div className="screen-capture__actions">
-        <button
-          type="button"
-          className="btn btn--primary screen-capture__shot"
-          onClick={capture}
-          disabled={remaining <= 0}
-        >
-          {remaining > 0 ? `지금 화면 캡처 · ${remaining}장 남음` : '최대 장수를 채웠어요'}
-        </button>
-        <button type="button" className="btn btn--ghost" onClick={stop}>
-          공유 중지
-        </button>
-      </div>
+        <ul className="uploader__hint screen-capture__notes">
+          <li>모니터 전체가 아니라 게임 창을 선택해 주세요. 다른 창이 함께 잡히면 인식되지 않을 수 있습니다.</li>
+          <li>16:9 화면에 맞춰져 있어요. 16:10 등 다른 비율에서는 화면이 깨지거나 스탯 위치가 어긋날 수 있습니다.</li>
+          <li>창 크기가 작거나 해상도가 낮으면 글자가 뭉개져 인식되지 않을 수 있습니다.</li>
+        </ul>
+        </>
+      )}
+      {error && <p className="screen-capture__error">{error}</p>}
     </div>
   )
 }

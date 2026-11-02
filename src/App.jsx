@@ -81,7 +81,9 @@ export default function App() {
   // 보던 페이지는 탭 단위(sessionStorage)로만 기억합니다: 새로고침은 그대로, 새 탭·재방문은 메인부터.
   const [page, setPage] = useState(() => {
     try {
-      return sessionStorage.getItem(PAGE_KEY) ?? 'home'
+      const savedPage = sessionStorage.getItem(PAGE_KEY) ?? 'home'
+      // 수정 중인 에코는 메모리에만 있어 새로고침하면 사라지므로, 캡처 화면으로 돌아갑니다.
+      return savedPage === 'edit' ? 'capture' : savedPage
     } catch {
       return 'home'
     }
@@ -89,6 +91,8 @@ export default function App() {
   const [character, setCharacter] = useState(savedCharacter)
   // 캐릭터 id별로 에코/무기/에코세트조합/기초스탯을 따로 보관합니다: { [characterId]: { echoes, weapon, echoParts, baseStats } }
   const [characterData, setCharacterData] = useState(saved?.characterData ?? {})
+  // 캡처 후 수정 화면에서 고치는 중인 에코입니다. 메모리에만 두고, "완료"를 눌러야 characterData에 저장됩니다.
+  const [draftEchoes, setDraftEchoes] = useState([])
   const [isProcessing, setIsProcessing] = useState(false)
   const [progress, setProgress] = useState(0)
   const [replacingId, setReplacingId] = useState(null)
@@ -129,6 +133,10 @@ export default function App() {
   }
 
   const setEchoesForCurrent = (updater) => {
+    if (page === 'edit') {
+      setDraftEchoes(updater)
+      return
+    }
     updateRecordForCurrent((rec) => ({
       ...rec,
       echoes: typeof updater === 'function' ? updater(rec.echoes) : updater,
@@ -202,7 +210,7 @@ export default function App() {
       setProgress((i + 1) / perImage.length)
     }
 
-    setEchoesForCurrent(() => results)
+    setDraftEchoes(results)
     setIsProcessing(false)
     setProgress(0)
     setPage('edit')
@@ -246,6 +254,11 @@ export default function App() {
     setPage(rec.echoes.length > 0 ? 'stats' : 'capture')
   }
 
+  const handleCompleteEdit = () => {
+    updateRecordForCurrent((rec) => ({ ...rec, echoes: draftEchoes }))
+    setPage('stats')
+  }
+
   const goHome = () => setPage('home')
   const goToCharacters = () => setPage('characters')
   const goToPatchNotes = () => setPage('patchnotes')
@@ -276,12 +289,12 @@ export default function App() {
       case 'edit':
         return (
           <EditPage
-            echoes={echoes}
+            echoes={draftEchoes}
             onUpdateSubStats={updateSubStats}
             onUpdateMainStats={updateMainStats}
             onReplaceOne={handleReplaceOne}
             replacingId={replacingId}
-            onProceedToStats={() => setPage('stats')}
+            onProceedToStats={handleCompleteEdit}
             onGoToCharacters={goToCharacters}
           />
         )
@@ -300,6 +313,7 @@ export default function App() {
             onSetErAdjust={setErAdjustForCurrent}
             onUpdateSubStats={updateSubStats}
             onUpdateMainStats={updateMainStats}
+            onReplaceOne={handleReplaceOne}
             onAddEcho={addManualEcho}
             onGoToCharacters={goToCharacters}
             onReset={handleResetCurrent}

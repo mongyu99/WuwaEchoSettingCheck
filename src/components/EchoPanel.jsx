@@ -19,6 +19,7 @@ export default function EchoPanel({
   blinkLabel,
   blinkValue,
   blinkToken,
+  onRetake,
 }) {
   const updateMainLabel = (id, label) => {
     onUpdateMainStats(echo.id, echo.mainStats.map((s) => (s.id === id ? { ...s, label } : s)))
@@ -56,6 +57,11 @@ export default function EchoPanel({
       <header className="echo-panel__header">
         <span className="echo-panel__badge">에코 {index + 1}</span>
         {getEchoCost(echo) && <span className="echo-panel__cost">COST {getEchoCost(echo)}</span>}
+        {onRetake && (
+          <button type="button" className="btn btn--ghost echo-panel__retake" onClick={onRetake}>
+            재촬영
+          </button>
+        )}
       </header>
 
       {echo.failed && <p className="echo-panel__failed">이 사진은 인식에 실패했어요. 값을 직접 선택해주세요.</p>}
