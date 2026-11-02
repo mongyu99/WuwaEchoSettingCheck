@@ -9,7 +9,7 @@ import { getCharacterEchoCombos } from '../config/characterEchoSets'
 import { getMainEcho } from '../config/mainEchoes'
 import { getMainEchoIdsForCombo } from '../config/echoSetMainEchoes'
 import { getMainEchoDamageBonus } from '../config/characterMainEchoBonus'
-import { SUB_STAT_OPTIONS } from '../config/subStatOptions'
+import { SUB_STAT_OPTIONS, SUB_STAT_NAMES } from '../config/subStatOptions'
 import { getEchoCost } from '../utils/ocr'
 import { runOptimizerFromGap, OPTIMIZER_CATEGORIES, findReallocationCandidate } from '../utils/optimizer'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -17,6 +17,7 @@ import EchoPanel from '../components/EchoPanel'
 import MobileSection from '../components/MobileSection'
 import Modal from '../components/Modal'
 import RetakeModal from '../components/RetakeModal'
+import EchoScoreCard from '../components/EchoScoreCard'
 import './StatsPage.css'
 
 const ELEMENT_DAMAGE_LABELS = ['응결 피해 보너스', '용융 피해 보너스', '전도 피해 보너스', '기류 피해 보너스', '회절 피해 보너스', '인멸 피해 보너스']
@@ -45,6 +46,9 @@ function getCategoryBaseNames(element) {
 }
 const BASE_TOTAL_CATEGORIES = new Set(['HP', '공격력', '방어력', '공명 효율', '크리티컬', '크리티컬 피해'])
 const OPTIMIZER_TARGET_ORDER = ['HP', '공격력', '방어력', '크리티컬', '공명 효율', '크리티컬 피해']
+
+// 에코 5개의 코스트 합계 한도입니다.
+const MAX_TOTAL_COST = 12
 
 function stripPercent(label) {
   return label.endsWith('%') ? label.slice(0, -1) : label
@@ -454,11 +458,24 @@ function OptimizerPanel({
 
   return (
     <div className="optimizer">
-      <h4 className="stats-page__col-title mobile-section__heading">목표 스탯 계산기 - 베타</h4>
+      <div className="optimizer__title-row">
+        <h4 className="stats-page__col-title mobile-section__heading">목표 스탯 계산기 - 베타</h4>
+        {/* 터치 기기는 마우스 오버가 없어서, 눌러서 포커스를 줘도 열리게 합니다. */}
+        <span className="optimizer__info" tabIndex={0} role="button" aria-label="계산식 보기">
+          i
+        </span>
+        <div className="optimizer__formula" role="tooltip">
+          <p>성공 확률 = 옵션이 모두 뜰 확률 × 목표 수치 이상이 뜰 확률</p>
+          <p>
+            옵션이 모두 뜰 확률 = C({SUB_STAT_NAMES.length}-n, 5-n) ÷ C({SUB_STAT_NAMES.length}, 5)
+            <br />
+            n = 지켜야 할 유효 옵션 수 + 목표 옵션 1개
+          </p>
+          <p>평균 시도 횟수 = 100 ÷ 성공 확률(%)</p>
+        </div>
+      </div>
       <p className="uploader__hint optimizer__hint">
-        목표를 채우고 "계산하기"를 누르면, 지금 합산 스탯 기준으로 몇이 부족한지, 에코마다 % 채우기·플랫(2순위)
-        채우기·낮은 단계 다시 띄우기 중 새 에코가 뜰 확률이 가장 높은 방법을 알려드려요. 수치가 적힌 유효
-        옵션은 새 에코에도 있어야 하는 것으로 계산합니다. 0이면 계산하지 않습니다.
+        계산 결과는 어디까지나 참고용이며, 실제 게임 내 확률과 다를 수 있어요.
       </p>
 
       <div className="optimizer__grid">
@@ -631,6 +648,7 @@ export default function StatsPage({
   onSetErAdjust,
   onUpdateSubStats,
   onUpdateMainStats,
+  onUpdateCost,
   onReplaceOne,
   onAddEcho,
   onGoToCharacters,
@@ -644,8 +662,10 @@ export default function StatsPage({
   // 모바일: 무기/에코 세트/메인 에코 중 하나만 펼칩니다. 처음엔 무기, 다른 걸 누르면 그쪽이 열리고 원래 건 닫힘.
   const [openLoadout, setOpenLoadout] = useState('weapon')
   const loadoutSection = (key) => ({
+    always: true,
     open: openLoadout === key,
-    onToggle: () => setOpenLoadout((current) => (current === key ? null : key)),
+    // 항상 하나는 열려 있도록, 열린 섹션을 다시 눌러도 닫지 않습니다.
+    onToggle: () => setOpenLoadout(key),
   })
   const openWeaponModal = () => setWeaponModalOpen(true)
   const openComboModal = () => setComboModalOpen(true)
@@ -759,6 +779,7 @@ export default function StatsPage({
     }
   })
 
+  const totalCost = echoes.reduce((sum, echo) => sum + (Number(getEchoCost(echo)) || 0), 0)
   const { raw: aggregate, baseStats, weapon: weaponData } = computeAggregate({
     echoes,
     character,
@@ -793,8 +814,8 @@ export default function StatsPage({
             <button className="capture-page__back capture-page__back--nav" onClick={onGoToCharacters}>← 캐릭터 선택으로</button>
           </div>
         </div>
-        <h2>캐릭터의 유효 옵션 기준으로 서브 스탯을 확인합니다</h2>
-        <p className="uploader__hint">여기서 바로 스탯을 수정할 수 있어요. 노란색 항목만 유효 옵션입니다.</p>
+        <h2>상세 정보</h2>
+        <p className="uploader__hint">유효 옵션은 노란색으로 표시됩니다.</p>
       </header>
 
       <div className="stats-page__columns">
@@ -814,7 +835,17 @@ export default function StatsPage({
             </p>
           )}
 
-          <h4>유효 옵션</h4>
+          <div className="optimizer__title-row stats-page__valid-title">
+            <h4>유효 옵션</h4>
+            <span className="optimizer__info" tabIndex={0} role="button" aria-label="유효 옵션 안내">
+              i
+            </span>
+            <div className="optimizer__formula" role="tooltip">
+              실제 유효 옵션과 차이가 있습니다.
+              <br />
+              계속 수정중입니다.
+            </div>
+          </div>
           <ul className="stats-page__valid-list">
             {validLabels.length === 0 && <li className="echo-panel__empty">설정된 유효 옵션 없음</li>}
             {validLabels.map((label) => <li key={label}>{label}</li>)}
@@ -822,7 +853,7 @@ export default function StatsPage({
         </aside>
 
         <aside className="stats-page__loadout">
-          <MobileSection title="사용 무기" summary={weaponData?.name} {...loadoutSection('weapon')}>
+          <MobileSection title="사용 무기" summary={weaponData?.icon && <img src={weaponData.icon} alt={weaponData.name} />} {...loadoutSection('weapon')}>
           <h4 className="mobile-section__heading">사용 무기</h4>
           {weaponData ? (
             <div className="stats-page__chip-card">
@@ -856,7 +887,10 @@ export default function StatsPage({
 
           <MobileSection
             title="사용 에코 세트"
-            summary={comboParts.map((p) => `${getEchoSet(p.setId)?.name ?? p.setId} ${p.pieceCount}`).join(' · ')}
+            summary={comboParts.map(({ setId }) => {
+              const set = getEchoSet(setId)
+              return set?.icon ? <img key={setId} src={set.icon} alt={set.name} /> : null
+            })}
             {...loadoutSection('echoSet')}
           >
           <h4 className="mobile-section__heading">사용 에코 세트</h4>
@@ -918,7 +952,7 @@ export default function StatsPage({
           )}
           </MobileSection>
 
-          <MobileSection title="사용 메인 에코" summary={mainEcho?.name} {...loadoutSection('mainEcho')}>
+          <MobileSection title="사용 메인 에코" summary={mainEcho?.icon && <img src={mainEcho.icon} alt={mainEcho.name} />} {...loadoutSection('mainEcho')}>
           <h4 className="mobile-section__heading">사용 메인 에코</h4>
           {mainEcho ? (
             <div className="stats-page__chip-card">
@@ -1045,7 +1079,15 @@ export default function StatsPage({
               <span>바이크 보정치 ( 공명 효율 {ER_ADJUST_VALUE}% )</span>
             </label>
           </div>
-          <p className="stats-page__aggregate-note">공식 계산 내용이 아닙니다. 자세한 스탯은 인게임을 확인하세요.</p>
+          <p className="stats-page__aggregate-note">공식 계산 내용이 아닙니다. 자세한 스탯은 인게임을 확인하세요.
+            <span className="stats-page__aggregate-link">
+            이잘키 : [{' '}
+            <a href="https://arca.live/w/wutheringwaves/%EC%9D%B4%EC%A0%95%EB%8F%84%EB%A9%B4%20%EC%9E%98%ED%82%A4%EC%9B%A0%EB%8B%A4%ED%91%9C" target="_blank" rel="noreferrer">
+              링크
+            </a>{' '}
+            ]
+            </span>
+          </p>
           </MobileSection>
         </aside>
       </div>
@@ -1056,7 +1098,12 @@ export default function StatsPage({
 
         <div className="echo-editor">
             <div className="echo-editor__scores">
-              <h4 className="stats-page__col-title">에코 선택</h4>
+              <h4 className="stats-page__col-title">
+                에코 선택{' '}
+                <span className={totalCost > MAX_TOTAL_COST ? 'echo-editor__cost-over' : ''}>
+                  (COST {totalCost}/{MAX_TOTAL_COST})
+                </span>
+              </h4>
               {echoes.length === 0 ? (
                 <p className="uploader__hint">등록된 에코가 없어요.</p>
               ) : (
@@ -1103,9 +1150,15 @@ export default function StatsPage({
                   blinkValue={blink?.echoIndex === selectedEchoIdx ? blink.value : null}
                   blinkToken={blink?.token}
                   onRetake={() => setRetakeOpen(true)}
+                  onUpdateCost={onUpdateCost}
+                  costLimitLeft={MAX_TOTAL_COST - totalCost + (Number(getEchoCost(echoes[selectedEchoIdx])) || 0)}
                 />
               )}
             </div>
+
+            {echoes[selectedEchoIdx] && (
+              <EchoScoreCard echoes={echoes} selectedIndex={selectedEchoIdx} validLabels={validLabels} />
+            )}
         </div>
         </MobileSection>
       </div>
@@ -1120,8 +1173,8 @@ export default function StatsPage({
           <div className="stats-page__head-top">
             <span className="uploader__eyebrow">점수 통계</span>
           </div>
-          <h2>캐릭터의 유효 옵션 기준으로 서브 스탯을 확인합니다</h2>
-          <p className="uploader__hint">여기서 바로 스탯을 수정할 수 있어요. 노란색 항목만 유효 옵션입니다.</p>
+          <h2>상세 정보</h2>
+          <p className="uploader__hint">유효 옵션은 노란색으로 표시됩니다.</p>
         </header>
         <aside className="stats-page__optimizer-col">
           <MobileSection title="목표 스탯 계산기 - 베타">

@@ -1,0 +1,131 @@
+.echo-score {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 16px;
+}
+
+.echo-score__title {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.echo-score__total {
+  font-size: 48px;
+  line-height: 1;
+  color: var(--accent-wave);
+  font-variant-numeric: tabular-nums;
+}
+
+.echo-score__empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.echo-score ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.echo-score li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px 52px 28px;
+  gap: 6px;
+  font-size: 12px;
+  text-align: right;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.echo-score__label {
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.echo-score__tier {
+  color: var(--text-muted);
+}
+
+.echo-score__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 8px 0 16px;
+}
+
+.echo-score__grade {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+
+.echo-score ol.echo-score__echoes {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.echo-score__echoes li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.echo-score__echoes .echo-score__echo--active {
+  color: var(--accent-wave);
+}
+
+.echo-score > .echo-score__title + ul,
+.echo-score > .echo-score__title + .echo-score__empty {
+  margin-top: 8px;
+}
+
+.echo-score__title-row {
+  margin-bottom: 0;
+}
+
+.echo-score ul.echo-score__legend {
+  gap: 4px;
+}
+
+.echo-score .echo-score__legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.echo-score__legend img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.echo-score__legend strong {
+  margin-left: auto;
+}
+
+.echo-score__rule {
+  padding-top: 8px;
+  border-top: 1px solid var(--border-hairline);
+  color: var(--text-muted);
+}
+
+.optimizer__formula .echo-score__legend {
+  margin-bottom: 8px;
+}

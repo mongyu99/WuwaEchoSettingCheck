@@ -239,3 +239,27 @@
     border-radius: 7px;
   }
 }
+
+/* 에코를 등록한 캐릭터의 합계 등급과 점수 */
+.char-card__grade {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 8px 2px 2px;
+  border-radius: 999px;
+  background: rgba(6, 8, 14, 0.75);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.char-card__grade img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}

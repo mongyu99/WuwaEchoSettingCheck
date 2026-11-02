@@ -8,16 +8,17 @@ import './MobileSection.css'
  *
  * summary: 접혀 있을 때 제목 옆에 보여줄 요약(예: 고른 무기 이름)
  * card: 바깥 카드가 없는 섹션이면 true. 모바일에서 섹션 자체를 카드로 그립니다.
+ * always: PC에서도 접고 펼칩니다.
  * open / onToggle: 여러 섹션 중 하나만 펼치려면(아코디언) 바깥에서 상태를 넘깁니다. 없으면 각자 따로 열고 닫습니다.
  */
-export default function MobileSection({ title, summary, defaultOpen = false, card = false, open: openProp, onToggle, children }) {
+export default function MobileSection({ title, summary, defaultOpen = false, card = false, always = false, open: openProp, onToggle, children }) {
   const [openState, setOpenState] = useState(defaultOpen)
   const controlled = openProp !== undefined
   const open = controlled ? openProp : openState
   const toggle = () => (controlled ? onToggle?.() : setOpenState((o) => !o))
   return (
     <div
-      className={`mobile-section ${open ? 'mobile-section--open' : ''} ${card ? 'mobile-section--card' : ''}`}
+      className={`mobile-section ${open ? 'mobile-section--open' : ''} ${card ? 'mobile-section--card' : ''} ${always ? 'mobile-section--always' : ''}`}
     >
       <button type="button" className="mobile-section__toggle" aria-expanded={open} onClick={toggle}>
         <span className="mobile-section__title">{title}</span>

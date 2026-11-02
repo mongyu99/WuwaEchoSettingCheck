@@ -1,12 +1,9 @@
 import { SUB_STAT_OPTIONS, SUB_STAT_NAMES, formatSubStatValue } from '../config/subStatOptions'
-import { MAIN_STAT_BONUS_NAMES } from '../config/mainStatBonusNames'
+import { MAIN_STAT_VALUES, applyCostToMainStats } from '../config/echoMainStats'
 import { getEchoCost } from '../utils/ocr'
 import './EchoPanel.css'
 
-// 메인 스탯은 항상 최대 2줄입니다: 첫 줄은 코스트 보너스(15가지 중 하나), 둘째 줄은 공격력/HP
-// 중 하나입니다(utils/ocr.js의 normalizeMainStats와 같은 규칙). 값(valueText)은 코스트별로
-// 고정돼 있지만 아직 그 수치 테이블이 없어서, 지금은 라벨만 목록에서 고르고 값은 직접 입력합니다.
-const MAIN_STAT_LABEL_OPTIONS = [MAIN_STAT_BONUS_NAMES, ['공격력', 'HP']]
+const ECHO_COSTS = ['1', '3', '4']
 
 export default function EchoPanel({
   echo,
@@ -20,19 +17,13 @@ export default function EchoPanel({
   blinkValue,
   blinkToken,
   onRetake,
+  onUpdateCost,
+  costLimitLeft,
 }) {
-  const updateMainLabel = (id, label) => {
-    onUpdateMainStats(echo.id, echo.mainStats.map((s) => (s.id === id ? { ...s, label } : s)))
-  }
-  const updateMainValue = (id, valueText) => {
-    onUpdateMainStats(echo.id, echo.mainStats.map((s) => (s.id === id ? { ...s, valueText } : s)))
-  }
-  const removeMain = (id) => {
-    onUpdateMainStats(echo.id, echo.mainStats.filter((s) => s.id !== id))
-  }
-  const addMain = () => {
-    if (echo.mainStats.length >= 2) return
-    onUpdateMainStats(echo.id, [...echo.mainStats, { id: `main-${Date.now()}`, label: '', valueText: '' }])
+  const cost = getEchoCost(echo)
+  const mainOptions = Object.keys(MAIN_STAT_VALUES[cost] ?? {})
+  const updateMainLabel = (label) => {
+    onUpdateMainStats(echo.id, applyCostToMainStats(echo.mainStats, cost, label))
   }
 
   const updateSubLabel = (id, label) => {
@@ -56,7 +47,22 @@ export default function EchoPanel({
     <article className="echo-panel">
       <header className="echo-panel__header">
         <span className="echo-panel__badge">에코 {index + 1}</span>
-        {getEchoCost(echo) && <span className="echo-panel__cost">COST {getEchoCost(echo)}</span>}
+        {onUpdateCost ? (
+          <select
+            className="echo-panel__cost echo-panel__cost-select"
+            aria-label="에코 코스트"
+            value={getEchoCost(echo) ?? ''}
+            onChange={(e) => onUpdateCost(echo.id, e.target.value)}
+          >
+            <option value="" disabled hidden>COST 선택</option>
+            {ECHO_COSTS.map((cost) => (
+              // 총합 12코스트를 넘기는 선택지는 고를 수 없습니다.
+              <option key={cost} value={cost} disabled={Number(cost) > costLimitLeft}>COST {cost}</option>
+            ))}
+          </select>
+        ) : (
+          getEchoCost(echo) && <span className="echo-panel__cost">COST {getEchoCost(echo)}</span>
+        )}
         {onRetake && (
           <button type="button" className="btn btn--ghost echo-panel__retake" onClick={onRetake}>
             재촬영
@@ -69,39 +75,29 @@ export default function EchoPanel({
       <section className="echo-panel__block echo-panel__block--main">
         <h3>메인 스탯</h3>
         <ul>
-          {echo.mainStats.length === 0 && <li className="echo-panel__empty">인식된 메인 스탯 없음</li>}
-          {echo.mainStats.map((s, i) => {
-            const labelOptions = MAIN_STAT_LABEL_OPTIONS[i] ?? MAIN_STAT_BONUS_NAMES
-            const labelIncomplete = highlightIncomplete && !s.label
-            const valueIncomplete = highlightIncomplete && !!s.label && !s.valueText
-            return (
-              <li key={s.id} className="echo-panel__main-row">
+          {mainOptions.length === 0 && <li className="echo-panel__empty">코스트를 먼저 선택해 주세요.</li>}
+          {mainOptions.length > 0 && (
+            <>
+              <li className="echo-panel__main-row">
                 <select
-                  className={labelIncomplete ? 'echo-panel__sub-row--incomplete' : ''}
-                  value={s.label}
-                  onChange={(e) => updateMainLabel(s.id, e.target.value)}
+                  className={highlightIncomplete && !echo.mainStats[0]?.label ? 'echo-panel__sub-row--incomplete' : ''}
+                  value={echo.mainStats[0]?.label ?? ''}
+                  onChange={(e) => updateMainLabel(e.target.value)}
                 >
                   <option value="" disabled hidden>스탯 선택</option>
-                  {labelOptions.map((name) => (
+                  {mainOptions.map((name) => (
                     <option key={name} value={name}>{name}</option>
                   ))}
                 </select>
-                <input
-                  className={valueIncomplete ? 'echo-panel__sub-row--incomplete' : ''}
-                  type="text"
-                  value={s.valueText}
-                  onChange={(e) => updateMainValue(s.id, e.target.value)}
-                  placeholder="수치 직접 입력"
-                  disabled={!s.label}
-                />
-                <button onClick={() => removeMain(s.id)} aria-label="메인 스탯 삭제">×</button>
+                <input type="text" value={echo.mainStats[0]?.valueText ?? ''} readOnly tabIndex={-1} aria-label="메인 스탯 수치" />
               </li>
-            )
-          })}
+              <li className="echo-panel__main-row">
+                <input type="text" value={echo.mainStats[1]?.label ?? ''} readOnly tabIndex={-1} aria-label="고정 스탯" />
+                <input type="text" value={echo.mainStats[1]?.valueText ?? ''} readOnly tabIndex={-1} aria-label="고정 스탯 수치" />
+              </li>
+            </>
+          )}
         </ul>
-        {echo.mainStats.length < 2 && (
-          <button className="echo-panel__add" onClick={addMain}>+ 메인 스탯 추가</button>
-        )}
       </section>
 
       <section className="echo-panel__block echo-panel__block--sub">

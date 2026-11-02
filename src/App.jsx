@@ -24,6 +24,8 @@ import { detectHighlightedLines } from './utils/highlight'
 import { preprocessForOcr, MAX_IMAGES } from './utils/image'
 import { prepareImageForExtraction } from './utils/pipeline'
 import { saveState, loadState } from './utils/persist'
+import { getEchoCost } from './utils/ocr'
+import { applyCostToMainStats } from './config/echoMainStats'
 import { loadTheme, applyTheme } from './utils/theme'
 import './App.css'
 
@@ -31,12 +33,15 @@ const EMPTY_BASE_STATS = { charAtk: '', weaponAtk: '', baseHp: '', baseDef: '' }
 
 /** 예전 저장 형식(캐릭터당 에코 배열만 저장, 또는 에코 세트를 단일/배열로 저장하던 형식)과도
  * 호환되도록 레코드 모양을 항상 통일합니다. */
+const withFixedMainStats = (echo) => ({ ...echo, mainStats: applyCostToMainStats(echo.mainStats, getEchoCost(echo)) })
+
 function normalizeRecord(rec) {
   if (Array.isArray(rec)) {
     return { echoes: rec, weapon: null, echoParts: null, baseStats: { ...EMPTY_BASE_STATS } }
   }
   return {
-    echoes: rec?.echoes ?? [],
+    // 예전에 저장한 에코도 코스트 기준 고정 수치로 맞춰서 읽습니다.
+    echoes: (rec?.echoes ?? []).map(withFixedMainStats),
     weapon: rec?.weapon ?? null, // 무기 카탈로그 id (또는 null)
     // 사용자가 세트 추가/삭제로 직접 조립한 에코 세트 조합([{ setId, pieceCount }, ...])입니다.
     // null이면 캐릭터에게 등록된 추천 조합(config/characterEchoSets.js) 중 첫 번째를 기본값으로
@@ -109,6 +114,10 @@ export default function App() {
   // 캐릭터 선택 화면에서 에코가 하나라도 등록된 캐릭터를 구분해 보여주기 위한 목록입니다.
   const charactersWithData = new Set(
     Object.keys(characterData).filter((id) => normalizeRecord(characterData[id]).echoes.length > 0),
+  )
+
+  const characterEchoes = Object.fromEntries(
+    Object.keys(characterData).map((id) => [id, normalizeRecord(characterData[id]).echoes]),
   )
 
   // 진행 상태가 바뀔 때마다 저장해서, 브라우저를 나갔다 들어와도 이어서 볼 수 있게 합니다.
@@ -206,7 +215,7 @@ export default function App() {
     for (let i = 0; i < perImage.length; i++) {
       const item = perImage[i]
       const echo = await buildEchoFromCrops(item.id, item.crops, item.previewUrl)
-      results.push(echo)
+      results.push(withFixedMainStats(echo))
       setProgress((i + 1) / perImage.length)
     }
 
@@ -220,7 +229,7 @@ export default function App() {
     setReplacingId(id)
     try {
       const { crops, previewUrl } = await prepareImageForExtraction(file)
-      const updated = await buildEchoFromCrops(id, crops, previewUrl)
+      const updated = withFixedMainStats(await buildEchoFromCrops(id, crops, previewUrl))
       setEchoesForCurrent((prev) => prev.map((e) => (e.id === id ? updated : e)))
     } catch (err) {
       console.error(err)
@@ -232,6 +241,10 @@ export default function App() {
 
   const updateSubStats = (id, subStats) => {
     setEchoesForCurrent((prev) => prev.map((e) => (e.id === id ? { ...e, subStats } : e)))
+  }
+
+  const updateEchoCost = (id, cost) => {
+    setEchoesForCurrent((prev) => prev.map((e) => (e.id === id ? { ...e, cost, mainStats: applyCostToMainStats(e.mainStats, cost) } : e)))
   }
 
   const updateMainStats = (id, mainStats) => {
@@ -292,6 +305,7 @@ export default function App() {
             echoes={draftEchoes}
             onUpdateSubStats={updateSubStats}
             onUpdateMainStats={updateMainStats}
+            onUpdateCost={updateEchoCost}
             onReplaceOne={handleReplaceOne}
             replacingId={replacingId}
             onProceedToStats={handleCompleteEdit}
@@ -313,6 +327,7 @@ export default function App() {
             onSetErAdjust={setErAdjustForCurrent}
             onUpdateSubStats={updateSubStats}
             onUpdateMainStats={updateMainStats}
+            onUpdateCost={updateEchoCost}
             onReplaceOne={handleReplaceOne}
             onAddEcho={addManualEcho}
             onGoToCharacters={goToCharacters}
@@ -320,7 +335,7 @@ export default function App() {
           />
         )
       case 'characters':
-        return <CharacterSelectPage onSelect={handleSelectCharacter} charactersWithData={charactersWithData} />
+        return <CharacterSelectPage onSelect={handleSelectCharacter} charactersWithData={charactersWithData} characterEchoes={characterEchoes} />
       case 'patchnotes':
         return <PatchNotesPage />
       case 'events':
