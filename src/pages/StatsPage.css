@@ -1382,3 +1382,13 @@
   cursor: not-allowed;
   opacity: 0.45;
 }
+
+/* 좁은 캐릭터 칸에 갇히지 않도록 말풍선 폭을 따로 줍니다. 옆 칸 위로 올라오도록 칸의 쌓임 순서도 올립니다. */
+.stats-page__valid-title .optimizer__formula {
+  right: auto;
+  width: 240px;
+}
+
+.stats-page__char {
+  z-index: 2;
+}
