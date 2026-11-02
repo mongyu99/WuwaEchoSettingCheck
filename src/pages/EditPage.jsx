@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import EchoPanel from '../components/EchoPanel'
+import { getEchoCost } from '../utils/ocr'
 import ConfirmDialog from '../components/ConfirmDialog'
 import './EditPage.css'
 
@@ -7,7 +8,7 @@ function hasIncompleteStat(echoes) {
   return echoes.some((echo) => echo.subStats.some((s) => !s.label || !s.valueText))
 }
 
-export default function EditPage({ echoes, onUpdateSubStats, onUpdateMainStats, onReplaceOne, replacingId, onProceedToStats, onGoToCharacters }) {
+export default function EditPage({ echoes, onUpdateSubStats, onUpdateMainStats, onUpdateCost, onReplaceOne, replacingId, onProceedToStats, onGoToCharacters }) {
   const [highlightIncomplete, setHighlightIncomplete] = useState(false)
   const [fewEchoesOpen, setFewEchoesOpen] = useState(false)
 
@@ -74,6 +75,8 @@ export default function EditPage({ echoes, onUpdateSubStats, onUpdateMainStats, 
               index={idx}
               onUpdateSubStats={onUpdateSubStats}
               onUpdateMainStats={onUpdateMainStats}
+              onUpdateCost={onUpdateCost}
+              costLimitLeft={12 - echoes.reduce((sum, e) => sum + (e.id === echo.id ? 0 : Number(getEchoCost(e)) || 0), 0)}
               highlightIncomplete={highlightIncomplete}
             />
           </div>

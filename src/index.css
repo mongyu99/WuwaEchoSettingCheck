@@ -187,3 +187,30 @@ button:not(:disabled):active,
   translate: none !important;
   scale: none !important;
 }
+
+/* 커스텀 스크롤바. 페이지 전체 스크롤바는 위에서 숨겨 둔 그대로이고, 팝업·목록 같은 안쪽 스크롤에 적용됩니다. */
+body * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-hairline) transparent;
+}
+
+body *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+body *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+body *::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--border-hairline);
+  background-clip: padding-box;
+}
+
+body *::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-wave);
+  background-clip: padding-box;
+}

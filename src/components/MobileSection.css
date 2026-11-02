@@ -126,3 +126,109 @@
     transition: none;
   }
 }
+
+/* always: PC에서도 모바일과 같은 접기/펼치기 (모바일 규칙은 위 미디어 쿼리가 그대로 적용됩니다) */
+@media (min-width: 701px) {
+  .mobile-section--always {
+    display: block;
+  }
+
+  .mobile-section--always > .mobile-section__toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 0;
+    border: none;
+    background: none;
+    color: var(--text-primary);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .mobile-section--always .mobile-section__title {
+    flex: 0 0 auto;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .mobile-section--always .mobile-section__summary {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .mobile-section--always .mobile-section__chevron {
+    flex: 0 0 auto;
+    margin-left: auto;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--text-muted);
+    border-bottom: 2px solid var(--text-muted);
+    transform: translateY(-2px) rotate(45deg);
+    transition: transform 0.2s ease;
+  }
+
+  .mobile-section--always.mobile-section--open .mobile-section__chevron {
+    transform: translateY(2px) rotate(-135deg);
+  }
+
+  .mobile-section--always > .mobile-section__body {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      grid-template-rows 0.25s ease,
+      opacity 0.2s ease,
+      visibility 0s linear 0.25s;
+  }
+
+  .mobile-section--always.mobile-section--open > .mobile-section__body {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    visibility: visible;
+    transition:
+      grid-template-rows 0.25s ease,
+      opacity 0.25s ease 0.05s,
+      visibility 0s;
+  }
+
+  .mobile-section--always .mobile-section__inner {
+    display: block;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .mobile-section--always .mobile-section__content {
+    display: block;
+    padding-bottom: 10px;
+  }
+
+  .mobile-section--always .mobile-section__heading {
+    display: none;
+  }
+
+  .mobile-section--always + .mobile-section--always {
+    border-top: 1px solid var(--border-hairline);
+  }
+}
+
+/* 요약에 아이콘을 넣는 경우 */
+.mobile-section__summary {
+  align-items: center;
+  gap: 4px;
+}
+
+.mobile-section__summary img {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  vertical-align: middle;
+}

@@ -216,3 +216,15 @@ input.echo-panel__sub-row--incomplete {
     font-size: 12px;
   }
 }
+
+.echo-panel__cost-select {
+  background: var(--bg-surface-raised);
+  cursor: pointer;
+}
+
+/* 코스트로 정해지는 메인 스탯 수치는 고칠 수 없습니다. */
+.echo-panel__main-row input[readonly] {
+  color: var(--text-muted);
+  cursor: default;
+  outline: none;
+}

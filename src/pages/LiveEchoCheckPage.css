@@ -1,0 +1,430 @@
+.live-check__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2.4fr) minmax(240px, 1fr) minmax(300px, 1.2fr);
+  gap: 16px;
+  margin-top: 16px;
+  align-items: start;
+}
+
+.live-check__screen,
+.live-check__result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 16px;
+}
+
+.live-check__result h3 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.live-check__stats,
+.live-check__ranks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* 인식된 옵션 줄을 누르면 팝업에서 고칠 수 있습니다. */
+.live-check__stat-btn {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 40px;
+  gap: 8px;
+  align-items: baseline;
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 6px;
+  background: var(--bg-surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.live-check__stat-btn:hover {
+  border-color: var(--accent-wave);
+}
+
+.live-check__stats small {
+  text-align: right;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.live-check__picker {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.live-check__picker li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.live-check__picker select {
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 6px;
+  background: var(--bg-surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 12px;
+}
+
+.live-check__ranks li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--bg-surface-raised);
+}
+
+.live-check__ranks img {
+  flex-shrink: 0;
+  width: 72px;
+  height: 96px;
+  object-fit: cover;
+  object-position: top;
+  border-radius: 8px;
+}
+
+.live-check__ranks div {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.live-check__ranks small {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .live-check__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.live-check__echo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 15px;
+}
+
+.live-check__set-tag {
+  margin-left: 6px;
+  font-size: 10px;
+  font-style: normal;
+  color: var(--accent-wave);
+}
+
+.live-check__set-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.live-check__set-select select {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 6px;
+  background: var(--bg-surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.live-check__set-select .btn {
+  flex: 1;
+  min-width: 0;
+}
+
+.live-check__picker .btn {
+  width: 100%;
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.live-check__rank-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.live-check__rank-head .live-check__set-tag {
+  margin-left: 0;
+  white-space: nowrap;
+}
+
+.live-check__apply {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+/* 폭이 좁으면 공유 화면을 위로 올리고 옵션과 추천을 그 아래에 나란히 둡니다. */
+@media (max-width: 1300px) {
+  .live-check__layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .live-check__screen {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 900px) {
+  .live-check__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.live-check__echo {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-check__echo img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.live-check__select {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 6px;
+  background: var(--bg-surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 12px;
+}
+
+.live-check__sub-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.live-check__sub-rows li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px;
+  gap: 6px;
+  align-items: center;
+}
+
+
+.live-check__main-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* 이름이 길어도 줄바꿈되지 않도록 이름을 한 줄 전체로 쓰고, 그 아래에 추천 세트와 적용하기를 둡니다. */
+.live-check__rank-head {
+  flex-wrap: wrap;
+}
+
+.live-check__rank-head strong {
+  flex: 0 0 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 공통 .btn 크기보다 우선하도록 선택자를 구체적으로 씁니다. */
+.live-check__ranks .live-check__apply {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+/* 사진이 카드 위아래를 빈틈없이 채웁니다. */
+.live-check__ranks li {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
+}
+
+.live-check__ranks img {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+.live-check__ranks li > div {
+  padding: 10px 12px 10px 0;
+}
+
+.live-check__saved {
+  margin: 0;
+  font-size: 12px;
+  color: var(--accent-wave);
+}
+
+.live-check__slot {
+  justify-content: space-between;
+  cursor: default;
+}
+
+.live-check__slot:hover {
+  border-color: var(--border-hairline);
+}
+
+.live-check__slot-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+.live-check__slot-actions .btn,
+.live-check__compare-actions .btn {
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+.live-check__compare {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.live-check__compare-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-self: stretch;
+  padding: 10px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 10px;
+  background: var(--bg-surface-raised);
+}
+
+.live-check__compare-col h4 {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.live-check__compare-col strong {
+  font-size: 20px;
+  color: var(--accent-wave);
+}
+
+.live-check__compare-col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.live-check__compare-col li {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.live-check__compare-col b {
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.live-check__compare-main {
+  color: var(--text-muted);
+}
+
+.live-check__compare-arrow {
+  color: var(--text-muted);
+  font-size: 18px;
+}
+
+.live-check__compare-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.live-check__debug {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.live-check__debug h3 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.live-check__debug-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 4px 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.live-check__debug-item span {
+  grid-column: 1 / -1;
+}
+
+.live-check__debug-item img {
+  width: 100%;
+  border-radius: 6px;
+}
+
+.live-check__debug-item pre {
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.live-check__debug summary {
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.live-check__debug-item {
+  margin-top: 10px;
+}

@@ -16,7 +16,7 @@ const DARK = 16 // 이 밝기(0~255) 이하면 검은 여백으로 봅니다
  * 2) 그래도 16:9보다 세로가 길면 창 제목 표시줄이 위에 붙은 것이라 아래쪽 16:9만 씁니다.
  * 16:9보다 가로가 긴 경우(울트라와이드 등)는 그대로 두면 이후 정규화(normalizeImage)가 오른쪽 기준으로 맞춥니다.
  */
-function findGameArea(ctx, width, height) {
+export function findGameArea(ctx, width, height) {
   const { data } = ctx.getImageData(0, 0, width, height)
   const bright = (px, py) => {
     const i = (py * width + px) * 4

@@ -1,8 +1,23 @@
 import { useMemo, useState } from 'react'
+import { assetPath } from '../config/assetPath'
+import { getValidOptions } from '../config/characterValidOptions'
+import { gradeOf, scoreEchoes } from '../utils/echoScore'
 import { CHARACTERS, ELEMENTS, ELEMENT_COLORS } from '../config/characters'
 import './CharacterSelectPage.css'
 
-export default function CharacterSelectPage({ onSelect, charactersWithData }) {
+/** 에코를 등록한 캐릭터 카드에 합계 등급과 점수를 띄웁니다. */
+function CardGrade({ echoes, characterId }) {
+  const total = scoreEchoes(echoes, getValidOptions(characterId))
+  const grade = gradeOf(total)
+  return (
+    <span className="char-card__grade">
+      <img src={assetPath(`grades/${grade.icon}.png`)} alt={grade.label} />
+      {total.toFixed(1)}
+    </span>
+  )
+}
+
+export default function CharacterSelectPage({ onSelect, charactersWithData, characterEchoes }) {
   const [element, setElement] = useState('all') // 'all' | ELEMENTS[i]
   const [query, setQuery] = useState('')
 
@@ -23,7 +38,7 @@ export default function CharacterSelectPage({ onSelect, charactersWithData }) {
     <section className="char-select">
       <header className="char-select__head">
         <span className="uploader__eyebrow">캐릭터 선택</span>
-        <h2>에코를 등록할 캐릭터를 고르세요</h2>
+        <h2>등록할 캐릭터를 고르세요</h2>
       </header>
 
       <div className="char-select__filters">
@@ -77,6 +92,7 @@ export default function CharacterSelectPage({ onSelect, charactersWithData }) {
                   {c.initials}
                 </div>
               )}
+              {characterEchoes?.[c.id]?.length > 0 && <CardGrade echoes={characterEchoes[c.id]} characterId={c.id} />}
               {c.rarity && <span className="char-card__rarity">{c.rarity}★</span>}
               {c.upcoming && <span className="char-card__upcoming">픽업 예정</span>}
             </div>

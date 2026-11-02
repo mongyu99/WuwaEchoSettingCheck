@@ -53,7 +53,7 @@
    맞춰 늘어납니다 — 항상 합산 스탯과 같은 길이를 유지합니다. */
 .echo-editor {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 260px minmax(0, 1fr) 300px;
   gap: 16px;
   margin-top: 10px;
   align-items: stretch;
@@ -886,7 +886,11 @@
 
 @media (max-width: 1300px) {
   .echo-editor {
-    grid-template-columns: 220px 1fr;
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  .echo-score {
+    grid-column: 1 / -1;
   }
 }
 
@@ -1183,4 +1187,208 @@
 .stats-page__er-adjust input[type='checkbox']:focus-visible {
   outline: 2px solid var(--accent-wave);
   outline-offset: 2px;
+}
+
+/* 계산기 제목 옆 i 아이콘과 계산식 말풍선. 카드가 스크롤 영역이라 옆으로 삐져나가지 않게 제목 줄 너비에 맞춥니다. */
+.optimizer__title-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.optimizer__info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: help;
+}
+
+.optimizer__info:hover,
+.optimizer__info:focus {
+  border-color: var(--accent-wave);
+  color: var(--accent-wave);
+  outline: none;
+}
+
+.optimizer__formula {
+  display: none;
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 8px;
+  background: var(--bg-surface-raised);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.optimizer__formula p {
+  margin: 0 0 6px;
+}
+
+.optimizer__formula p:last-child {
+  margin-bottom: 0;
+}
+
+.optimizer__info:hover + .optimizer__formula,
+.optimizer__info:focus + .optimizer__formula {
+  display: block;
+}
+
+/* i 아이콘을 제목 글자 크기·높이에 맞춥니다. 제목의 위아래 여백은 줄 전체로 옮깁니다. */
+.optimizer__title-row .stats-page__col-title {
+  margin: 0;
+}
+
+.optimizer__title-row {
+  margin-bottom: 10px;
+}
+
+.optimizer__info {
+  width: 14px;
+  height: 14px;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.stats-page__aggregate-note a {
+  color: var(--accent-wave);
+}
+
+/* 안내 문구는 왼쪽, 이잘키 링크는 오른쪽 끝에 둡니다. */
+.stats-page__aggregate-note {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stats-page__aggregate-link {
+  flex-shrink: 0;
+}
+
+.stats-page__valid-title {
+  margin: 10px 0 2px;
+}
+
+.stats-page__valid-title h4 {
+  margin: 0;
+}
+
+/* 접힌 줄의 긴 요약(한 줄 말줄임)이 카드 폭을 밀어내지 않게 합니다. */
+.stats-page__loadout,
+.stats-page__loadout > .mobile-section {
+  min-width: 0;
+}
+
+.stats-page__loadout > .mobile-section {
+  width: 100%;
+}
+
+/* 값이 바뀌어도 열 너비가 흔들리지 않게 고정합니다(바이크 보정치 체크 등). */
+.full-aggregate-table {
+  table-layout: fixed;
+}
+
+.full-aggregate-table th:nth-child(1) {
+  width: 36%;
+}
+
+.full-aggregate-table th:nth-child(2) {
+  width: 22%;
+}
+
+/* 옵션 수가 바뀌어도 카드 높이가 변하지 않게 메인 2줄·서브 5줄 자리를 항상 비워 둡니다.
+   추가 버튼은 줄이 모자랄 때만 나오므로, 비어 있는 마지막 줄 자리에 겹쳐 놓습니다. */
+@media (min-width: 701px) {
+  .echo-editor__panel .echo-panel__block {
+    position: relative;
+  }
+
+  .echo-editor__panel .echo-panel__sub-row select,
+  .echo-editor__panel .echo-panel__main-row select,
+  .echo-editor__panel .echo-panel__main-row input {
+    height: 33px;
+  }
+
+  .echo-editor__panel .echo-panel__block--main ul {
+    min-height: 72px;
+  }
+
+  .echo-editor__panel .echo-panel__block--sub ul {
+    min-height: 189px;
+  }
+
+  .echo-editor__panel .echo-panel__add {
+    position: absolute;
+    left: 12px;
+    bottom: 0;
+    margin: 0;
+  }
+
+  /* 에코 선택 버튼이 카드 높이를 빈칸 없이 채웁니다. */
+  /* 에코가 적어도 버튼이 커지지 않게 항상 5칸으로 나눕니다. */
+  .echo-editor__scores .stats-page__chip-list {
+    display: grid;
+    grid-template-rows: repeat(5, 1fr);
+  }
+
+  .echo-editor__scores .stats-page__chip-list > li {
+    display: flex;
+    min-height: 0;
+  }
+
+  /* 에코 번호는 왼쪽, 코스트와 화살표는 오른쪽 끝에 둡니다. */
+  .echo-editor__scores .stats-page__chip-head {
+    width: 100%;
+  }
+
+  .echo-editor__scores .stats-page__chip-head > span {
+    white-space: nowrap;
+  }
+
+  .echo-editor__scores .stats-page__chip-cost {
+    margin-left: auto;
+  }
+
+  .echo-editor__scores .stats-page__chip-cost + .stats-page__chip-arrow {
+    margin-left: 0;
+  }
+
+  .echo-editor__scores .stats-page__chip-list > li > .stats-page__chip-card {
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+}
+
+.echo-editor__cost-over {
+  color: var(--score-low);
+}
+
+.picker-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* 좁은 캐릭터 칸에 갇히지 않도록 말풍선 폭을 따로 줍니다. 옆 칸 위로 올라오도록 칸의 쌓임 순서도 올립니다. */
+.stats-page__valid-title .optimizer__formula {
+  right: auto;
+  width: 240px;
+}
+
+.stats-page__char {
+  z-index: 2;
 }
