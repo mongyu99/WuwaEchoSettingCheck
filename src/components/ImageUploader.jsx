@@ -81,7 +81,14 @@ export default function ImageUploader({ onExtractAll, isProcessing, progress }) 
   return (
     <section className="uploader">
       <header className="uploader__head">
-        <h2>업로드 방식을 선택해주세요.</h2>
+        <div className="uploader__title-row">
+          <h2>업로드 방식을 선택해주세요.</h2>
+          {mode !== null && screenCaptureSupported && (
+            <button type="button" className="btn btn--ghost uploader__mode-back" onClick={() => setMode(null)}>
+              ← 뒤로
+            </button>
+          )}
+        </div>
         <p className="uploader__hint">
           최대 {MAX_IMAGES}장까지 업로드가 가능합니다.
         </p>
@@ -98,12 +105,6 @@ export default function ImageUploader({ onExtractAll, isProcessing, progress }) 
             <span>화면 공유로 실시간 업로드 할게요.</span>
           </button>
         </div>
-      )}
-
-      {mode !== null && screenCaptureSupported && (
-        <button type="button" className="btn btn--ghost uploader__mode-back" onClick={() => setMode(null)}>
-          ← 뒤로
-        </button>
       )}
 
       {mode === 'share' && (

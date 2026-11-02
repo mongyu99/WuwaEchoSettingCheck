@@ -51,7 +51,7 @@ export default function CharacterSelectPage({ onSelect, charactersWithData }) {
 
       {filtered.length === 0 && <p className="uploader__hint">조건에 맞는 캐릭터가 없어요.</p>}
 
-      <div className="char-select__grid">
+      <div key={element} className="char-select__grid"> {/* 속성을 바꾸면 목록을 새로 그려 물결 등장을 다시 재생합니다. */}
         {filtered.map((c, i) => (
           <button
             key={c.id}

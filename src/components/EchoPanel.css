@@ -14,6 +14,12 @@
   gap: 10px;
 }
 
+.echo-panel__retake {
+  margin-left: auto;
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
 .echo-panel__badge {
   font-family: var(--font-mono);
   font-size: 11px;

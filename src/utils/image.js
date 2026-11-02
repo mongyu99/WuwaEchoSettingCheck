@@ -39,14 +39,55 @@ function drawScaled(source, width, height) {
   return canvas
 }
 
+// 휴대폰 화면 비율(19.5:9, 20:9 등). 21:9 이상 PC 울트라와이드는 2.3을 넘어서 기존 처리를 탑니다.
+const MOBILE_RATIO_MIN = 1.95
+const MOBILE_RATIO_MAX = 2.3
+
+function isMobileRatio(width, height) {
+  const ratio = width / height
+  return ratio >= MOBILE_RATIO_MIN && ratio <= MOBILE_RATIO_MAX
+}
+
+// 2340x1080 휴대폰 스크린샷에서 잰 패널 위치입니다. 세로는 높이 1080 기준, 가로는 오른쪽 끝에서 떨어진 거리입니다.
+const MOBILE_PANEL = { right: 152, width: 438 }
+const MOBILE_ROWS = [
+  { srcY: 130, srcH: 69, dstY: 91, dstH: 104 }, // 이름(미리보기용)
+  { srcY: 199, srcH: 33, dstY: 195, dstH: 35 }, // 코스트
+  { srcY: 255, srcH: 85, dstY: 230, dstH: 70 }, // 메인 스탯 2줄
+  { srcY: 345, srcH: 215, dstY: 300, dstH: 180 }, // 서브 스탯 5줄
+]
+
+/** 패널의 각 구역을 잘라 FIXED_REGIONS의 PC 좌표에 옮겨 그립니다. */
+function drawMobileLayout(img) {
+  const canvas = document.createElement('canvas')
+  canvas.width = TARGET_WIDTH
+  canvas.height = TARGET_HEIGHT
+  const ctx = canvas.getContext('2d')
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
+  const scale = img.naturalHeight / 1080
+  const srcX = img.naturalWidth - (MOBILE_PANEL.right + MOBILE_PANEL.width) * scale
+  for (const row of MOBILE_ROWS) {
+    ctx.drawImage(img, srcX, row.srcY * scale, MOBILE_PANEL.width * scale, row.srcH * scale, 1485, row.dstY, 385, row.dstH)
+  }
+  return canvas
+}
+
 /**
  * 해상도·비율과 상관없이 1920x1080 캔버스로 맞춥니다. 인식 영역(config/regions.js)이 1920x1080
  * 좌표 기준입니다. 게임은 화면이 넓어져도(21:9 등) UI를 높이 기준으로 키우고 스탯 패널을 오른쪽 끝에
  * 붙이므로, 높이를 1080에 맞춘 뒤 오른쪽 끝을 기준으로 1920 너비만 남깁니다(16:9보다 좁으면 왼쪽이 빔).
  * 4K처럼 큰 사진은 한 번에 줄이면 글자가 뭉개져서, 절반씩 단계적으로 줄인 뒤 마지막에 맞춥니다.
+ * 휴대폰 스크린샷은 UI 크기와 위치가 PC와 달라서 drawMobileLayout으로 따로 맞춥니다.
  */
 export async function normalizeImage(file) {
   const { img, url } = await loadImage(file)
+
+  if (isMobileRatio(img.naturalWidth, img.naturalHeight)) {
+    const canvas = drawMobileLayout(img)
+    URL.revokeObjectURL(url)
+    return { dataUrl: canvas.toDataURL('image/png'), width: TARGET_WIDTH, height: TARGET_HEIGHT }
+  }
 
   let source = img
   let w = img.naturalWidth

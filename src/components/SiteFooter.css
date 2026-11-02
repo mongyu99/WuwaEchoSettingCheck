@@ -54,3 +54,7 @@
     padding: 20px 16px;
   }
 }
+
+.site-footer a.site-footer__link {
+  text-decoration: none;
+}

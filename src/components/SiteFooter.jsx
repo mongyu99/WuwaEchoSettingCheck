@@ -3,6 +3,9 @@ import Modal from './Modal'
 import { LEGAL_NOTICES } from '../config/legalNotices'
 import './SiteFooter.css'
 
+// 문의용 구글폼 주소입니다. 비어 있으면 문의 링크를 숨깁니다.
+const CONTACT_URL = 'https://forms.gle/BtbnCm8TpnsTFDp7A';
+
 export default function SiteFooter() {
   const [openKey, setOpenKey] = useState(null)
   const active = openKey ? LEGAL_NOTICES[openKey] : null
@@ -27,6 +30,11 @@ export default function SiteFooter() {
           <button className="site-footer__link" onClick={() => setOpenKey('terms')}>
             이용약관
           </button>
+          {CONTACT_URL && (
+            <a className="site-footer__link" href={CONTACT_URL} target="_blank" rel="noreferrer">
+              문의
+            </a>
+          )}
         </div>
       </footer>
 

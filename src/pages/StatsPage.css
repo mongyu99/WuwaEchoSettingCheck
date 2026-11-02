@@ -1067,7 +1067,8 @@
   }
 
   /* 위 선택 버튼에 이미 "에코 N · COST" 가 있어서, 편집 패널 머리의 같은 표시는 뺍니다. */
-  .echo-editor__panel .echo-panel__header {
+  .echo-editor__panel .echo-panel__badge,
+  .echo-editor__panel .echo-panel__cost {
     display: none;
   }
 

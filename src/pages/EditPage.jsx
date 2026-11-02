@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import EchoPanel from '../components/EchoPanel'
+import ConfirmDialog from '../components/ConfirmDialog'
 import './EditPage.css'
 
 function hasIncompleteStat(echoes) {
@@ -8,6 +9,7 @@ function hasIncompleteStat(echoes) {
 
 export default function EditPage({ echoes, onUpdateSubStats, onUpdateMainStats, onReplaceOne, replacingId, onProceedToStats, onGoToCharacters }) {
   const [highlightIncomplete, setHighlightIncomplete] = useState(false)
+  const [fewEchoesOpen, setFewEchoesOpen] = useState(false)
 
   const handleProceedClick = () => {
     if (hasIncompleteStat(echoes)) {
@@ -16,6 +18,10 @@ export default function EditPage({ echoes, onUpdateSubStats, onUpdateMainStats, 
       return
     }
     setHighlightIncomplete(false)
+    if (echoes.length < 5) {
+      setFewEchoesOpen(true)
+      return
+    }
     onProceedToStats()
   }
 
@@ -81,6 +87,14 @@ export default function EditPage({ echoes, onUpdateSubStats, onUpdateMainStats, 
           </button>
         </div>
       )}
+      <ConfirmDialog
+        open={fewEchoesOpen}
+        message="에코가 5개 이하입니다. 완료하시겠습니까?"
+        confirmLabel="확인"
+        cancelLabel="취소"
+        onConfirm={() => { setFewEchoesOpen(false); onProceedToStats() }}
+        onCancel={() => setFewEchoesOpen(false)}
+      />
     </section>
   )
 }

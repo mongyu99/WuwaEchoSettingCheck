@@ -21,6 +21,7 @@ public class CharacterStateService {
     private final CharacterBuildRepository buildRepository;
     private final UserRepository userRepository;
     private final CharacterStateMapper mapper;
+    private final BuildSnapshotRecorder snapshotRecorder;
 
     @Transactional(readOnly = true)
     public String load(Long userId) {
@@ -50,6 +51,7 @@ public class CharacterStateService {
         buildRepository.flush();
 
         OffsetDateTime now = OffsetDateTime.now();
+        String version = snapshotRecorder.currentVersion();
         incoming.forEach((characterId, record) -> {
             CharacterBuild build = existing.get(characterId);
             if (build == null) {
@@ -58,6 +60,7 @@ public class CharacterStateService {
             mapper.applyRecord(build, record);
             build.setUpdatedAt(now);
             buildRepository.save(build);
+            snapshotRecorder.record(userId, build, version);
         });
     }
 }

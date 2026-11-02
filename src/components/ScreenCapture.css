@@ -5,8 +5,14 @@
   margin-bottom: 14px;
 }
 
-.screen-capture__start {
-  align-self: flex-start;
+/* 공유 전 빈 미리보기 칸. 게임 화면 비율로 자리를 잡아 둡니다. */
+.screen-capture__idle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 9;
+  max-height: 360px;
+  width: 100%;
 }
 
 .screen-capture__error {
@@ -61,4 +67,12 @@
   .screen-capture__preview {
     transition: none;
   }
+}
+
+.screen-capture__start {
+  width: 100%;
+}
+
+.screen-capture__notes {
+  padding-left: 18px;
 }
