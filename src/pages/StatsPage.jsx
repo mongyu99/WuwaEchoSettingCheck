@@ -194,7 +194,7 @@ function computeCategoryTotal(cat, raw, baseStats, weapon) {
 // (config/characterWeapons.js)에는 "추천" 태그를 붙여 구분합니다.
 function WeaponPickerModal({ open, onClose, onSelect, options, recommendedIds }) {
   return (
-    <Modal open={open} title="무기 선택" onClose={onClose}>
+    <Modal wide open={open} title="무기 선택" onClose={onClose}>
       {options.length === 0 && <p className="uploader__hint">이 캐릭터가 쓸 수 있는 무기가 카탈로그에 없어요.</p>}
       {options.map(([id, w]) => (
         <button key={id} className="picker-item picker-item--simple" onClick={() => onSelect(id)}>
@@ -213,7 +213,7 @@ function WeaponPickerModal({ open, onClose, onSelect, options, recommendedIds })
 // 단계(1세트 전용/2·5세트 등, 남은 자리 수에 맞는 것만) 버튼을 오른쪽에 나열합니다.
 function EchoComboPickerModal({ open, onClose, onSelectPreset, onAddPart, presetEntries, addableSets }) {
   return (
-    <Modal open={open} title="에코 세트 조합" onClose={onClose}>
+    <Modal wide open={open} title="에코 세트 조합" onClose={onClose}>
       {presetEntries.length > 0 && (
         <>
           <p className="picker-section-title">추천 조합 (한 번에 적용)</p>
@@ -257,7 +257,7 @@ function EchoComboPickerModal({ open, onClose, onSelectPreset, onAddPart, preset
 // 후보가 하나뿐이면 이 팝업을 열 일 자체가 없습니다(고정).
 function MainEchoPickerModal({ open, onClose, onSelect, mainEchoIds }) {
   return (
-    <Modal open={open} title="메인 에코 선택" onClose={onClose}>
+    <Modal wide open={open} title="메인 에코 선택" onClose={onClose}>
       {mainEchoIds.map((id) => {
         const echo = getMainEcho(id)
         return (

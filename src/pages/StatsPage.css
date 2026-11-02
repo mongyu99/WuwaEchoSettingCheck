@@ -1339,14 +1339,15 @@
   }
 
   /* 에코 선택 버튼이 카드 높이를 빈칸 없이 채웁니다. */
+  /* 에코가 적어도 버튼이 커지지 않게 항상 5칸으로 나눕니다. */
   .echo-editor__scores .stats-page__chip-list {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: repeat(5, 1fr);
   }
 
   .echo-editor__scores .stats-page__chip-list > li {
     display: flex;
-    flex: 1;
+    min-height: 0;
   }
 
   /* 에코 번호는 왼쪽, 코스트와 화살표는 오른쪽 끝에 둡니다. */
@@ -1375,4 +1376,9 @@
 
 .echo-editor__cost-over {
   color: var(--score-low);
+}
+
+.picker-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }

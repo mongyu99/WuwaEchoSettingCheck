@@ -7,6 +7,14 @@ export const FIXED_REGIONS = {
   subStat: { x: 1485, y: 300, width: 385, height: 180 },
 }
 
+// 실시간 에코 체크 전용 영역입니다. 화음 이펙트 줄은 어빌리티 설명 길이에 따라 움직여서 패널 아래쪽을 넓게 읽습니다.
+export const LIVE_REGIONS = {
+  sonata: { x: 1485, y: 480, width: 385, height: 420 },
+  // 강화 화면은 패널이 왼쪽에 있습니다. 넓은 화면에서 잘리지 않게 왼쪽 끝 기준, 높이 1080 기준 좌표로 씁니다.
+  enhanceMainStat: { x: 200, y: 262, width: 470, height: 75 },
+  enhanceSubStat: { x: 200, y: 335, width: 470, height: 225 },
+}
+
 export const REGION_META = [
   { key: 'cost', label: '코스트', varName: '--region-name' },
   { key: 'mainStat', label: '메인 스탯 (2줄)', varName: '--region-main' },

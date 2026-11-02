@@ -22,7 +22,7 @@ function levenshtein(a, b) {
 }
 
 /** label과 가장 가까운 후보를 찾되, 후보 길이에 비해 너무 많이 다르면 매칭하지 않습니다. */
-function closestMatch(label, candidates) {
+export function closestMatch(label, candidates) {
   const stripped = label.replace(/\s+/g, '')
   let best = null
   let bestDist = Infinity
@@ -213,6 +213,22 @@ export async function recognizeRegion(image, onProgress) {
     return { text: data.text, lines }
   } finally {
     await worker.terminate()
+  }
+}
+
+/** 연속으로 인식할 때 쓰는 세션입니다. 워커를 매번 새로 띄우지 않아 훨씬 빠릅니다. */
+export function createOcrSession() {
+  const workerPromise = createWorker('kor+eng', 1)
+  return {
+    async recognize(image) {
+      const worker = await workerPromise
+      const { data } = await worker.recognize(image)
+      return { text: data.text, lines: (data.lines ?? []).map((l) => ({ text: l.text, bbox: l.bbox })) }
+    },
+    async terminate() {
+      const worker = await workerPromise
+      await worker.terminate()
+    },
   }
 }
 

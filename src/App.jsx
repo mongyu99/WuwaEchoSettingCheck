@@ -5,6 +5,7 @@ import SiteFooter from './components/SiteFooter'
 import HomePage from './pages/HomePage'
 import PatchNotesPage from './pages/PatchNotesPage'
 import EventCalendarPage from './pages/EventCalendarPage'
+import LiveEchoCheckPage from './pages/LiveEchoCheckPage'
 import CharacterSelectPage from './pages/CharacterSelectPage'
 import CapturePage from './pages/CapturePage'
 import EditPage from './pages/EditPage'
@@ -33,6 +34,9 @@ const EMPTY_BASE_STATS = { charAtk: '', weaponAtk: '', baseHp: '', baseDef: '' }
 
 /** 예전 저장 형식(캐릭터당 에코 배열만 저장, 또는 에코 세트를 단일/배열로 저장하던 형식)과도
  * 호환되도록 레코드 모양을 항상 통일합니다. */
+// 메인 옵션을 고르지 않은 에코는 저장하지 않습니다. 화면에서 편집하는 동안에는 남아 있고, 저장할 때만 빠집니다.
+const hasMainOption = (echo) => !!echo.mainStats?.[0]?.label
+
 const withFixedMainStats = (echo) => ({ ...echo, mainStats: applyCostToMainStats(echo.mainStats, getEchoCost(echo)) })
 
 function normalizeRecord(rec) {
@@ -74,7 +78,7 @@ function stripPreviewUrls(characterData) {
       result[id] = rec
       continue
     }
-    const strippedEchoes = echoes.map(({ previewUrl, ...rest }) => rest)
+    const strippedEchoes = echoes.filter(hasMainOption).map(({ previewUrl, ...rest }) => rest)
     result[id] = Array.isArray(rec) ? strippedEchoes : { ...rec, echoes: strippedEchoes }
   }
   return result
@@ -117,7 +121,7 @@ export default function App() {
   )
 
   const characterEchoes = Object.fromEntries(
-    Object.keys(characterData).map((id) => [id, normalizeRecord(characterData[id]).echoes]),
+    Object.keys(characterData).map((id) => [id, normalizeRecord(characterData[id]).echoes.filter(hasMainOption)]),
   )
 
   // 진행 상태가 바뀔 때마다 저장해서, 브라우저를 나갔다 들어와도 이어서 볼 수 있게 합니다.
@@ -267,8 +271,21 @@ export default function App() {
     setPage(rec.echoes.length > 0 ? 'stats' : 'capture')
   }
 
+  /** 실시간 에코 체크에서 고른 캐릭터의 지정한 자리에 에코를 넣고 그 캐릭터 화면으로 이동합니다. 이미 있는 자리면 교체합니다. */
+  const handleApplyLiveEcho = (target, echo, slot, stay = false) => {
+    const rec = normalizeRecord(characterData[target.id] ?? {})
+    const echoes = rec.echoes.filter(hasMainOption)
+    if (slot < echoes.length) echoes[slot] = echo
+    else echoes.push(echo)
+    setCharacterData((prev) => ({ ...prev, [target.id]: { ...rec, echoes } }))
+    // 바로 저장은 화면 공유를 끊지 않고 실시간 체크 화면에 그대로 머뭅니다.
+    if (stay) return
+    setCharacter(target)
+    setPage('stats')
+  }
+
   const handleCompleteEdit = () => {
-    updateRecordForCurrent((rec) => ({ ...rec, echoes: draftEchoes }))
+    updateRecordForCurrent((rec) => ({ ...rec, echoes: draftEchoes.filter(hasMainOption) }))
     setPage('stats')
   }
 
@@ -276,6 +293,7 @@ export default function App() {
   const goToCharacters = () => setPage('characters')
   const goToPatchNotes = () => setPage('patchnotes')
   const goToEventCalendar = () => setPage('events')
+  const goToLiveCheck = () => setPage('live')
 
   /** 초기화: 이 캐릭터의 캡처된 에코만 지우고, 다시 캡처할 수 있도록 캡처 화면으로 이동합니다. */
   const handleResetCurrent = () => {
@@ -338,6 +356,8 @@ export default function App() {
         return <CharacterSelectPage onSelect={handleSelectCharacter} charactersWithData={charactersWithData} characterEchoes={characterEchoes} />
       case 'patchnotes':
         return <PatchNotesPage />
+      case 'live':
+        return <LiveEchoCheckPage onApplyEcho={handleApplyLiveEcho} characterEchoes={characterEchoes} />
       case 'events':
         return <EventCalendarPage />
       case 'home':
@@ -354,6 +374,7 @@ export default function App() {
         onGoToCharacterList={goToCharacters}
         onGoToPatchNotes={goToPatchNotes}
         onGoToEventCalendar={goToEventCalendar}
+        onGoToLiveCheck={goToLiveCheck}
         theme={theme}
         onToggleTheme={toggleTheme}
         characterData={stripPreviewUrls(characterData)}

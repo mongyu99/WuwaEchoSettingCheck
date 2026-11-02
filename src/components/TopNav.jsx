@@ -1,10 +1,13 @@
 import AuthPanel from './AuthPanel'
+import { screenCaptureSupported } from './ScreenCapture'
 import './TopNav.css'
 
 // 상단바 메뉴. 왼쪽 사이드바 대신 모든 화면에서 같은 위치로 바로 이동합니다.
 const MENU = [
   { page: 'home', label: '홈', handler: 'onGoHome' },
   { page: 'characters', label: '캐릭터 빌드 체크', handler: 'onGoToCharacterList' },
+  // 화면 공유가 필요한 기능이라 모바일에서는 메뉴에 넣지 않습니다.
+  ...(screenCaptureSupported ? [{ page: 'live', label: '실시간 에코 체크 - 베타', handler: 'onGoToLiveCheck' }] : []),
   { page: 'events', label: '이벤트 캘린더', handler: 'onGoToEventCalendar' },
 ]
 

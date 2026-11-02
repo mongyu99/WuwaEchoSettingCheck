@@ -58,3 +58,37 @@
   flex-direction: column;
   gap: 10px;
 }
+
+/* 목록 팝업: PC에서는 화면을 넓게 쓰고, 항목을 아이콘이 위에 오는 카드로 나열합니다. */
+@media (min-width: 701px) {
+  .modal--wide .modal__card {
+    width: min(1200px, 92vw);
+    max-height: 88vh;
+  }
+
+  .modal--wide .modal__body {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+
+  .modal--wide .modal__body > :not(.picker-item) {
+    grid-column: 1 / -1;
+  }
+
+  .modal--wide .picker-item {
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    min-height: 72px;
+    text-align: center;
+  }
+
+  .modal--wide .picker-item__icon {
+    width: 72px;
+    height: 72px;
+  }
+
+  .modal--wide .picker-item__tag {
+    margin-left: 0;
+  }
+}
