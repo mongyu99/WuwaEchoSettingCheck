@@ -1,4 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import { FIXED_REGIONS } from '../config/regions'
+import { cropNormalizedImage, normalizeImage, preprocessForOcr } from '../utils/image'
+import { buildStatsFromLines, createOcrSession, snapSubStatsToCatalog } from '../utils/ocr'
+import { panelSignature, signatureChanged } from '../utils/screenWatch'
 import './ScreenCapture.css'
 
 // 화면 공유(getDisplayMedia)는 PC 브라우저에서만 됩니다. 모바일은 API가 없거나 마우스가 아닌 터치라 숨깁니다.
@@ -8,6 +12,7 @@ export const screenCaptureSupported =
   window.matchMedia?.('(pointer: fine)').matches
 
 const GAME_RATIO = 16 / 9
+const AUTO_CHECK_MS = 500
 const DARK = 16 // 이 밝기(0~255) 이하면 검은 여백으로 봅니다
 
 /**
@@ -60,8 +65,9 @@ export function findGameArea(ctx, width, height) {
  *
  * onCapture(file): 캡처한 장면을 PNG File로 넘깁니다(파일 업로드와 같은 처리를 탑니다).
  * remaining: 더 올릴 수 있는 장 수. 0이면 캡처 버튼을 끕니다.
+ * auto: 화면이 멈췄을 때 새 에코가 보이면 알아서 캡처합니다.
  */
-export default function ScreenCapture({ onCapture, remaining }) {
+export default function ScreenCapture({ onCapture, remaining, auto = false }) {
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const [sharing, setSharing] = useState(false)
@@ -95,29 +101,94 @@ export default function ScreenCapture({ onCapture, remaining }) {
     if (sharing && videoRef.current) videoRef.current.srcObject = streamRef.current
   }, [sharing])
 
-  const capture = async () => {
+  /** 지금 장면에서 게임 화면 부분만 잘라 냅니다. */
+  const grabGameArea = () => {
     const video = videoRef.current
-    if (!video || !video.videoWidth || remaining <= 0) return
+    if (!video || !video.videoWidth) return null
     const frame = document.createElement('canvas')
     frame.width = video.videoWidth
     frame.height = video.videoHeight
     const frameCtx = frame.getContext('2d', { willReadFrequently: true })
     frameCtx.drawImage(video, 0, 0)
-
-    // 스크린샷과 같은 모양이 되도록 게임 화면 부분만 잘라 냅니다.
     const { x, y, w, h } = findGameArea(frameCtx, frame.width, frame.height)
     const canvas = document.createElement('canvas')
     canvas.width = w
     canvas.height = h
     canvas.getContext('2d').drawImage(frame, x, y, w, h, 0, 0, w, h)
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
-    if (!blob) return
-    const n = count + 1
-    setCount(n)
+    return canvas
+  }
+
+  const countRef = useRef(0)
+  const submit = (blob) => {
+    countRef.current += 1
+    setCount(countRef.current)
     setFlash(true)
     setTimeout(() => setFlash(false), 200)
-    onCapture(new File([blob], `화면 캡처 ${n}.png`, { type: 'image/png' }))
+    onCapture(new File([blob], `화면 캡처 ${countRef.current}.png`, { type: 'image/png' }))
   }
+
+  const capture = async () => {
+    if (remaining <= 0) return
+    const canvas = grabGameArea()
+    if (!canvas) return
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
+    if (blob) submit(blob)
+  }
+
+  // 매 렌더의 최신 값을 자동 캡처 타이머에서 읽기 위한 ref입니다.
+  const latest = useRef({})
+  latest.current = { remaining, submit, grabGameArea }
+
+  // 자동 캡처: 화면이 움직이는 동안은 기다렸다가, 멈추면 서브 옵션을 읽어 처음 보는 에코일 때만 캡처합니다.
+  useEffect(() => {
+    if (!sharing || !auto) return undefined
+    let busy = false
+    let cancelled = false
+    let previous = null
+    let lastChecked = null
+    const seen = new Set()
+    const session = createOcrSession()
+
+    const check = async () => {
+      if (busy || latest.current.remaining <= 0) return
+      busy = true
+      try {
+        const canvas = latest.current.grabGameArea()
+        if (!canvas) return
+        const signature = panelSignature(canvas, canvas.width, canvas.height)
+        const moving = signatureChanged(previous, signature)
+        previous = signature
+        if (moving || !signatureChanged(lastChecked, signature)) return
+        lastChecked = signature
+
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
+        const file = new File([blob], 'auto.png', { type: 'image/png' })
+        const { dataUrl } = await normalizeImage(file)
+        const crop = await cropNormalizedImage(dataUrl, FIXED_REGIONS.subStat)
+        const { lines } = await session.recognize(await preprocessForOcr(crop))
+        if (cancelled) return
+        const stats = snapSubStatsToCatalog(buildStatsFromLines(lines).stats.filter((s) => s.valueText).slice(0, 5)).filter(
+          (s) => s.label && s.valueText,
+        )
+        // 옵션이 안 읽히면 에코 화면이 아닙니다. 같은 옵션 조합은 이미 찍은 에코로 봅니다.
+        const key = stats.map((s) => `${s.label}${s.valueText}`).join('|')
+        if (stats.length === 0 || seen.has(key)) return
+        seen.add(key)
+        latest.current.submit(blob)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        busy = false
+      }
+    }
+
+    const timer = setInterval(check, AUTO_CHECK_MS)
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+      session.terminate()
+    }
+  }, [sharing, auto])
 
   if (!screenCaptureSupported) return null
 
@@ -126,7 +197,7 @@ export default function ScreenCapture({ onCapture, remaining }) {
       <div className={`screen-capture__preview ${flash ? 'screen-capture__preview--flash' : ''}`}>
         <video ref={videoRef} autoPlay muted playsInline hidden={!sharing} />
         {sharing ? (
-          <span className="screen-capture__live">● 공유 중</span>
+          <span className="screen-capture__live">{auto ? '● 자동 캡처 중' : '● 공유 중'}</span>
         ) : (
           <div className="screen-capture__idle" />
         )}

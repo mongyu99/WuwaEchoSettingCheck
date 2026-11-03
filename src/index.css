@@ -214,3 +214,15 @@ body *::-webkit-scrollbar-thumb:hover {
   background: var(--accent-wave);
   background-clip: padding-box;
 }
+
+/* 숫자 입력칸의 위아래 화살표를 없앱니다. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}

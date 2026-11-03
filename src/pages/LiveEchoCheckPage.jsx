@@ -13,38 +13,13 @@ import { MAIN_STAT_VALUES, applyCostToMainStats } from '../config/echoMainStats'
 import { buildStatsFromLines, closestMatch, createOcrSession, getEchoCost, normalizeMainStats, parseStatLines, snapSubStatsToCatalog } from '../utils/ocr'
 import { SUB_STAT_NAMES, SUB_STAT_OPTIONS, formatSubStatValue } from '../config/subStatOptions'
 import { scoreValidStats } from '../utils/echoScore'
+import { panelSignature, signatureChanged } from '../utils/screenWatch'
 import '../components/ScreenCapture.css'
 import './LiveEchoCheckPage.css'
 
-const CHECK_INTERVAL_MS = 2000
+const CHECK_INTERVAL_MS = 500
 const MAX_TOTAL_COST = 12
 const TOP_COUNT = 5
-// 스탯 패널이 있는 화면 오른쪽만 작게 줄여 비교합니다. 이 값보다 많이 달라졌을 때만 글자 인식을 돌립니다.
-const SIGNATURE_SIZE = 32
-const CHANGE_THRESHOLD = 4
-
-function panelSignature(source, w, h) {
-  const canvas = document.createElement('canvas')
-  canvas.width = SIGNATURE_SIZE
-  canvas.height = SIGNATURE_SIZE
-  const ctx = canvas.getContext('2d', { willReadFrequently: true })
-  // 왼쪽 절반은 강화 화면 패널, 오른쪽 절반은 에코 목록 화면 패널 자리입니다.
-  const half = SIGNATURE_SIZE / 2
-  ctx.drawImage(source, w * 0.05, h * 0.2, w * 0.25, h * 0.3, 0, 0, half, SIGNATURE_SIZE)
-  ctx.drawImage(source, w * 0.75, h * 0.2, w * 0.25, h * 0.3, half, 0, half, SIGNATURE_SIZE)
-  const { data } = ctx.getImageData(0, 0, SIGNATURE_SIZE, SIGNATURE_SIZE)
-  const gray = new Uint8Array(SIGNATURE_SIZE * SIGNATURE_SIZE)
-  for (let i = 0; i < gray.length; i++) gray[i] = (data[i * 4] + data[i * 4 + 1] + data[i * 4 + 2]) / 3
-  return gray
-}
-
-function signatureChanged(a, b) {
-  if (!a) return true
-  let diff = 0
-  for (let i = 0; i < a.length; i++) diff += Math.abs(a[i] - b[i])
-  return diff / a.length > CHANGE_THRESHOLD
-}
-
 /** 게임 화면을 높이 1080 기준으로 보고, 왼쪽 끝 기준 좌표의 영역을 잘라 냅니다(강화 화면용). */
 function cropFromLeft(source, h, region) {
   const scale = h / 1080
@@ -146,7 +121,7 @@ function EchoCompareColumn({ title, echo, characterId }) {
 
 const EMPTY_MANUAL_STATS = [0, 1, 2, 3, 4].map((i) => ({ id: `manual-${i}`, label: '', valueText: '' }))
 
-/** 공유 화면을 2초마다 확인해서, 지금 보고 있는 에코의 서브 스탯에 잘 맞는 캐릭터를 추천합니다. 모든 처리는 브라우저 안에서 합니다. */
+/** 공유 화면을 0.5초마다 확인해서, 지금 보고 있는 에코의 서브 스탯에 잘 맞는 캐릭터를 추천합니다. 모든 처리는 브라우저 안에서 합니다. */
 export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
   const videoRef = useRef(null)
   const streamRef = useRef(null)
@@ -218,12 +193,13 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
 
     let busy = false
     let cancelled = false
-    let lastSignature = null
+    let lastSignature = null // 마지막으로 글자 인식을 돌린 화면
+    let previousSignature = null // 바로 전 확인의 화면
     const session = createOcrSession()
 
     const check = async () => {
       const video = videoRef.current
-      // 이전 인식이 2초 넘게 걸리면 끝날 때까지 이번 확인은 건너뜁니다.
+      // 이전 인식이 0.5초 넘게 걸리면 끝날 때까지 이번 확인은 건너뜁니다.
       if (busy || !video?.videoWidth) return
       busy = true
       try {
@@ -239,7 +215,10 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
         area.getContext('2d').drawImage(frame, x, y, w, h, 0, 0, w, h)
 
         const signature = panelSignature(area, w, h)
-        if (!signatureChanged(lastSignature, signature)) return
+        // 화면이 움직이는 동안(에코 전환, 강화 연출 등)은 기다렸다가, 멈춘 뒤에 한 번만 인식합니다.
+        const moving = signatureChanged(previousSignature, signature)
+        previousSignature = signature
+        if (moving || !signatureChanged(lastSignature, signature)) return
         lastSignature = signature
 
         const blob = await new Promise((resolve) => area.toBlob(resolve, 'image/png'))

@@ -8,7 +8,7 @@ function hasIncompleteStat(echoes) {
   return echoes.some((echo) => echo.subStats.some((s) => !s.label || !s.valueText))
 }
 
-export default function EditPage({ echoes, onUpdateSubStats, onUpdateMainStats, onUpdateCost, onReplaceOne, replacingId, onProceedToStats, onGoToCharacters }) {
+export default function EditPage({ echoes, onUpdateSubStats, onUpdateMainStats, onUpdateCost, onReplaceOne, onReRecognize, replacingId, onProceedToStats, onGoToCharacters }) {
   const [highlightIncomplete, setHighlightIncomplete] = useState(false)
   const [fewEchoesOpen, setFewEchoesOpen] = useState(false)
 
@@ -69,6 +69,20 @@ export default function EditPage({ echoes, onUpdateSubStats, onUpdateMainStats, 
                   e.target.value = ''
                 }}
               />
+              {echo.crops && (
+                <button
+                  type="button"
+                  className="btn btn--ghost echo-row__recognize"
+                  disabled={replacingId !== null}
+                  onClick={(e) => {
+                    // label 안이라 막지 않으면 파일 선택 창이 함께 열립니다.
+                    e.preventDefault()
+                    onReRecognize(echo.id)
+                  }}
+                >
+                  재인식
+                </button>
+              )}
             </label>
             <EchoPanel
               echo={echo}

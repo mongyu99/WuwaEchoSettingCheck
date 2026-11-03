@@ -190,3 +190,15 @@
     transition: none;
   }
 }
+
+.home-page__broadcast {
+  display: block;
+  width: 100%;
+  border-radius: 4px;
+}
+
+.home-page__broadcast-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}

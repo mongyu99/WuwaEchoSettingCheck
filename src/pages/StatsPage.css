@@ -1392,3 +1392,25 @@
 .stats-page__char {
   z-index: 2;
 }
+
+
+.full-aggregate-table__detail .full-aggregate-table__group {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.full-aggregate-table__detail .full-aggregate-table__group-item {
+  padding-left: 12px;
+  font-size: 11px;
+}
+
+/* 묶음마다 세부 항목 아래에 합계가 옵니다. */
+.full-aggregate-table__detail .full-aggregate-table__group {
+  margin-bottom: 6px;
+  padding-top: 3px;
+  border-top: 1px solid var(--border-hairline);
+}
+
+.full-aggregate-table__detail .full-aggregate-table__group:last-child {
+  margin-bottom: 0;
+}

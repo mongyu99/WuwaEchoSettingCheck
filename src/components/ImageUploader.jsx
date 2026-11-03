@@ -104,14 +104,19 @@ export default function ImageUploader({ onExtractAll, isProcessing, progress }) 
             <strong>PC 공유</strong>
             <span>화면 공유로 실시간 업로드 할게요.</span>
           </button>
+          <button type="button" className="uploader__mode" onClick={() => setMode('auto')}>
+            <strong>자동 캡처</strong>
+            <span>화면 공유 중 새 에코가 보이면 알아서 캡처할게요.</span>
+          </button>
         </div>
       )}
 
-      {mode === 'share' && (
+      {(mode === 'share' || mode === 'auto') && (
         <>
           <ScreenCapture
             onCapture={(file) => addFiles([file], { extract: false })}
             remaining={MAX_IMAGES - items.length}
+            auto={mode === 'auto'}
           />
           {items.some((it) => !it.error) && (
             <button

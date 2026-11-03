@@ -110,3 +110,10 @@
     flex-basis: auto;
   }
 }
+
+.echo-row__recognize {
+  width: 100%;
+  margin-top: 8px;
+  padding: 7px 12px;
+  font-size: 12px;
+}
