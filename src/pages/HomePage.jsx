@@ -1,6 +1,7 @@
 import VersionBanner from '../components/VersionBanner'
 import PickupCarousel from '../components/PickupCarousel'
 import EventSchedule from '../components/EventSchedule'
+import BroadcastNews from '../components/BroadcastNews'
 import { OFFICIAL_X_HANDLE, NAVER_LOUNGE_URL, OFFICIAL_SITE_URL, YOUTUBE_URL } from '../config/officialNews'
 import { assetPath } from '../config/assetPath'
 import './HomePage.css'
@@ -57,6 +58,8 @@ export default function HomePage() {
           <h4 className="home-page__panel-title">픽업 일정</h4>
           <PickupCarousel />
         </section>
+
+        <BroadcastNews />
       </aside>
     </div>
   )

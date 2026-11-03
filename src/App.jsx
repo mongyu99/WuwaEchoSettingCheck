@@ -219,7 +219,8 @@ export default function App() {
     for (let i = 0; i < perImage.length; i++) {
       const item = perImage[i]
       const echo = await buildEchoFromCrops(item.id, item.crops, item.previewUrl)
-      results.push(withFixedMainStats(echo))
+      // 재인식에 쓰려고 잘라 둔 그림을 수정 화면이 끝날 때까지 메모리에 들고 있습니다.
+      results.push({ ...withFixedMainStats(echo), crops: item.crops })
       setProgress((i + 1) / perImage.length)
     }
 
@@ -233,11 +234,24 @@ export default function App() {
     setReplacingId(id)
     try {
       const { crops, previewUrl } = await prepareImageForExtraction(file)
-      const updated = withFixedMainStats(await buildEchoFromCrops(id, crops, previewUrl))
+      const updated = { ...withFixedMainStats(await buildEchoFromCrops(id, crops, previewUrl)), crops }
       setEchoesForCurrent((prev) => prev.map((e) => (e.id === id ? updated : e)))
     } catch (err) {
       console.error(err)
       alert(err.message || '사진 처리에 실패했어요. 다른 사진으로 다시 시도해주세요.')
+    } finally {
+      setReplacingId(null)
+    }
+  }
+
+  /** 잘라 둔 그림으로 그 에코만 다시 인식합니다. 직접 고친 값은 인식 결과로 돌아갑니다. */
+  const handleReRecognize = async (id) => {
+    const target = draftEchoes.find((e) => e.id === id)
+    if (!target?.crops) return
+    setReplacingId(id)
+    try {
+      const updated = withFixedMainStats(await buildEchoFromCrops(id, target.crops, target.previewUrl))
+      setDraftEchoes((prev) => prev.map((e) => (e.id === id ? { ...updated, crops: target.crops } : e)))
     } finally {
       setReplacingId(null)
     }
@@ -285,7 +299,7 @@ export default function App() {
   }
 
   const handleCompleteEdit = () => {
-    updateRecordForCurrent((rec) => ({ ...rec, echoes: draftEchoes.filter(hasMainOption) }))
+    updateRecordForCurrent((rec) => ({ ...rec, echoes: draftEchoes.filter(hasMainOption).map(({ crops, ...echo }) => echo) }))
     setPage('stats')
   }
 
@@ -325,6 +339,7 @@ export default function App() {
             onUpdateMainStats={updateMainStats}
             onUpdateCost={updateEchoCost}
             onReplaceOne={handleReplaceOne}
+            onReRecognize={handleReRecognize}
             replacingId={replacingId}
             onProceedToStats={handleCompleteEdit}
             onGoToCharacters={goToCharacters}

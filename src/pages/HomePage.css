@@ -190,3 +190,9 @@
     transition: none;
   }
 }
+
+.home-page__broadcast {
+  display: block;
+  width: 100%;
+  border-radius: 4px;
+}

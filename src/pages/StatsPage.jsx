@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, Fragment } from 'react'
 import { ELEMENT_COLORS } from '../config/characters'
 import { getValidOptions } from '../config/characterValidOptions'
 import { getCharacterBaseStats } from '../config/characterBaseStats'
@@ -95,7 +95,7 @@ function computeAggregate({ echoes, character, weaponId, combo, mainEchoId, erAd
 
   const baseStats = getCharacterBaseStats(character?.id)
   if (baseStats) {
-    for (const b of baseStats.innateBonuses ?? []) addPercent(b.category, b.value, '캐릭터 고유')
+    for (const b of baseStats.innateBonuses ?? []) addPercent(b.category, b.value, '캐릭터 추가 옵션')
   }
 
   const weapon = getWeapon(weaponId)
@@ -188,6 +188,31 @@ function computeCategoryTotal(cat, raw, baseStats, weapon) {
     default:
       return null
   }
+}
+
+/** 합산 내역을 출처 묶음(캐릭터·무기·세트·메인 에코·에코)으로 나누고 묶음별 합계를 냅니다. 기본값은 묶지 않습니다. */
+function groupSources(sources) {
+  const groupOf = (source) => {
+    if (source.startsWith('캐릭터')) return '캐릭터 추가 옵션 합계'
+    if (source.startsWith('무기')) return '무기 옵션 합계'
+    if (source.endsWith('세트')) return '에코 세트 합계'
+    if (source.startsWith('메인 에코')) return '메인 에코 합계'
+    if (source.startsWith('에코 ')) return '에코 합계'
+    return source
+  }
+  const groups = []
+  for (const item of sources) {
+    const name = groupOf(item.source)
+    let group = groups.find((g) => g.name === name)
+    if (!group) {
+      group = { name, items: [], percent: 0, flat: 0 }
+      groups.push(group)
+    }
+    group.items.push(item)
+    if (item.isPercent) group.percent += item.value
+    else group.flat += item.value
+  }
+  return groups
 }
 
 // 이 캐릭터의 무기 타입에 맞는 무기 전체를 보여주는 팝업입니다. 캐릭터에게 등록된 추천 무기
@@ -475,7 +500,7 @@ function OptimizerPanel({
         </div>
       </div>
       <p className="uploader__hint optimizer__hint">
-        계산 결과는 어디까지나 참고용이며, 실제 게임 내 확률과 다를 수 있어요.
+        계산 결과는 어디까지나 참고용이며, 실제 게임 내 확률과 다를 수 있습니다.
       </p>
 
       <div className="optimizer__grid">
@@ -982,6 +1007,19 @@ export default function StatsPage({
             <p className="uploader__hint">고른 에코 세트에 연결된 메인 에코가 아직 없어요.</p>
           )}
           </MobileSection>
+          <MobileSection title="활성 바이크 옵션" summary={erAdjust.on ? '공명 효율 30%' : null} {...loadoutSection('bike')}>
+          <h4 className="mobile-section__heading">활성 바이크 옵션</h4>
+          <div className="stats-page__er-adjust">
+            <label>
+              <input
+                type="checkbox"
+                checked={erAdjust.on}
+                onChange={(e) => onSetErAdjust?.({ on: e.target.checked })}
+              />
+              <span>바이크 보정치 ( 공명 효율 {ER_ADJUST_VALUE}% )</span>
+            </label>
+          </div>
+          </MobileSection>
         </aside>
         </div>
 
@@ -1013,14 +1051,34 @@ export default function StatsPage({
                   <tr key={`${cat}-detail`} className="full-aggregate-table__detail">
                     <td colSpan={3}>
                       <ul>
-                        {sources.map((x, i) => (
-                          <li key={i}>
+                        {sources.filter((x) => x.base).map((x) => (
+                          <li key={x.source}>
                             <span>{x.source}</span>
-                            <span className={x.base ? 'stat-base' : 'stat-additional'}>
-                              {x.base ? '' : '+'}
+                            <span className="stat-base">
                               {x.isPercent ? `${formatPercent1(x.value)}%` : formatWholeStat(x.value)}
                             </span>
                           </li>
+                        ))}
+                        {groupSources(sources.filter((x) => !x.base)).map((group) => (
+                          <Fragment key={group.name}>
+                            {group.items.map((x) => (
+                              <li key={`${x.source}-${x.isPercent}`} className="full-aggregate-table__group-item">
+                                <span>{x.source}</span>
+                                <span>{x.isPercent ? `+${formatPercent1(x.value)}%` : `+${formatWholeStat(x.value)}`}</span>
+                              </li>
+                            ))}
+                            <li className="full-aggregate-table__group">
+                              <span>{group.name}</span>
+                              <span className="stat-additional">
+                                {[
+                                  group.percent > 0 && `+${formatPercent1(group.percent)}%`,
+                                  group.flat > 0 && `+${formatWholeStat(group.flat)}`,
+                                ]
+                                  .filter(Boolean)
+                                  .join(' / ')}
+                              </span>
+                            </li>
+                          </Fragment>
                         ))}
                       </ul>
                     </td>
@@ -1069,16 +1127,6 @@ export default function StatsPage({
               이 캐릭터는 기초 스탯 데이터가 없어서 "합산"이 0으로 나와요. 알려주시면 추가해드릴게요.
             </p>
           )}
-          <div className="stats-page__er-adjust">
-            <label>
-              <input
-                type="checkbox"
-                checked={erAdjust.on}
-                onChange={(e) => onSetErAdjust?.({ on: e.target.checked })}
-              />
-              <span>바이크 보정치 ( 공명 효율 {ER_ADJUST_VALUE}% )</span>
-            </label>
-          </div>
           <p className="stats-page__aggregate-note">공식 계산 내용이 아닙니다. 자세한 스탯은 인게임을 확인하세요.
             <span className="stats-page__aggregate-link">
             이잘키 : [{' '}
