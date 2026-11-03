@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { assetPath } from '../config/assetPath'
 import { fetchBroadcasts } from '../utils/api'
 
-/** 관리자 페이지에서 기간을 정해 등록한 방송 소식입니다. 지금 걸린 방송이 없으면 패널째 숨깁니다. */
+/** 관리자 페이지에서 종료 일시를 정해 등록한 방송 소식입니다. 지금 걸린 방송이 없으면 패널째 숨깁니다. */
 export default function BroadcastNews() {
   const [broadcasts, setBroadcasts] = useState([])
 

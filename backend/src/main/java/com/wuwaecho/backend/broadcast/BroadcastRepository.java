@@ -7,11 +7,11 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface BroadcastRepository extends JpaRepository<Broadcast, String> {
 
-    /** 지금 노출 기간 안에 있는 ACTIVE 방송 소식. */
+    /** 아직 종료되지 않은 ACTIVE 방송 소식. */
     @Query("""
             SELECT b FROM Broadcast b
-            WHERE b.status = 'ACTIVE' AND b.startsAt <= :now AND b.endsAt > :now
-            ORDER BY b.sortOrder, b.startsAt
+            WHERE b.status = 'ACTIVE' AND b.endsAt > :now
+            ORDER BY b.sortOrder, b.endsAt
             """)
     List<Broadcast> findShowing(OffsetDateTime now);
 }

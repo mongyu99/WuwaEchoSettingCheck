@@ -26,9 +26,6 @@ public class Broadcast {
 
     private String url;
 
-    @Column(name = "starts_at", nullable = false)
-    private OffsetDateTime startsAt;
-
     @Column(name = "ends_at", nullable = false)
     private OffsetDateTime endsAt;
 
