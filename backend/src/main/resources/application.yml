@@ -8,6 +8,11 @@ spring:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/wuwaecho}
     username: ${DB_USER}
     password: ${DB_PASSWORD}
+    hikari:
+      connection-timeout: 3000
+  jdbc:
+    template:
+      query-timeout: 3s
   jpa:
     hibernate:
       ddl-auto: validate
@@ -16,6 +21,7 @@ spring:
       hibernate:
         format_sql: true
         default_batch_fetch_size: 100
+        jakarta.persistence.query.timeout: 3000
   data:
     redis:
       host: ${REDIS_HOST:localhost}

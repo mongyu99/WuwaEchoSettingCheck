@@ -11,6 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.dao.DataAccessException;
@@ -69,8 +70,7 @@ public class CatalogService implements ApplicationRunner {
     private boolean cacheEnabled;
 
     /**
-     * Redis와 DB가 모두 죽었을 때 읽는 마지막 정상 데이터. 캐시를 갱신하는 refresh()(서버 시작, 관리자 수정)마다
-     * 최신본으로 덮어씁니다.
+     * Redis와 DB가 모두 죽었을 때 읽는 마지막 정상 데이터. 서버 시작 때와 이후 주기적으로 캐시 값을 백업합니다.
      */
     @Value("${app.catalog.fallback-file:catalog-fallback.json}")
     private String fallbackFile = "catalog-fallback.json";
@@ -79,6 +79,7 @@ public class CatalogService implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         if (preload && cacheEnabled) {
             refresh();
+            backupToFile();
         }
     }
 
@@ -121,7 +122,7 @@ public class CatalogService implements ApplicationRunner {
     }
 
     /**
-     * DB에서 새로 읽어 캐시와 로컬 JSON 파일을 덮어씁니다. 관리자 페이지에서 데이터를 바꾼 직후 호출합니다.
+     * DB에서 새로 읽어 캐시를 덮어씁니다. 관리자 페이지에서 데이터를 바꾼 직후 호출합니다.
      * DB 실패는 그대로 던집니다(관리자가 반영 실패를 알아야 함).
      */
     public String refresh() {
@@ -131,7 +132,6 @@ public class CatalogService implements ApplicationRunner {
         } catch (RuntimeException e) {
             log.warn("catalog 캐시 저장 실패(Redis 연결 확인 필요): {}", e.getMessage());
         }
-        saveFallbackFile(json);
         return json;
     }
 
@@ -144,6 +144,36 @@ public class CatalogService implements ApplicationRunner {
         }
     }
 
+    /**
+     * 캐시 값을 백업 파일로 저장합니다. DB 갱신과 분리해 파일 실패가 갱신에 영향을 주지 않고, 값이 바뀌었을 때만
+     * 디스크에 씁니다. 캐시에는 DB에서 읽은 값만 들어가므로 DB를 다시 읽지 않습니다.
+     */
+    @Scheduled(fixedDelayString = "${app.catalog.fallback-sync-ms:300000}", initialDelayString = "${app.catalog.fallback-sync-ms:300000}")
+    public void backupToFile() {
+        if (!cacheEnabled) {
+            return;
+        }
+        String cached;
+        try {
+            cached = redis.opsForValue().get(CACHE_KEY);
+        } catch (RuntimeException e) {
+            log.warn("catalog 백업 건너뜀(Redis 조회 실패): {}", e.getMessage());
+            return;
+        }
+        if (cached == null || cached.equals(readFileOrNull())) {
+            return;
+        }
+        saveFallbackFile(cached);
+    }
+
+    private String readFileOrNull() {
+        try {
+            return Files.readString(Path.of(fallbackFile));
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
     /** 쓰다 만 파일이 읽히지 않도록 임시 파일에 쓴 뒤 한 번에 바꿔치기합니다. */
     private void saveFallbackFile(String json) {
         Path target = Path.of(fallbackFile);
@@ -152,7 +182,7 @@ public class CatalogService implements ApplicationRunner {
             Files.writeString(tmp, json);
             Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
-            log.warn("catalog 로컬 백업 파일 저장 실패: {}", e.getMessage());
+            log.error("catalog 로컬 백업 파일 저장 실패: {}", e.getMessage());
         }
     }
 
