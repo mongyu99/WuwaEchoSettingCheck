@@ -46,3 +46,21 @@ export function echoSuccessProbability(requiredCount, label, neededValue) {
 export function expectedAttempts(probabilityPercent) {
   return probabilityPercent > 0 ? 100 / probabilityPercent : Infinity
 }
+
+/** 지정한 옵션 종류들이 새 에코에 모두 뜰 확률(%)입니다. 수치는 보지 않습니다(예: 크크공이 뜰 확률). */
+export function optionSetProbability(labels) {
+  if (labels.length === 0 || new Set(labels).size !== labels.length) return 0
+  return allPresentProbability(labels.length) * 100
+}
+
+/** 지금 서브 옵션이 종류와 수치까지 그대로 뜰 확률(%)입니다. 옵션이 덜 열린 강화 중 에코는 열린 옵션만 계산합니다. */
+export function exactRollProbability(subStats) {
+  const labels = subStats.map((s) => s.label)
+  const setChance = optionSetProbability(labels)
+  if (!setChance) return 0
+  return subStats.reduce((p, s) => {
+    const index = (SUB_STAT_OPTIONS[s.label] ?? []).indexOf(parseFloat(s.valueText))
+    const tierChance = index < 0 ? 0 : SUB_STAT_PROBABILITIES[s.label]?.[index] ?? 0
+    return p * (tierChance / 100)
+  }, setChance)
+}

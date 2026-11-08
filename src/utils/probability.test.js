@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { SUB_STAT_NAMES, SUB_STAT_OPTIONS } from '../config/subStatOptions'
 import { SUB_STAT_PROBABILITIES } from '../config/subStatProbabilities'
-import { echoSuccessProbability, expectedAttempts, successProbability } from './probability'
+import { echoSuccessProbability, expectedAttempts, successProbability, exactRollProbability, optionSetProbability } from './probability'
 
 // 공개된 단계 확률표(config/subStatProbabilities.js)로 코드가 정확히 계산하는지, 코드와 독립적인
 // 두 가지 방법(전수 계산, 시뮬레이션)으로 교차 검증합니다.
@@ -138,5 +138,27 @@ describe('expectedAttempts: 성공까지 평균 시도 횟수', () => {
     // 기하분포 표준편차 sqrt(1-p)/p 기준 표준오차의 5배
     const tolerance = (5 * Math.sqrt(1 - pPercent / 100)) / (pPercent / 100) / Math.sqrt(runs)
     expect(Math.abs(mean - expected)).toBeLessThan(tolerance)
+  })
+})
+
+describe('optionSetProbability', () => {
+  it('옵션 5종이 모두 뜰 확률은 1/C(13,5)이다', () => {
+    const labels = SUB_STAT_NAMES.slice(0, 5)
+    expect(optionSetProbability(labels)).toBeCloseTo(100 / 1287, 10)
+  })
+
+  it('같은 옵션이 두 번 있으면 0이다', () => {
+    expect(optionSetProbability(['크리티컬%', '크리티컬%'])).toBe(0)
+  })
+})
+
+describe('exactRollProbability', () => {
+  it('옵션 1개면 그 옵션이 뜰 확률(5/13)에 그 수치 단계 확률을 곱한다', () => {
+    const expected = (5 / 13) * (SUB_STAT_PROBABILITIES['크리티컬%'][7] / 100) * 100
+    expect(exactRollProbability([{ label: '크리티컬%', valueText: '10.5%' }])).toBeCloseTo(expected, 10)
+  })
+
+  it('티어표에 없는 수치면 0이다', () => {
+    expect(exactRollProbability([{ label: '크리티컬%', valueText: '6.4%' }])).toBe(0)
   })
 })

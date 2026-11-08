@@ -428,3 +428,13 @@
 .live-check__debug-item {
   margin-top: 10px;
 }
+
+.live-check__odds {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.live-check__odds strong {
+  color: var(--accent-wave);
+}

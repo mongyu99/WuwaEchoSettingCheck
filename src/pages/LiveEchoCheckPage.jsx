@@ -13,6 +13,7 @@ import { MAIN_STAT_VALUES, applyCostToMainStats } from '../config/echoMainStats'
 import { buildStatsFromLines, closestMatch, createOcrSession, getEchoCost, normalizeMainStats, parseStatLines, snapSubStatsToCatalog } from '../utils/ocr'
 import { SUB_STAT_NAMES, SUB_STAT_OPTIONS, formatSubStatValue } from '../config/subStatOptions'
 import { scoreValidStats } from '../utils/echoScore'
+import { exactRollProbability, optionSetProbability } from '../utils/probability'
 import { panelSignature, signatureChanged } from '../utils/screenWatch'
 import '../components/ScreenCapture.css'
 import './LiveEchoCheckPage.css'
@@ -116,6 +117,23 @@ function EchoCompareColumn({ title, echo, characterId }) {
         ))}
       </ul>
     </div>
+  )
+}
+
+/** 확률(%)을 "0.12% · 약 N개 중 1개"로 씁니다. 아주 작은 값은 지수 표기로 줄입니다. */
+function formatOdds(percent) {
+  const shown = percent < 0.01 ? percent.toExponential(1) : percent.toFixed(2)
+  return `${shown}% · 약 ${Math.round(100 / percent).toLocaleString()}개 중 1개`
+}
+
+/** 지금 서브 옵션이 종류와 수치까지 그대로 뜰 확률입니다. */
+function RollOdds({ stats }) {
+  const percent = exactRollProbability(stats)
+  if (!percent) return null
+  return (
+    <p className="live-check__odds">
+      이 옵션이 그대로 뜰 확률 <strong>{formatOdds(percent)}</strong>
+    </p>
   )
 }
 
@@ -367,6 +385,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
             </select>
 
             <h3>서브 옵션{shownStats ? ` (${shownStats.length}/5)` : ''}</h3>
+            {shownStats && <RollOdds stats={shownStats} />}
             <ul className="live-check__sub-rows">
               {manualStats.map((row, i) => {
                 // 직접 고른 값이 없으면 인식 결과를 보여 줍니다.
@@ -435,6 +454,12 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
                       유효 {validCount}/{shownStats.length}
                       {rows.length > 0 && <br />}
                       {rows.map((r) => r.label).join(' · ')}
+                      {rows.length > 0 && (
+                        <>
+                          <br />
+                          유효 옵션이 뜰 확률 {formatOdds(optionSetProbability(rows.map((r) => r.label)))}
+                        </>
+                      )}
                     </small>
                   </div>
                 </li>
