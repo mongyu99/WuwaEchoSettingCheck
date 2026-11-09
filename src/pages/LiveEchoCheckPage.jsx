@@ -13,7 +13,7 @@ import { MAIN_STAT_VALUES, applyCostToMainStats } from '../config/echoMainStats'
 import { buildStatsFromLines, closestMatch, createOcrSession, getEchoCost, normalizeMainStats, parseStatLines, snapSubStatsToCatalog } from '../utils/ocr'
 import { SUB_STAT_NAMES, SUB_STAT_OPTIONS, formatSubStatValue } from '../config/subStatOptions'
 import { scoreValidStats } from '../utils/echoScore'
-import { exactRollProbability, optionSetProbability } from '../utils/probability'
+import { exactRollProbability, optionSetProbability, successProbability, targetRollProbability, tierProbability } from '../utils/probability'
 import { panelSignature, signatureChanged } from '../utils/screenWatch'
 import '../components/ScreenCapture.css'
 import './LiveEchoCheckPage.css'
@@ -137,6 +137,81 @@ function RollOdds({ stats }) {
   )
 }
 
+const MAX_TARGETS = 5
+
+/** 원하는 옵션(최대 5개)과 최소 수치를 골라, 그런 에코가 뜰 확률을 계산합니다. 화면 인식과는 따로 동작합니다. */
+/** 원하는 옵션이 지금 에코에 (최소 수치 이상으로) 떠 있는지 봅니다. */
+const targetHit = (target, stats) =>
+  (stats ?? []).some((s) => s.label === target.label && (!target.minValue || parseFloat(s.valueText) >= target.minValue))
+
+function TargetOdds({ targets, setTargets, stats }) {
+  const allHit = targets.length > 0 && targets.every((t) => targetHit(t, stats))
+  const toggle = (label) =>
+    setTargets((list) =>
+      list.some((t) => t.label === label)
+        ? list.filter((t) => t.label !== label)
+        : list.length < MAX_TARGETS
+          ? [...list, { label, minValue: null }]
+          : list,
+    )
+  const setMin = (label, minValue) =>
+    setTargets((list) => list.map((t) => (t.label === label ? { ...t, minValue } : t)))
+  const percent = targetRollProbability(targets)
+
+  return (
+    <div className="live-check__target">
+      <h3>원하는 옵션 ({targets.length}/{MAX_TARGETS})</h3>
+      {allHit && <p className="live-check__target-hit">원하는 옵션이 모두 떴어요!</p>}
+      <div className="live-check__target-chips">
+        {SUB_STAT_NAMES.map((name) => {
+          const on = targets.some((t) => t.label === name)
+          return (
+            <button
+              key={name}
+              type="button"
+              className={`live-check__chip ${on ? 'live-check__chip--on' : ''}`}
+              disabled={!on && targets.length >= MAX_TARGETS}
+              onClick={() => toggle(name)}
+            >
+              {name}
+            </button>
+          )
+        })}
+      </div>
+      {targets.length > 0 && (
+        <>
+          <ul className="live-check__sub-rows">
+            {targets.map((t) => (
+              <li key={t.label} className={targetHit(t, stats) ? 'live-check__target--hit' : ''}>
+                <span>
+                  {targetHit(t, stats) ? '✓ ' : ''}
+                  {t.label}
+                </span>
+                <select
+                  className="live-check__select"
+                  aria-label={`${t.label} 최소 수치`}
+                  value={t.minValue ?? ''}
+                  onChange={(e) => setMin(t.label, e.target.value ? Number(e.target.value) : null)}
+                >
+                  <option value="">수치 무관</option>
+                  {(SUB_STAT_OPTIONS[t.label] ?? []).map((value) => (
+                    <option key={value} value={value}>
+                      {formatSubStatValue(t.label, value)} 이상
+                    </option>
+                  ))}
+                </select>
+              </li>
+            ))}
+          </ul>
+          <p className="live-check__odds">
+            이 옵션이 뜰 확률 <strong>{formatOdds(percent)}</strong>
+          </p>
+        </>
+      )}
+    </div>
+  )
+}
+
 const EMPTY_MANUAL_STATS = [0, 1, 2, 3, 4].map((i) => ({ id: `manual-${i}`, label: '', valueText: '' }))
 
 /** 공유 화면을 0.5초마다 확인해서, 지금 보고 있는 에코의 서브 스탯에 잘 맞는 캐릭터를 추천합니다. 모든 처리는 브라우저 안에서 합니다. */
@@ -151,6 +226,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
   const setId = manualSetId || detectedSetId
   // 인식 결과의 각 칸을 직접 고쳐 쓸 수 있습니다. 고친 칸은 다음 인식에도 그대로 유지됩니다.
   const [manualStats, setManualStats] = useState(EMPTY_MANUAL_STATS)
+  const [targets, setTargets] = useState([]) // 원하는 옵션: [{ label, minValue }]
   const statSlots = manualStats.map((row, i) => {
     // 옵션만 고르고 수치를 아직 안 고른 칸은 이전 인식 값을 쓰지 않고 비워 둡니다.
     if (row.label) return row.valueText ? row : null
@@ -392,8 +468,11 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
                 const recognized = subStats?.[i]
                 const label = row.label || recognized?.label || ''
                 const valueText = row.label ? row.valueText : recognized?.valueText ?? ''
+                const value = parseFloat(valueText)
+                const chance = valueText ? tierProbability(label, value) : null
+                const wanted = targets.some((t) => t.label === label)
                 return (
-                  <li key={row.id}>
+                  <li key={row.id} className={wanted ? 'live-check__sub--wanted' : ''}>
                     <select
                       className="live-check__select"
                       aria-label={`서브 옵션 ${i + 1}`}
@@ -417,6 +496,11 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
                         <option key={value} value={formatSubStatValue(label, value)}>{formatSubStatValue(label, value)}</option>
                       ))}
                     </select>
+                    {chance !== null && (
+                      <small className="live-check__tier-odds">
+                        이 수치 확률 {chance.toFixed(1)}% · 상위 {successProbability(label, value).toFixed(1)}%
+                      </small>
+                    )}
                   </li>
                 )
               })}
@@ -426,6 +510,8 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
                 직접 고친 값 지우기
               </button>
             )}
+
+            <TargetOdds targets={targets} setTargets={setTargets} stats={shownStats} />
           </div>
 
           <div className="live-check__result">

@@ -438,3 +438,71 @@
 .live-check__odds strong {
   color: var(--accent-wave);
 }
+
+.live-check__target {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-hairline);
+}
+
+.live-check__target-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.live-check__chip {
+  padding: 4px 8px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 999px;
+  background: var(--bg-surface-raised);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.live-check__chip--on {
+  border-color: var(--accent-wave);
+  color: var(--accent-wave);
+}
+
+.live-check__chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.live-check__target .live-check__sub-rows li {
+  grid-template-columns: minmax(0, 1fr) 110px;
+  font-size: 12px;
+}
+
+.live-check__sub-rows .live-check__tier-odds {
+  grid-column: 1 / -1;
+  margin-top: -2px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* 원하는 옵션과 같은 줄은 강조합니다. */
+.live-check__sub--wanted .live-check__select {
+  border-color: var(--accent-wave);
+}
+
+.live-check__target--hit {
+  color: var(--accent-wave);
+}
+
+.live-check__target-hit {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--accent-wave);
+  border-radius: 8px;
+  color: var(--accent-wave);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}

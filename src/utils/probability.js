@@ -64,3 +64,22 @@ export function exactRollProbability(subStats) {
     return p * (tierChance / 100)
   }, setChance)
 }
+
+/**
+ * 원하는 옵션들이 모두 뜨고, 최소 수치를 정한 옵션은 그 수치 이상이 나올 확률(%)입니다.
+ * targets: [{ label, minValue }] — minValue가 없으면 수치는 보지 않습니다.
+ */
+export function targetRollProbability(targets) {
+  const setChance = optionSetProbability(targets.map((t) => t.label))
+  if (!setChance) return 0
+  return targets.reduce(
+    (p, t) => (t.minValue ? p * (successProbability(t.label, t.minValue) / 100) : p),
+    setChance,
+  )
+}
+
+/** 이 수치(티어)가 한 번에 나올 확률(%)입니다. 티어표에 없는 수치면 null. */
+export function tierProbability(label, value) {
+  const index = (SUB_STAT_OPTIONS[label] ?? []).indexOf(value)
+  return index < 0 ? null : SUB_STAT_PROBABILITIES[label]?.[index] ?? null
+}

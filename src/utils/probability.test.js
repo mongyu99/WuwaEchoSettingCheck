@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { SUB_STAT_NAMES, SUB_STAT_OPTIONS } from '../config/subStatOptions'
 import { SUB_STAT_PROBABILITIES } from '../config/subStatProbabilities'
-import { echoSuccessProbability, expectedAttempts, successProbability, exactRollProbability, optionSetProbability } from './probability'
+import { echoSuccessProbability, expectedAttempts, successProbability, exactRollProbability, optionSetProbability, targetRollProbability } from './probability'
 
 // 공개된 단계 확률표(config/subStatProbabilities.js)로 코드가 정확히 계산하는지, 코드와 독립적인
 // 두 가지 방법(전수 계산, 시뮬레이션)으로 교차 검증합니다.
@@ -160,5 +160,16 @@ describe('exactRollProbability', () => {
 
   it('티어표에 없는 수치면 0이다', () => {
     expect(exactRollProbability([{ label: '크리티컬%', valueText: '6.4%' }])).toBe(0)
+  })
+})
+
+describe('targetRollProbability', () => {
+  it('최소 수치가 없으면 옵션 종류만 본다', () => {
+    expect(targetRollProbability([{ label: '크리티컬%' }])).toBeCloseTo(optionSetProbability(['크리티컬%']), 10)
+  })
+
+  it('최소 수치가 있으면 그 수치 이상 나올 확률을 곱한다', () => {
+    const expected = optionSetProbability(['크리티컬%']) * (successProbability('크리티컬%', 8.1) / 100)
+    expect(targetRollProbability([{ label: '크리티컬%', minValue: 8.1 }])).toBeCloseTo(expected, 10)
   })
 })
