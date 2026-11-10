@@ -1,4 +1,5 @@
 import AuthPanel from './AuthPanel'
+import BackupPanel from './BackupPanel'
 import { screenCaptureSupported } from './ScreenCapture'
 import './TopNav.css'
 
@@ -35,6 +36,7 @@ export default function TopNav({ currentPage, theme, onToggleTheme, characterDat
         ))}
       </nav>
       <div className="top-nav__right">
+        <BackupPanel characterData={characterData} onLoadData={onLoadCloudData} />
         <button
           className={`top-nav__link ${currentPage === PATCH_NOTES.page ? 'top-nav__link--active' : ''}`}
           aria-current={currentPage === PATCH_NOTES.page ? 'page' : undefined}
