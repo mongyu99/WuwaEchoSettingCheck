@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { motionOff } from './motion'
 
 // 숫자가 바뀌면 이전 값에서 새 값까지 "촤르륵" 올라갑니다. 끝에서 살짝 넘쳤다가 돌아와 쫀득하게 멈춥니다.
 const DURATION_MS = 700
@@ -14,7 +15,7 @@ export function useCountUp(value) {
   const fromRef = useRef(0)
 
   useEffect(() => {
-    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const reduce = motionOff()
     if (reduce) {
       setShown(value)
       fromRef.current = value

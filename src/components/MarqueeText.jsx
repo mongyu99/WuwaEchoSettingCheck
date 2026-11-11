@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import './MarqueeText.css'
+import { motionOff } from '../utils/motion'
 
 // 모든 글이 같은 시간(MOVE_MS) 동안 한 바퀴를 돌아서 동시에 출발하고 동시에 도착합니다.
 // 그래서 긴 글은 빠르게, 짧은 글은 느리게 흐릅니다. 한 바퀴마다 처음 위치에서 PAUSE_MS 만큼 멈춥니다.
@@ -39,7 +40,7 @@ export default function MarqueeText({ children, className = '' }) {
   useEffect(() => {
     const track = trackRef.current
     if (!track || !scrolling || !track.animate) return undefined
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined
+    if (motionOff()) return undefined
     const distance = textWidth + GAP_PX
     const totalMs = PAUSE_MS + MOVE_MS
     const animation = track.animate(

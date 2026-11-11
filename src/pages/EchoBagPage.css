@@ -493,3 +493,29 @@
     grid-column: 2;
   }
 }
+
+/* 정렬·필터에서 빠지는 행: 살짝 줄어들며 흐려집니다(useFlipList가 0.26초 뒤 지움). */
+.echo-bag__row--exiting {
+  animation: bag-row-out 0.26s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes bag-row-out {
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .echo-bag__row,
+  .echo-bag__row--exiting {
+    animation: none;
+  }
+}
+
+/* 정렬 이동·등장 애니메이션이 목록 상자 밖으로 삐져나가 보이지 않게 자릅니다. */
+.echo-bag__list {
+  overflow: clip;
+  overflow-clip-margin: 6px; /* 행 그림자·세트 아이콘이 잘리지 않을 만큼만 여유 */
+}

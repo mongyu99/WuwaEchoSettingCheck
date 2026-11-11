@@ -1,6 +1,8 @@
 import AuthPanel from './AuthPanel'
 import BackupPanel from './BackupPanel'
 import { screenCaptureSupported } from './ScreenCapture'
+import { useEffect, useState } from 'react'
+import { applyMotion, loadMotion } from '../utils/motion'
 import './TopNav.css'
 
 // 상단바 메뉴. 왼쪽 사이드바 대신 모든 화면에서 같은 위치로 바로 이동합니다.
@@ -21,6 +23,9 @@ const PATCH_NOTES = { page: 'patchnotes', label: '패치노트', handler: 'onGoT
 
 export default function TopNav({ currentPage, theme, onToggleTheme, characterData, onLoadCloudData, ...handlers }) {
   const isDark = theme === 'dark'
+  // 애니메이션 켜기/끄기(움직임이 싫은 사용자용). 이 기기에만 기억합니다.
+  const [motionOn, setMotionOn] = useState(loadMotion)
+  useEffect(() => applyMotion(motionOn), [motionOn])
 
   return (
     <div className="top-nav">
@@ -47,6 +52,18 @@ export default function TopNav({ currentPage, theme, onToggleTheme, characterDat
           onClick={handlers[PATCH_NOTES.handler]}
         >
           {PATCH_NOTES.label}
+        </button>
+        <button
+          className={`motion-switch ${motionOn ? 'motion-switch--on' : ''}`}
+          onClick={() => setMotionOn((on) => !on)}
+          role="switch"
+          aria-checked={motionOn}
+          title={motionOn ? '애니메이션 끄기' : '애니메이션 켜기'}
+        >
+          <span className="motion-switch__track">
+            <span className="motion-switch__knob" />
+          </span>
+          애니메이션
         </button>
         <button
           className={`theme-switch ${isDark ? 'theme-switch--dark' : 'theme-switch--light'}`}

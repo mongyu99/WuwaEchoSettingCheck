@@ -239,3 +239,13 @@ input[type="number"] {
   font-weight: 700;
   letter-spacing: 0.02em;
 }
+
+/* 애니메이션 끄기(상단바 스위치): 모든 CSS 애니메이션·전환을 즉시 끝냅니다. 끝 상태는 유지됩니다. */
+[data-motion='off'] *,
+[data-motion='off'] *::before,
+[data-motion='off'] *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}

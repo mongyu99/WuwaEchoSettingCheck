@@ -4,6 +4,7 @@ import { SUB_STAT_NAMES } from '../config/subStatOptions'
 import { getEchoSet } from '../config/echoSets'
 import { useCountUp } from '../utils/useCountUp'
 import { flyTo } from '../utils/flyTo'
+import { useFlipList } from '../utils/useFlipList'
 import { jelly } from '../utils/jelly'
 import { assetPath } from '../config/assetPath'
 import { gradeOf } from '../utils/echoScore'
@@ -22,7 +23,7 @@ import './EchoBagPage.css'
 const CHECK_INTERVAL_MS = 250
 
 /** 가방 에코 한 줄. 마우스를 올리면 상세가 살짝 보이고, 누르면 펼친 채로 고정됩니다. */
-function BagRow({ item, index, open, incoming, onToggle, highlight, onRemove }) {
+function BagRow({ item, index, open, incoming, exiting, onToggle, highlight, onRemove }) {
   const score = useCountUp(item.score)
   const set = getEchoSet(item.setId)
   const icon = item.thumbnail
@@ -30,7 +31,8 @@ function BagRow({ item, index, open, incoming, onToggle, highlight, onRemove }) 
   return (
     <li
       data-key={item.key}
-      className={`echo-bag__row ${open ? 'echo-bag__row--open' : ''} ${incoming ? 'echo-bag__row--incoming' : ''}`}
+      data-flip-key={item.key}
+      className={`echo-bag__row ${open ? 'echo-bag__row--open' : ''} ${incoming ? 'echo-bag__row--incoming' : ''} ${exiting ? 'echo-bag__row--exiting' : ''}`}
       style={{ '--i': Math.min(index, 12) }}
     >
       <button type="button" className="echo-bag__summary" onClick={onToggle} aria-expanded={open}>
@@ -233,20 +235,24 @@ export default function EchoBagPage() {
   const toggleRequired = (label) =>
     setRequired((list) => (list.includes(label) ? list.filter((l) => l !== label) : [...list, label]))
   const sorted = useMemo(() => filterAndSort(items, { required, sortKey }), [items, required, sortKey])
+  // 정렬·필터가 바뀌면 행이 새 자리로 미끄러져 가고, 빠지는 행은 흐려지며 사라집니다.
+  const { rendered, listRef } = useFlipList(sorted, (item) => item.key)
 
   const [openKey, setOpenKey] = useState(null) // 눌러서 펼쳐 둔 에코
 
   // 저장되면 공유 화면(상세 패널 자리)에서 사진이 튀어나와 목록의 그 행으로 날아갑니다.
   const previewRef = useRef(null)
-  const listRef = useRef(null)
   const [flyingKey, setFlyingKey] = useState(null)
   const [pendingFly, setPendingFly] = useState(null) // { key, src }
   useEffect(() => {
     if (!pendingFly) return
     const { key, src } = pendingFly
-    setPendingFly(null)
     const preview = previewRef.current?.getBoundingClientRect()
     const row = listRef.current?.querySelector(`[data-key="${CSS.escape(key)}"]`)
+    // 목록은 한 박자 늦게 그려지므로(정렬 애니메이션), 행이 생길 때까지 기다립니다.
+    // 필터에 걸려 목록에 안 나오는 에코면 기다리지 않고 날리지 않습니다.
+    if (!row && sorted.some((i) => i.key === key)) return
+    setPendingFly(null)
     if (!preview || !row) {
       setFlyingKey(null)
       return
@@ -266,7 +272,7 @@ export default function EchoBagPage() {
         jelly(visible ? row : listRef.current)
       },
     })
-  }, [pendingFly])
+  }, [pendingFly, rendered]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const removeItem = (key) => {
     setItems((list) => list.filter((i) => i.key !== key))
@@ -398,11 +404,12 @@ export default function EchoBagPage() {
                 <span>옵션</span>
                 <span>등급</span>
               </li>
-              {sorted.map((item, i) => (
+              {rendered.map(({ item, exiting }, i) => (
                 <BagRow
                   key={item.key}
                   item={item}
                   index={i}
+                  exiting={exiting}
                   open={openKey === item.key}
                   incoming={flyingKey === item.key}
                   onToggle={() => setOpenKey((k) => (k === item.key ? null : item.key))}

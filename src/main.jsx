@@ -2,6 +2,10 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { loadCatalog } from './config/catalog'
 import './index.css'
+import { applyMotion, loadMotion } from './utils/motion'
+
+// 애니메이션을 꺼 둔 사용자는 첫 화면부터 꺼진 상태로 보이게, 그리기 전에 적용합니다.
+applyMotion(loadMotion())
 
 const root = ReactDOM.createRoot(document.getElementById('root'))
 

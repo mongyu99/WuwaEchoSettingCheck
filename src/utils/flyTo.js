@@ -1,6 +1,7 @@
 // 사진이 한 위치에서 튀어나와 포물선을 그리며 다른 요소로 날아가 "쏙" 들어가는 효과입니다.
 // 화면 위(fixed)에 잠깐 복제 이미지를 띄워 움직인 뒤 지웁니다. 실제 목록은 건드리지 않습니다.
 import { jelly } from './jelly'
+import { motionOff } from './motion'
 
 const DURATION_MS = 750
 
@@ -10,7 +11,7 @@ const DURATION_MS = 750
  */
 export function flyTo(src, from, toTarget, { onLand } = {}) {
   const toEl = toTarget instanceof Element ? toTarget : null
-  if (!src || !toTarget || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+  if (!src || !toTarget || motionOff()) {
     onLand?.()
     return
   }

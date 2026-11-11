@@ -3,6 +3,7 @@ import { PICKUP_IMAGES } from '../config/pickups'
 import { assetPath } from '../config/assetPath'
 import { fetchPickups } from '../utils/api'
 import './PickupCarousel.css'
+import { motionOff } from '../utils/motion'
 
 const SLIDE_INTERVAL_MS = 4000
 // PickupCarousel.css .pickup__track 의 transition 시간(0.6s)과 같아야 합니다.
@@ -41,7 +42,7 @@ export default function PickupCarousel() {
 
   useEffect(() => {
     if (count <= 1 || paused) return undefined
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined
+    if (motionOff()) return undefined
     const timer = setInterval(() => {
       setAnimate(true)
       // 복제본(count)보다 더 가면 빈 칸이 보이므로 복제본에서 멈춥니다. 되돌리는 건 아래 효과가 맡습니다.
