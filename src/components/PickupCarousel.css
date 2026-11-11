@@ -55,3 +55,11 @@
     transition: none;
   }
 }
+
+/* 진행 중 픽업이 없어 예정 픽업을 보여 줄 때 오른쪽 위에 표시합니다. */
+.pickup__upcoming {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+}

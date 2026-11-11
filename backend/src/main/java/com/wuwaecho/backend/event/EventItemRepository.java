@@ -7,4 +7,6 @@ public interface EventItemRepository extends JpaRepository<EventItem, String> {
 
     /** 노출 상태(ACTIVE)인 이벤트를 시작일 순으로. */
     List<EventItem> findByStatusOrderByStartsAtAsc(String status);
+
+    List<EventItem> findByStatusInOrderByStartsAtAsc(List<String> statuses);
 }

@@ -506,3 +506,28 @@
   font-weight: 700;
   text-align: center;
 }
+
+/* 칩을 켜면 톡 튀어 오릅니다(쫀득). */
+.live-check__chip {
+  transition: color 0.2s ease, border-color 0.2s ease, transform 0.3s var(--ease-pop);
+}
+
+.live-check__chip:active {
+  transform: scale(0.9);
+}
+
+.live-check__chip--on {
+  animation: chip-pop 0.4s var(--ease-pop);
+}
+
+@keyframes chip-pop {
+  40% {
+    transform: scale(1.14);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-check__chip--on {
+    animation: none;
+  }
+}

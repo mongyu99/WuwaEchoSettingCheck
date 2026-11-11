@@ -15,6 +15,13 @@ export const LIVE_REGIONS = {
   enhanceSubStat: { x: 200, y: 335, width: 470, height: 225 },
 }
 
+// 에코 가방(인벤토리) 화면 오른쪽 상세 패널입니다(1920x1080 기준, 오른쪽 끝 맞춤). 세트 이름은 이 화면에 글자로 나오지 않습니다.
+export const BAG_REGIONS = {
+  name: { x: 1320, y: 115, width: 545, height: 55 },
+  mainStat: { x: 1315, y: 452, width: 550, height: 90 },
+  subStat: { x: 1315, y: 542, width: 550, height: 225 },
+}
+
 export const REGION_META = [
   { key: 'cost', label: '코스트', varName: '--region-name' },
   { key: 'mainStat', label: '메인 스탯 (2줄)', varName: '--region-main' },

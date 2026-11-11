@@ -3,6 +3,7 @@ import { ELEMENT_COLORS } from '../config/characters'
 import { getValidOptions } from '../config/characterValidOptions'
 import { getCharacterBaseStats } from '../config/characterBaseStats'
 import { WEAPONS, getWeapon } from '../config/weapons'
+import { WEAPON_RANKS, hasRankValues, weaponBonusesAt, weaponDescriptionAt } from '../utils/weaponRank'
 import { getCharacterWeaponIds } from '../config/characterWeapons'
 import { ECHO_SETS, getEchoSet } from '../config/echoSets'
 import { getCharacterEchoCombos } from '../config/characterEchoSets'
@@ -75,7 +76,7 @@ const formatPercent1 = (n) => n.toFixed(1)
 // 보정치를 체크하면 공명 효율에 더하는 고정값(%)입니다.
 const ER_ADJUST_VALUE = 30
 
-function computeAggregate({ echoes, character, weaponId, combo, mainEchoId, erAdjust }) {
+function computeAggregate({ echoes, character, weaponId, weaponRank, combo, mainEchoId, erAdjust }) {
   const categoryBaseNames = getCategoryBaseNames(character?.element)
   const raw = {}
   for (const cat of Object.keys(categoryBaseNames)) raw[cat] = { percentSum: 0, flatSum: 0, echoPercentSum: 0, echoFlatSum: 0, sources: [] }
@@ -101,7 +102,7 @@ function computeAggregate({ echoes, character, weaponId, combo, mainEchoId, erAd
   const weapon = getWeapon(weaponId)
   if (weapon) {
     if (weapon.subStat) addPercent(weapon.subStat.category, weapon.subStat.value, '무기 부옵션')
-    for (const b of weapon.bonuses ?? []) addPercent(b.category, b.value, '무기 효과')
+    for (const b of weaponBonusesAt(weapon, weaponRank)) addPercent(b.category, b.value, '무기 효과')
   }
 
   // 조합 안의 세트마다, 착용한 개수 이하의 모든 단계가 함께 적용됩니다. bonuses가 있는 단계(보통
@@ -215,13 +216,48 @@ function groupSources(sources) {
   return groups
 }
 
+/** 선택 팝업 위쪽의 분류 탭(전체 / 5성 / 4성 … 또는 4코스트 / 3코스트 …). 분류가 하나뿐이면 숨깁니다. */
+function PickerTabs({ tabs, value, onChange, format }) {
+  const groupRef = useRef(null)
+  const [pill, setPill] = useState(null) // 선택 표시의 위치·크기
+  const all = [null, ...tabs]
+  const activeIndex = all.indexOf(value)
+
+  // 고른 탭의 위치를 재서, 배경 알약이 그 자리로 미끄러져 가게 합니다.
+  useEffect(() => {
+    const btn = groupRef.current?.children[activeIndex + 1] // 0번째는 알약 자신
+    if (btn) setPill({ left: btn.offsetLeft, top: btn.offsetTop, width: btn.offsetWidth, height: btn.offsetHeight })
+  }, [activeIndex, tabs.length])
+
+  if (tabs.length < 2) return null
+  return (
+    <div className="picker-tabs" role="group" ref={groupRef}>
+      <span className="picker-tabs__pill" style={pill ?? { opacity: 0 }} aria-hidden="true" />
+      {all.map((t) => (
+        <button
+          key={t ?? 'all'}
+          type="button"
+          className={`picker-tabs__btn ${value === t ? 'picker-tabs__btn--on' : ''}`}
+          onClick={() => onChange(t)}
+        >
+          {t === null ? '전체' : format(t)}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 // 이 캐릭터의 무기 타입에 맞는 무기 전체를 보여주는 팝업입니다. 캐릭터에게 등록된 추천 무기
 // (config/characterWeapons.js)에는 "추천" 태그를 붙여 구분합니다.
 function WeaponPickerModal({ open, onClose, onSelect, options, recommendedIds }) {
+  const [rarity, setRarity] = useState(null)
+  const rarities = [...new Set(options.map(([, w]) => w.rarity).filter(Boolean))].sort((a, b) => b - a)
+  const shown = rarity ? options.filter(([, w]) => w.rarity === rarity) : options
   return (
     <Modal wide open={open} title="무기 선택" onClose={onClose}>
       {options.length === 0 && <p className="uploader__hint">이 캐릭터가 쓸 수 있는 무기가 카탈로그에 없어요.</p>}
-      {options.map(([id, w]) => (
+      <PickerTabs tabs={rarities} value={rarity} onChange={setRarity} format={(r) => `${r}성`} />
+      {shown.map(([id, w]) => (
         <button key={id} className="picker-item picker-item--simple" onClick={() => onSelect(id)}>
           {w.icon && <img src={w.icon} alt={w.name} className="picker-item__icon" />}
           <span>{w.name}</span>
@@ -248,8 +284,10 @@ function EchoComboPickerModal({ open, onClose, onSelectPreset, onAddPart, preset
                 {combo.map((p) => {
                   const set = getEchoSet(p.setId)
                   return (
-                    <span key={p.setId}>
-                      {set?.name ?? p.setId} ({p.pieceCount})
+                    <span key={p.setId} className="picker-item__combo-part">
+                      {set?.icon && <img src={set.icon} alt="" className="picker-item__icon" />}
+                      {set?.name ?? p.setId}
+                      <span className="picker-item__tier-btn">{p.pieceCount}세트</span>
                     </span>
                   )
                 })}
@@ -281,9 +319,13 @@ function EchoComboPickerModal({ open, onClose, onSelectPreset, onAddPart, preset
 // 지금 쓰는 에코 세트 조합에 호환되는 메인 에코만 보여주는 팝업입니다(에코 세트에 종속).
 // 후보가 하나뿐이면 이 팝업을 열 일 자체가 없습니다(고정).
 function MainEchoPickerModal({ open, onClose, onSelect, mainEchoIds }) {
+  const [cost, setCost] = useState(null)
+  const costs = [...new Set(mainEchoIds.map((id) => getMainEcho(id)?.cost).filter(Boolean))].sort((a, b) => b - a)
+  const shown = cost ? mainEchoIds.filter((id) => getMainEcho(id)?.cost === cost) : mainEchoIds
   return (
     <Modal wide open={open} title="메인 에코 선택" onClose={onClose}>
-      {mainEchoIds.map((id) => {
+      <PickerTabs tabs={costs} value={cost} onChange={setCost} format={(c) => `${c}코스트`} />
+      {shown.map((id) => {
         const echo = getMainEcho(id)
         return (
           <button key={id} className="picker-item picker-item--simple" onClick={() => onSelect(id)}>
@@ -664,6 +706,8 @@ export default function StatsPage({
   echoes,
   character,
   weapon,
+  weaponRank = 1,
+  onSetWeaponRank,
   echoParts: savedEchoParts,
   mainEchoId: selectedMainEchoId,
   onSetWeapon,
@@ -809,6 +853,7 @@ export default function StatsPage({
     echoes,
     character,
     weaponId,
+    weaponRank,
     combo,
     mainEchoId,
     erAdjust,
@@ -885,6 +930,20 @@ export default function StatsPage({
               <div className="stats-page__chip-head">
                 {weaponData.icon && <img src={weaponData.icon} alt={weaponData.name} />}
                 <span>{weaponData.name}</span>
+                {hasRankValues(weaponData) && (
+                  <select
+                    className="stats-page__rank-select"
+                    aria-label="무기 돌파 단계"
+                    value={weaponRank}
+                    onChange={(e) => onSetWeaponRank?.(Number(e.target.value))}
+                  >
+                    {WEAPON_RANKS.map((r) => (
+                      <option key={r} value={r}>
+                        {r}돌파
+                      </option>
+                    ))}
+                  </select>
+                )}
                 {weaponOptions.length > 1 && (
                   <button
                     className="stats-page__swap-btn"
@@ -899,7 +958,7 @@ export default function StatsPage({
               {weaponData.description && (
                 <>
                   {weaponData.passiveName && <p className="stats-page__chip-passive">[{weaponData.passiveName}]</p>}
-                  <p className="stats-page__chip-effect">{weaponData.description}</p>
+                  <p className="stats-page__chip-effect">{weaponDescriptionAt(weaponData, weaponRank)}</p>
                 </>
               )}
             </div>

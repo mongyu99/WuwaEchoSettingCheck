@@ -14,4 +14,13 @@ public interface PickupBannerRepository extends JpaRepository<PickupBanner, Stri
             ORDER BY p.sortOrder, p.startsAt
             """)
     List<PickupBanner> findShowing(OffsetDateTime now);
+
+    /** 아직 끝나지 않은 예정 픽업: UPCOMING이거나, ACTIVE지만 아직 시작 전인 배너. */
+    @Query("""
+            SELECT p FROM PickupBanner p
+            WHERE p.endsAt > :now
+              AND (p.status = 'UPCOMING' OR (p.status = 'ACTIVE' AND p.startsAt > :now))
+            ORDER BY p.sortOrder, p.startsAt
+            """)
+    List<PickupBanner> findUpcoming(OffsetDateTime now);
 }

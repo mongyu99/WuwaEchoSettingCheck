@@ -15,13 +15,17 @@ const TRANSITION_MS = 600
 export default function PickupCarousel() {
   // 관리자 페이지에서 기간을 정해 활성화한 픽업 배너(/api/pickups). 조회가 실패하면 config의 로컬 이미지를 씁니다.
   const [images, setImages] = useState(null)
+  // 진행 중인 픽업이 없어서 예정 픽업을 보여 주는 중이면 true입니다(서버가 둘을 섞어 보내지 않음).
+  const [upcoming, setUpcoming] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     fetchPickups()
       .then((result) => {
         if (!cancelled) {
-          setImages(result.filter((p) => p.imagePath).map((p) => assetPath(p.imagePath)))
+          const shown = result.filter((p) => p.imagePath)
+          setImages(shown.map((p) => assetPath(p.imagePath)))
+          setUpcoming(shown.length > 0 && shown.every((p) => p.upcoming))
         }
       })
       .catch(() => !cancelled && setImages(PICKUP_IMAGES))
@@ -81,6 +85,7 @@ export default function PickupCarousel() {
 
   return (
     <div className="pickup" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+      {upcoming && <span className="upcoming-badge pickup__upcoming">예정</span>}
       <div
         className={`pickup__track ${animate ? '' : 'pickup__track--instant'}`}
         style={{ transform: `translateX(-${index * 100}%)` }}

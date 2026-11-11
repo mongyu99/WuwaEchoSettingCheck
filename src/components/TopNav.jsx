@@ -8,8 +8,12 @@ const MENU = [
   { page: 'home', label: '홈', handler: 'onGoHome' },
   { page: 'characters', label: '캐릭터 빌드 체크', handler: 'onGoToCharacterList' },
   // 화면 공유가 필요한 기능이라 모바일에서는 메뉴에 넣지 않습니다.
-  ...(screenCaptureSupported ? [{ page: 'live', label: '실시간 에코 체크 - 베타', handler: 'onGoToLiveCheck' }] : []),
+  ...(screenCaptureSupported ? [
+        { page: 'live', label: '실시간 에코 체크 - 베타', handler: 'onGoToLiveCheck' },
+        { page: 'bag', label: '에코 가방 정리 - 베타', handler: 'onGoToEchoBag' },
+      ] : []),
   { page: 'events', label: '이벤트 캘린더', handler: 'onGoToEventCalendar' },
+  { page: 'eventnote', label: '이벤트 노트', handler: 'onGoToEventNote' },
 ]
 
 // 사이트 자체의 업데이트 기록이라 게임 메뉴와 떨어뜨려 오른쪽 끝(테마 스위치 앞)에 둡니다.

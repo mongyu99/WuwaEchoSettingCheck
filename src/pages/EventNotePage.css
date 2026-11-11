@@ -1,0 +1,115 @@
+.event-note h2 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  margin: 8px 0 20px;
+}
+
+/* 좁은 화면에서는 가로로 스크롤해서 봅니다(막대가 너무 얇아지지 않게). */
+.event-note__chart {
+  overflow-x: auto;
+  padding: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 16px;
+}
+
+.event-note__scale,
+.event-note__rows {
+  position: relative;
+  min-width: 720px;
+}
+
+.event-note__scale {
+  height: 22px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.event-note__scale span {
+  position: absolute;
+  top: 0;
+  padding-left: 4px;
+  border-left: 1px solid var(--border-hairline);
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.event-note__rows {
+  list-style: none;
+  margin: 0;
+  padding: 10px 0 0;
+}
+
+.event-note__row {
+  position: relative;
+  height: 44px;
+  margin-bottom: 6px;
+  animation: event-note-in 0.4s ease both;
+  animation-delay: calc(var(--i) * 40ms);
+}
+
+@keyframes event-note-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+
+.event-note__bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 10px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent-wave) 22%, var(--bg-surface-raised));
+  border: 1px solid var(--accent-wave);
+  color: var(--text-primary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.event-note__bar:hover {
+  background: color-mix(in srgb, var(--accent-wave) 35%, var(--bg-surface-raised));
+}
+
+/* 아직 시작 안 한 이벤트는 점선으로 구분합니다. */
+.event-note__bar--upcoming {
+  border-style: dashed;
+  background: var(--bg-surface-raised);
+}
+
+.event-note__bar strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+}
+
+.event-note__bar small {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* 오늘 위치를 세로선으로 표시합니다. */
+.event-note__today {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  width: 0;
+  border-left: 2px solid var(--score-low);
+  pointer-events: none;
+}
+
+.event-note__today span {
+  position: absolute;
+  top: -2px;
+  left: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--score-low);
+}

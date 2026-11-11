@@ -106,3 +106,25 @@
 .page-transition .event-calendar__grid {
   animation: none;
 }
+
+/* 끝난 이벤트 구역: 제목으로 나누고 카드는 흐리게 보여줍니다. */
+.event-calendar__section {
+  margin: 36px 0 14px;
+  font-size: 16px;
+  color: var(--text-muted);
+}
+
+.event-calendar__grid--past .event-card {
+  opacity: 0.6;
+}
+
+.event-calendar__grid--past .event-card:hover {
+  opacity: 1;
+}
+
+/* 예정 이벤트: D-day 배지 자리(오른쪽 위)에 회색 "예정" 표시 */
+.event-card__upcoming {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}

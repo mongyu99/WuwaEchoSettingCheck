@@ -1,11 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import ocrSamplePlugin from './scripts/ocrSamplePlugin'
 
 // GitHub Pages에 배포할 때는 저장소 이름으로 base를 맞춰줘야 합니다.
 // 예: https://<username>.github.io/wuwa-echo-setting-check/
 // 로 배포한다면 base를 '/wuwa-echo-setting-check/' 로 바꿔주세요.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), ocrSamplePlugin()],
   base: './',
   server: {
     watch: {

@@ -1,11 +1,13 @@
 import { GRADES, POINTS_PER_OPTION, gradeOf, scoreValidStats, scoreEchoes } from '../utils/echoScore'
 import { assetPath } from '../config/assetPath'
+import { useCountUp } from '../utils/useCountUp'
 import './EchoScoreCard.css'
 
 export default function EchoScoreCard({ echoes, selectedIndex, validLabels }) {
   const scores = echoes.map((echo) => scoreValidStats(echo.subStats, validLabels))
   const total = scoreEchoes(echoes, validLabels)
   const grade = gradeOf(total)
+  const shownTotal = useCountUp(total)
   const rows = scores[selectedIndex]?.rows ?? []
 
   return (
@@ -41,8 +43,9 @@ export default function EchoScoreCard({ echoes, selectedIndex, validLabels }) {
         </div>
       </div>
       <div className="echo-score__summary">
-        <img className="echo-score__grade" src={assetPath(`grades/${grade.icon}.png`)} alt={grade.label} />
-        <strong className="echo-score__total">{total.toFixed(1)}</strong>
+        {/* key: 등급이 바뀔 때마다 아이콘을 새로 그려 "툭" 튀어나오는 애니메이션을 다시 재생합니다. */}
+        <img key={grade.icon} className="echo-score__grade echo-score__grade--pop" src={assetPath(`grades/${grade.icon}.png`)} alt={grade.label} />
+        <strong className="echo-score__total">{shownTotal.toFixed(1)}</strong>
       </div>
 
       <ol className="echo-score__echoes">

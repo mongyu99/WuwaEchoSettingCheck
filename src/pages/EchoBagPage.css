@@ -1,0 +1,466 @@
+.echo-bag__layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr);
+  gap: 16px;
+  margin-top: 16px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .echo-bag__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.echo-bag__counts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.echo-bag__counts div {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--bg-surface-raised);
+}
+
+.echo-bag__counts dt {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.echo-bag__counts dd {
+  margin: 2px 0 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.echo-bag__result {
+  overflow-x: auto;
+}
+
+.echo-bag__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.echo-bag__table th {
+  padding: 6px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-hairline);
+  white-space: nowrap;
+}
+
+.echo-bag__table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border-hairline);
+  vertical-align: middle;
+}
+
+.echo-bag__table td small {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.echo-bag__table td strong {
+  color: var(--accent-wave);
+}
+
+.echo-bag__subs {
+  min-width: 220px;
+}
+
+.echo-bag__remove {
+  padding: 2px 8px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.echo-bag__remove:hover {
+  color: var(--text-primary);
+  border-color: var(--accent-wave);
+}
+
+.echo-bag__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.echo-bag__sort {
+  width: auto;
+}
+
+/* 고른 옵션(필터·정렬 기준)은 강조합니다. */
+.echo-bag__sub--hit {
+  color: var(--accent-wave);
+  font-weight: 700;
+}
+
+/* 세트 칸: 아이콘 + 이름 */
+.echo-bag__set {
+  min-width: 120px;
+}
+
+.echo-bag__set img {
+  width: 20px;
+  height: 20px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* ── 에코 목록: 사진+세트 | 이름 | 메인 | 유효 옵션 ── */
+.echo-bag__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.echo-bag__head,
+.echo-bag__summary {
+  display: grid;
+  grid-template-columns: 64px minmax(110px, 1fr) minmax(110px, 1fr) minmax(0, 2.4fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.echo-bag__head {
+  padding: 0 10px 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.echo-bag__row {
+  border: 1px solid var(--border-hairline);
+  border-radius: 12px;
+  background: var(--bg-surface-raised);
+  overflow: hidden;
+  /* 새 에코가 들어오면 위에서 톡 떨어지며 들어옵니다. */
+  animation: bag-row-in 0.45s var(--ease-pop) both;
+  animation-delay: calc(var(--i) * 30ms);
+  transition: border-color 0.2s ease, transform 0.25s var(--ease-pop);
+}
+
+@keyframes bag-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.97);
+  }
+}
+
+.echo-bag__row:hover {
+  border-color: var(--accent-wave);
+  transform: translateY(-1px);
+}
+
+.echo-bag__summary {
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* 사진 + 오른쪽 위 세트 아이콘 */
+.echo-bag__photo {
+  position: relative;
+  width: 56px;
+  height: 56px;
+}
+
+.echo-bag__photo > img:first-child,
+.echo-bag__photo-empty {
+  display: block;
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--bg-surface);
+}
+
+.echo-bag__photo-set {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--bg-surface-raised);
+  transition: transform 0.3s var(--ease-pop);
+}
+
+.echo-bag__row:hover .echo-bag__photo-set {
+  transform: scale(1.18) rotate(-8deg);
+}
+
+.echo-bag__name {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.echo-bag__name small {
+  display: block;
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.echo-bag__valid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+
+.echo-bag__valid-chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bg-surface);
+  font-size: 11px;
+}
+
+.echo-bag__score {
+  margin-left: auto;
+  font-size: 15px;
+  color: var(--accent-wave);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 상세: 마우스를 올리면 살짝, 누르면 고정해서 펼칩니다(높이 0 → 내용 높이). */
+.echo-bag__detail {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.35s var(--ease-pop);
+}
+
+.echo-bag__row:hover .echo-bag__detail,
+.echo-bag__row--open .echo-bag__detail {
+  grid-template-rows: 1fr;
+}
+
+.echo-bag__detail-inner {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px 24px;
+  padding: 0 12px 0 86px;
+  font-size: 12px;
+}
+
+.echo-bag__row:hover .echo-bag__detail-inner,
+.echo-bag__row--open .echo-bag__detail-inner {
+  padding-bottom: 12px;
+}
+
+.echo-bag__detail-inner dl {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.echo-bag__detail-inner dt {
+  display: inline;
+  margin-right: 6px;
+  color: var(--text-muted);
+}
+
+.echo-bag__detail-inner dd {
+  display: inline;
+  margin: 0;
+}
+
+.echo-bag__subs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(150px, auto));
+  gap: 3px 18px;
+}
+
+.echo-bag__subs li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.echo-bag__detail-inner .echo-bag__remove {
+  margin-left: auto;
+  align-self: flex-end;
+  font-size: 11px;
+}
+
+@media (max-width: 900px) {
+  .echo-bag__head {
+    display: none;
+  }
+
+  .echo-bag__summary {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .echo-bag__main,
+  .echo-bag__valid {
+    grid-column: 2;
+  }
+
+  .echo-bag__detail-inner {
+    padding-left: 12px;
+  }
+}
+
+/* 옵션 5개 + 등급 열 */
+.echo-bag__head,
+.echo-bag__summary {
+  grid-template-columns: 64px minmax(110px, 1fr) minmax(110px, 1fr) minmax(0, 2.4fr) 56px;
+}
+
+.echo-bag__valid-chip {
+  border: 1px solid transparent;
+  color: var(--text-muted);
+}
+
+/* 추천 캐릭터 기준 유효 옵션 */
+.echo-bag__valid-chip--valid {
+  border-color: color-mix(in srgb, var(--accent-wave) 55%, transparent);
+  color: var(--text-primary);
+}
+
+.echo-bag__tier {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.echo-bag__tier-icon {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  animation: grade-pop 0.55s var(--ease-pop) both;
+}
+
+.echo-bag__tier small {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 900px) {
+  .echo-bag__summary {
+    grid-template-columns: 56px minmax(0, 1fr) 48px;
+  }
+
+  .echo-bag__tier {
+    grid-column: 3;
+    grid-row: 1 / span 3;
+  }
+}
+
+/* 옵션 열: 이름만, 강조 없음 */
+.echo-bag__valid-chip,
+.echo-bag__valid-chip--valid {
+  border-color: transparent;
+  color: var(--text-primary);
+}
+
+/* ── 개발자 도구 ── */
+.echo-bag__debug {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px dashed var(--border-hairline);
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+.echo-bag__debug-diff {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.echo-bag__debug-shot {
+  width: 100%;
+  border-radius: 6px;
+}
+
+.echo-bag__debug-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.echo-bag__debug-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+  border-radius: 2px;
+  vertical-align: -1px;
+}
+
+.echo-bag__debug-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.echo-bag__debug-log time {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.echo-bag__debug-queue {
+  color: #facc15;
+}
+
+.echo-bag__debug-save {
+  color: #34d399;
+}
+
+.echo-bag__debug-dup {
+  color: var(--text-muted);
+}
+
+.echo-bag__debug-skip {
+  color: #f87171;
+}
+
+/* 날아오는 중인 행: 사진 자리를 비워 두었다가 사진이 "쏙" 들어오면 보입니다. */
+.echo-bag__row--incoming .echo-bag__photo {
+  opacity: 0;
+}
+
+.echo-bag__photo {
+  transition: opacity 0.15s ease;
+}

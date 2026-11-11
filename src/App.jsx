@@ -6,6 +6,8 @@ import HomePage from './pages/HomePage'
 import PatchNotesPage from './pages/PatchNotesPage'
 import EventCalendarPage from './pages/EventCalendarPage'
 import LiveEchoCheckPage from './pages/LiveEchoCheckPage'
+import EchoBagPage from './pages/EchoBagPage'
+import EventNotePage from './pages/EventNotePage'
 import CharacterSelectPage from './pages/CharacterSelectPage'
 import CapturePage from './pages/CapturePage'
 import EditPage from './pages/EditPage'
@@ -47,6 +49,7 @@ function normalizeRecord(rec) {
     // 예전에 저장한 에코도 코스트 기준 고정 수치로 맞춰서 읽습니다.
     echoes: (rec?.echoes ?? []).map(withFixedMainStats),
     weapon: rec?.weapon ?? null, // 무기 카탈로그 id (또는 null)
+    weaponRank: rec?.weaponRank ?? 1, // 무기 돌파 단계(1~5)
     // 사용자가 세트 추가/삭제로 직접 조립한 에코 세트 조합([{ setId, pieceCount }, ...])입니다.
     // null이면 캐릭터에게 등록된 추천 조합(config/characterEchoSets.js) 중 첫 번째를 기본값으로
     // 씁니다. 전부 삭제하면 빈 배열이 되어 "선택된 세트 없음" 상태입니다.
@@ -157,7 +160,11 @@ export default function App() {
   }
 
   const setWeaponForCurrent = (weapon) => {
-    updateRecordForCurrent((rec) => ({ ...rec, weapon }))
+    updateRecordForCurrent((rec) => ({ ...rec, weapon, weaponRank: 1 }))
+  }
+
+  const setWeaponRankForCurrent = (weaponRank) => {
+    updateRecordForCurrent((rec) => ({ ...rec, weaponRank }))
   }
 
   const setEchoPartsForCurrent = (echoParts) => {
@@ -307,7 +314,9 @@ export default function App() {
   const goToCharacters = () => setPage('characters')
   const goToPatchNotes = () => setPage('patchnotes')
   const goToEventCalendar = () => setPage('events')
+  const goToEventNote = () => setPage('eventnote')
   const goToLiveCheck = () => setPage('live')
+  const goToEchoBag = () => setPage('bag')
 
   /** 초기화: 이 캐릭터의 캡처된 에코만 지우고, 다시 캡처할 수 있도록 캡처 화면으로 이동합니다. */
   const handleResetCurrent = () => {
@@ -351,6 +360,8 @@ export default function App() {
             echoes={echoes}
             character={character}
             weapon={record.weapon}
+            weaponRank={record.weaponRank}
+            onSetWeaponRank={setWeaponRankForCurrent}
             echoParts={record.echoParts}
             mainEchoId={record.mainEchoId}
             onSetWeapon={setWeaponForCurrent}
@@ -373,6 +384,10 @@ export default function App() {
         return <PatchNotesPage />
       case 'live':
         return <LiveEchoCheckPage onApplyEcho={handleApplyLiveEcho} characterEchoes={characterEchoes} />
+      case 'bag':
+        return <EchoBagPage />
+      case 'eventnote':
+        return <EventNotePage />
       case 'events':
         return <EventCalendarPage />
       case 'home':
@@ -389,7 +404,9 @@ export default function App() {
         onGoToCharacterList={goToCharacters}
         onGoToPatchNotes={goToPatchNotes}
         onGoToEventCalendar={goToEventCalendar}
+        onGoToEventNote={goToEventNote}
         onGoToLiveCheck={goToLiveCheck}
+        onGoToEchoBag={goToEchoBag}
         theme={theme}
         onToggleTheme={toggleTheme}
         characterData={stripPreviewUrls(characterData)}
