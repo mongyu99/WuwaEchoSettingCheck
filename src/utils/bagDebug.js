@@ -5,7 +5,6 @@ import { BAG_WATCH_REGIONS } from './screenWatch'
 // 좌표는 모두 1920x1080 기준(오른쪽 끝 맞춤)입니다. echoRecognition.js·setIconMatch.js와 같은 값입니다.
 export const BAG_DEBUG_BOXES = [
   ...BAG_WATCH_REGIONS.map((r) => ({ ...r, label: '변화 감지', color: '#facc15', dash: true })),
-  { ...BAG_REGIONS.name, label: '이름', color: '#22d3ee' },
   { ...BAG_REGIONS.mainStat, label: '메인 옵션', color: '#a78bfa' },
   { ...BAG_REGIONS.subStat, label: '서브 옵션', color: '#34d399' },
   { x: 1401, y: 199, width: 28, height: 28, label: '세트 아이콘', color: '#f472b6' },

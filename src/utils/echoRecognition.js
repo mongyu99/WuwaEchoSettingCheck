@@ -3,85 +3,9 @@ import { findGameArea } from '../components/ScreenCapture'
 import { ECHO_SETS } from '../config/echoSets'
 import { BAG_REGIONS, FIXED_REGIONS, LIVE_REGIONS } from '../config/regions'
 import { MAIN_STAT_VALUES } from '../config/echoMainStats'
-import { MAIN_ECHOES } from '../config/mainEchoes'
 import { matchBagSetIcon } from './setIconMatch'
 import { blobToDataURL, cropNormalizedImage, normalizeImage, preprocessForOcr } from './image'
 import { buildStatsFromLines, closestMatch, normalizeMainStats, parseStatLines, snapSubStatsToCatalog } from './ocr'
-
-/**
- * 에코 이름을 읽습니다. 카탈로그(메인 에코 목록)에 비슷한 이름이 있으면 그 이름으로 맞추고,
- * 없으면(카탈로그에 없는 1·3코스트 에코 등) 읽은 한글을 그대로 씁니다.
- */
-export function readEchoName(text) {
-  // 이름 위쪽 잡음이 한 줄로 따로 읽히는 경우가 있어서(예: "] 로" / "천괴중루") 모든 줄을 봅니다.
-  const lines = text.split('\n').map(cleanNameLine).filter(Boolean)
-  if (lines.length === 0) return null
-  // 카탈로그 이름과 맞는 줄을 먼저 쓰고, 없으면 가장 긴 줄을 씁니다.
-  const names = Object.values(MAIN_ECHOES).map((e) => e.name)
-  const byLength = [...lines].sort((a, b) => b.length - a.length)
-  return byLength.map((l) => matchEchoName(l, names)).find(Boolean) ?? byLength[0]
-}
-
-/** OCR 한 줄을 이름 후보로 다듬습니다. 이름이 아닌 잡음 줄이면 null. */
-function cleanNameLine(raw) {
-  // 이름 뒤 잡음은 긴 공백 뒤에 붙어 나옵니다(예: "보이드 모스        (후 /"). 공백 3칸 이상 뒤는 버립니다.
-  // 짧은 공백 뒤에 붙은 한글 없는 토막(예: "반디의 군세 TA WAVE", "무망자 NW /,")도 떼어 냅니다.
-  const tokens = raw.split(/\s{3,}/)[0].trim().split(/\s+/)
-  while (tokens.length > 1 && !/[가-힣]/.test(tokens.at(-1))) tokens.pop()
-  const head = tokens.join(' ')
-  // 한글이 적은 줄은 잡음입니다(예: "Ham 6547~래래").
-  const visible = head.replace(/\s/g, '')
-  const hangul = (visible.match(/[가-힣]/g) ?? []).length
-  if (hangul < 2 || hangul / visible.length < 0.6) return null
-  // 「공명의 메아리 · 플뢰르 드 리스」처럼 가운뎃점이 들어간 이름이 있어, 점은 살리고 나머지 기호만 지웁니다.
-  const cleaned = head
-    // 가운뎃점은 ㆍ·•~- 등으로 읽힙니다(예: "이상-무망자", "이상ㆍ-무망자").
-    .replace(/[ㆍ•∙·~-]/g, ' · ')
-    .replace(/[^가-힣\s·]/g, '')
-    .replace(/\s+/g, ' ')
-    .replace(/(\s*·\s*)+/g, ' · ')
-    .replace(/^[\s·]+|[\s·]+$/g, '')
-  return cleaned.replace(/[\s·]/g, '').length >= 2 ? cleaned : null
-}
-
-// 같은 에코의 변형(이상·악몽·공명의 메아리)은 이름 뒷부분이 같아서, 느슨하게 맞추면 다른 변형으로 바뀝니다.
-const variantOf = (name) => {
-  const parts = name.split('·').map((p) => p.replace(/\s/g, ''))
-  return parts.length > 1 ? parts.slice(0, -1).join('·') : ''
-}
-
-/**
- * 카탈로그 이름과 맞춥니다. 변형 앞부분(예: "이상", "악몽")이 정확히 같고, 글자 차이가 이름 길이의 25% 이하일 때만 인정합니다.
- */
-function matchEchoName(line, names) {
-  const target = line.replace(/[\s·]/g, '')
-  let best = null
-  let bestDist = Infinity
-  for (const name of names) {
-    if (variantOf(name) !== variantOf(line)) continue
-    const plain = name.replace(/[\s·]/g, '')
-    const dist = editDistance(target, plain)
-    if (dist <= Math.max(1, Math.floor(plain.length * 0.25)) && dist < bestDist) {
-      best = name
-      bestDist = dist
-    }
-  }
-  return best
-}
-
-function editDistance(a, b) {
-  const row = Array.from({ length: b.length + 1 }, (_, j) => j)
-  for (let i = 1; i <= a.length; i++) {
-    let prev = row[0]
-    row[0] = i
-    for (let j = 1; j <= b.length; j++) {
-      const tmp = row[j]
-      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1))
-      prev = tmp
-    }
-  }
-  return row[b.length]
-}
 
 // 가방 화면 상세 패널의 에코 그림 자리(1920x1080 기준, 오른쪽 끝 맞춤)입니다.
 const BAG_ART = { x: 1615, y: 170, size: 245 }
@@ -123,34 +47,26 @@ function cropRightForOcr(area, region) {
 }
 
 /**
- * 가방 화면 인식(빠른 경로). 서브·메인·이름을 동시에 읽고(작업자가 여러 개면 병렬), 세트 아이콘·썸네일도 같이 만듭니다.
- * 서브 옵션을 못 읽으면 에코 화면이 아닌 것으로 봅니다.
+ * 가방 화면 인식(빠른 경로). 서브·메인 옵션을 동시에 읽고(작업자가 여러 개면 병렬), 세트 아이콘·썸네일도 같이 만듭니다.
+ * 에코 이름은 OCR 오류가 많고 사진으로 구분되므로 읽지 않습니다. 서브 옵션을 못 읽으면 에코 화면이 아닌 것으로 봅니다.
  */
 async function recognizeBagPanel(area, ocr, { withViews }) {
   const crops = {
     sub: cropRightForOcr(area, BAG_REGIONS.subStat),
     main: cropRightForOcr(area, BAG_REGIONS.mainStat),
-    name: cropRightForOcr(area, BAG_REGIONS.name),
   }
-  const [sub, main, name, setId] = await Promise.all([
-    ocr.recognize(crops.sub),
-    ocr.recognize(crops.main),
-    ocr.recognize(crops.name),
-    matchBagSetIcon(area),
-  ])
+  const [sub, main, setId] = await Promise.all([ocr.recognize(crops.sub), ocr.recognize(crops.main), matchBagSetIcon(area)])
   const views = withViews
     ? [
         { title: '가방 서브 옵션', image: crops.sub.toDataURL('image/png'), text: sub.text.trim() },
         { title: '가방 메인 옵션', image: crops.main.toDataURL('image/png'), text: main.text.trim() },
-        { title: '가방 에코 이름', image: crops.name.toDataURL('image/png'), text: name.text.trim() },
       ]
     : []
   const subStats = readSubStats(sub.lines)
-  if (subStats.length === 0) return { subStats, main: null, name: null, setId: null, views }
+  if (subStats.length === 0) return { subStats, main: null, setId: null, views }
   return {
     subStats,
     main: readMainStat(main.text),
-    name: readEchoName(name.text),
     setId,
     thumbnail: bagThumbnail(area),
     views,

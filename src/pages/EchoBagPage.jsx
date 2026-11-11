@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { screenCaptureSupported } from '../components/ScreenCapture'
 import { SUB_STAT_NAMES } from '../config/subStatOptions'
 import { getEchoSet } from '../config/echoSets'
-import { MAIN_ECHOES } from '../config/mainEchoes'
 import { useCountUp } from '../utils/useCountUp'
 import { flyTo } from '../utils/flyTo'
 import { jelly } from '../utils/jelly'
@@ -22,16 +21,11 @@ import './EchoBagPage.css'
 // 가방은 에코를 빠르게 넘기므로 실시간 체크(0.5초)보다 자주 봅니다. 화면 비교는 64x128 픽셀이라 가볍습니다.
 const CHECK_INTERVAL_MS = 250
 
-// 카탈로그(메인 에코)에 같은 이름이 있으면 그 아이콘을, 없으면 화면에서 잘라 둔 썸네일을 씁니다.
-const iconOf = (item) =>
-  Object.values(MAIN_ECHOES).find((e) => e.icon && e.name.replace(/\s/g, '') === (item.name ?? '').replace(/\s/g, ''))?.icon ??
-  item.thumbnail
-
 /** 가방 에코 한 줄. 마우스를 올리면 상세가 살짝 보이고, 누르면 펼친 채로 고정됩니다. */
 function BagRow({ item, index, open, incoming, onToggle, highlight, onRemove }) {
   const score = useCountUp(item.score)
   const set = getEchoSet(item.setId)
-  const icon = iconOf(item)
+  const icon = item.thumbnail
   const grade = gradeOf(item.score * 5)
   return (
     <li
@@ -44,11 +38,12 @@ function BagRow({ item, index, open, incoming, onToggle, highlight, onRemove }) 
           {icon ? <img src={icon} alt="" /> : <span className="echo-bag__photo-empty" />}
           {set?.icon && <img className="echo-bag__photo-set" src={set.icon} alt={set.name} title={set.name} />}
         </span>
-        <span className="echo-bag__name">
-          {item.name ?? '이름 모름'}
-          <small>{item.cost ? `${item.cost}코스트` : '코스트 모름'}</small>
+        <span className="echo-bag__main">
+          {set?.name ?? '세트 모름'}
+          <small>
+            {item.main ? `${item.main.label} ${item.main.valueText}` : '주옵션 모름'} | {item.cost ? `${item.cost}코스트` : '코스트 모름'}
+          </small>
         </span>
-        <span className="echo-bag__main">{item.main ? `${item.main.label} ${item.main.valueText}` : '-'}</span>
         <span className="echo-bag__valid">
           {/* 옵션 이름만 보여 줍니다. 수치는 펼친 상세에서 봅니다. */}
           {item.subStats.map((s) => (
@@ -157,8 +152,8 @@ export default function EchoBagPage() {
     let previousSignature = null // 바로 전 확인의 화면
     const queue = []
     let working = false
-    // 서브·메인·이름 세 영역을 동시에 읽도록 작업자를 3개 둡니다.
-    const session = createOcrPool(3)
+    // 서브·메인 두 영역을 동시에 읽도록 작업자를 2개 둡니다.
+    const session = createOcrPool(2)
     const updatePending = () => setStats((s) => ({ ...s, pending: queue.length }))
 
     // 큐에서 하나씩 꺼내 글자 인식 → 중복 확인 → 저장합니다.
@@ -182,11 +177,11 @@ export default function EchoBagPage() {
             continue
           }
           if (keysRef.current.has(item.key)) {
-            log('dup', `중복이라 건너뜀: ${item.name ?? '이름 모름'} · ${item.subStats.map((x) => x.label + ' ' + x.valueText).join(', ')}`)
+            log('dup', `중복이라 건너뜀: ${item.subStats.map((x) => x.label + ' ' + x.valueText).join(', ')}`)
             setStats((s) => ({ ...s, duplicate: s.duplicate + 1 }))
             continue
           }
-          log('save', `저장: ${item.name ?? '이름 모름'} · 세트 ${getEchoSet(item.setId)?.name ?? '모름'} · 옵션 ${item.subStats.length}개`)
+          log('save', `저장: 세트 ${getEchoSet(item.setId)?.name ?? '모름'} · 옵션 ${item.subStats.length}개`)
           keysRef.current.add(item.key)
           setItems((list) => [...list, evaluateBagItem(item)])
           if (item.thumbnail) {
@@ -399,8 +394,7 @@ export default function EchoBagPage() {
             <ul className="echo-bag__list" ref={listRef}>
               <li className="echo-bag__head" aria-hidden="true">
                 <span>사진 · 세트</span>
-                <span>이름</span>
-                <span>메인</span>
+                <span>세트 · 주옵션</span>
                 <span>옵션</span>
                 <span>등급</span>
               </li>

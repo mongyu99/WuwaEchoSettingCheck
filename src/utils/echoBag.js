@@ -6,18 +6,17 @@ import { costOfMain } from './echoRecognition'
  * 같은 에코인지 판단하는 키입니다. 이미지 해시는 커서·선택 테두리 때문에 매번 달라져서, 읽은 결과로 비교합니다.
  * 세트 + 코스트 + 메인 옵션 + 서브 옵션(순서대로)이 모두 같으면 같은 에코로 봅니다.
  */
-export function echoKey({ name, setId, main, subStats }) {
+export function echoKey({ setId, main, subStats }) {
   const subs = subStats.map((s) => `${s.label}=${s.valueText}`).join(',')
-  return [name ?? '-', setId ?? '-', costOfMain(main) ?? '-', main ? `${main.label}=${main.valueText}` : '-', subs].join('|')
+  return [setId ?? '-', costOfMain(main) ?? '-', main ? `${main.label}=${main.valueText}` : '-', subs].join('|')
 }
 
 /** 인식 결과 하나를 가방 항목으로 만듭니다. 서브 옵션이 없으면 에코 화면이 아니라서 null입니다. */
 export function toBagItem(recognized, now = Date.now()) {
   if (!recognized?.subStats?.length) return null
-  const { name = null, setId = null, main = null, subStats, thumbnail = null } = recognized
+  const { setId = null, main = null, subStats, thumbnail = null } = recognized
   return {
-    key: echoKey({ name, setId, main, subStats }),
-    name,
+    key: echoKey({ setId, main, subStats }),
     setId,
     main,
     cost: costOfMain(main),

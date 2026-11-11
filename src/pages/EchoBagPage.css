@@ -464,3 +464,32 @@
 .echo-bag__photo {
   transition: opacity 0.15s ease;
 }
+
+/* 이름 열을 뺀 배치: 사진+세트 | 메인(+코스트) | 옵션 | 등급 */
+.echo-bag__head,
+.echo-bag__summary {
+  grid-template-columns: 64px minmax(130px, 1fr) minmax(0, 2.6fr) 56px;
+}
+
+.echo-bag__main {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.echo-bag__main small {
+  display: block;
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+@media (max-width: 900px) {
+  .echo-bag__summary {
+    grid-template-columns: 56px minmax(0, 1fr) 48px;
+  }
+
+  .echo-bag__main,
+  .echo-bag__valid {
+    grid-column: 2;
+  }
+}
