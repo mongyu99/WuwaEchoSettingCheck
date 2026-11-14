@@ -76,3 +76,17 @@ describe('filterAndSort', () => {
     expect(filterAndSort(items).map((i) => i.key)).toEqual(['b', 'c', 'a'])
   })
 })
+
+describe('filterAndSort 메인·코스트·세트 필터', () => {
+  const x = { key: 'x', score: 1, capturedAt: 1, cost: '4', setId: 'molten-rift', main: { label: '크리티컬' }, subStats: [st('공격력%', '10.1%')] }
+  const y = { key: 'y', score: 2, capturedAt: 2, cost: '3', setId: 'void-thunder', main: { label: '공격력' }, subStats: [st('공격력%', '9.4%')] }
+
+  it('메인 옵션은 고른 것 중 하나라도', () => {
+    expect(filterAndSort([x, y], { mains: ['크리티컬', 'HP'] }).map((i) => i.key)).toEqual(['x'])
+  })
+
+  it('코스트·세트로 거른다', () => {
+    expect(filterAndSort([x, y], { costs: [3] }).map((i) => i.key)).toEqual(['y'])
+    expect(filterAndSort([x, y], { sets: ['molten-rift', 'void-thunder'] }).map((i) => i.key)).toEqual(['y', 'x'])
+  })
+})

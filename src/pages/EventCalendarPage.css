@@ -128,3 +128,16 @@
   top: 10px;
   right: 10px;
 }
+
+/* 공식 이벤트 노트 이미지. 누르면 원본을 새 탭에서 엽니다. */
+.event-calendar__note {
+  display: block;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.event-calendar__note img {
+  display: block;
+  width: 100%;
+  height: auto;
+}

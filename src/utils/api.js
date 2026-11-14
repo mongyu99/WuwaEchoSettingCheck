@@ -57,6 +57,11 @@ export function fetchCatalog() {
   return apiFetch('/api/catalog')
 }
 
+/** 최신 이벤트 노트 이미지({ version, image }). 없으면 null. */
+export function fetchLatestEventNote() {
+  return apiFetch('/api/event-notes/latest')
+}
+
 export function fetchEvents() {
   return apiFetch('/api/events')
 }

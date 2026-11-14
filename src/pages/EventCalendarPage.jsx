@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { assetPath } from '../config/assetPath'
-import { fetchEvents } from '../utils/api'
+import { fetchEvents, fetchLatestEventNote } from '../utils/api'
 import { formatDate, daysRemaining } from '../utils/eventDates'
 import './EventCalendarPage.css'
 
@@ -8,6 +8,20 @@ export default function EventCalendarPage() {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [note, setNote] = useState(null)
+
+  // 이벤트 노트 이미지는 없어도 페이지는 그대로 보여줍니다.
+  useEffect(() => {
+    let cancelled = false
+    fetchLatestEventNote()
+      .then((result) => {
+        if (!cancelled && result?.image) setNote(result)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -72,6 +86,12 @@ export default function EventCalendarPage() {
         <span className="uploader__eyebrow">이벤트 캘린더</span>
         <h2>진행 중인 이벤트</h2>
       </header>
+
+      {note && (
+        <a className="event-calendar__note" href={assetPath(note.image)} target="_blank" rel="noreferrer">
+          <img src={assetPath(note.image)} alt={`${note.version} 버전 이벤트 노트`} />
+        </a>
+      )}
 
       {loading && <p className="uploader__hint">불러오는 중...</p>}
 

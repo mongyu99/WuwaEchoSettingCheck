@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { screenCaptureSupported } from '../components/ScreenCapture'
 import { SUB_STAT_NAMES } from '../config/subStatOptions'
-import { getEchoSet } from '../config/echoSets'
+import { ECHO_SETS, getEchoSet } from '../config/echoSets'
+import { MAIN_STAT_VALUES } from '../config/echoMainStats'
+import Modal from '../components/Modal'
 import { useCountUp } from '../utils/useCountUp'
 import { flyTo } from '../utils/flyTo'
 import { useFlipList } from '../utils/useFlipList'
@@ -12,7 +14,7 @@ import { createOcrPool } from '../utils/ocr'
 import { grabGameArea, recognizeEchoPanel } from '../utils/echoRecognition'
 import { MIN_CHANGED_CELLS, bagPanelSignature, bagSignatureDiff } from '../utils/screenWatch'
 import { BAG_DEBUG_BOXES, drawDebugSnapshot } from '../utils/bagDebug'
-import { evaluateBagItem, filterAndSort, toBagItem } from '../utils/echoBag'
+import { evaluateBagItem, filterAndSort, toBagItem, withSet } from '../utils/echoBag'
 import { saveOcrSample } from '../utils/ocrSample'
 import { clearBag, deleteBagItem, loadBag, saveBagItem } from '../utils/bagStore'
 import '../components/ScreenCapture.css'
@@ -23,7 +25,7 @@ import './EchoBagPage.css'
 const CHECK_INTERVAL_MS = 250
 
 /** 가방 에코 한 줄. 마우스를 올리면 상세가 살짝 보이고, 누르면 펼친 채로 고정됩니다. */
-function BagRow({ item, index, open, incoming, exiting, onToggle, highlight, onRemove }) {
+function BagRow({ item, index, open, incoming, exiting, onToggle, highlight, onRemove, onPickSet }) {
   const score = useCountUp(item.score)
   const set = getEchoSet(item.setId)
   const icon = item.thumbnail
@@ -41,7 +43,29 @@ function BagRow({ item, index, open, incoming, exiting, onToggle, highlight, onR
           {set?.icon && <img className="echo-bag__photo-set" src={set.icon} alt={set.name} title={set.name} />}
         </span>
         <span className="echo-bag__main">
-          {set?.name ?? '세트 모름'}
+          {set ? (
+            set.name
+          ) : (
+            // 세트를 못 읽었으면 눌러서 직접 고릅니다(행 펼치기와 따로 동작).
+            <span
+              role="button"
+              tabIndex={0}
+              className="echo-bag__set-pick"
+              onClick={(e) => {
+                e.stopPropagation()
+                onPickSet()
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onPickSet()
+                }
+              }}
+            >
+              세트 지정하기
+            </span>
+          )}
           <small>
             {item.main ? `${item.main.label} ${item.main.valueText}` : '주옵션 모름'} | {item.cost ? `${item.cost}코스트` : '코스트 모름'}
           </small>
@@ -65,7 +89,12 @@ function BagRow({ item, index, open, incoming, exiting, onToggle, highlight, onR
           <dl>
             <div>
               <dt>세트</dt>
-              <dd>{set?.name ?? '세트 모름'}</dd>
+              <dd>
+                {set?.name ?? '세트 모름'}{' '}
+                <button type="button" className="echo-bag__set-change" onClick={onPickSet}>
+                  {set ? '바꾸기' : '지정하기'}
+                </button>
+              </dd>
             </div>
             <div>
               <dt>추천 캐릭터</dt>
@@ -230,11 +259,36 @@ export default function EchoBagPage() {
   }, [sharing])
 
   // 고른 서브 옵션을 모두 가진 에코만 보고, 점수 또는 특정 옵션 수치 순으로 정렬합니다.
-  const [required, setRequired] = useState([])
+  const [required, setRequired] = useState([]) // 부옵션(모두 가진 에코)
+  const [mains, setMains] = useState([]) // 메인 옵션(하나라도)
+  const [costs, setCosts] = useState([]) // 코스트(하나라도)
+  const [sets, setSets] = useState([]) // 세트(하나라도)
   const [sortKey, setSortKey] = useState('recent')
-  const toggleRequired = (label) =>
-    setRequired((list) => (list.includes(label) ? list.filter((l) => l !== label) : [...list, label]))
-  const sorted = useMemo(() => filterAndSort(items, { required, sortKey }), [items, required, sortKey])
+  const [filterOpen, setFilterOpen] = useState(false)
+  const toggleIn = (setter) => (value) => setter((list) => (list.includes(value) ? list.filter((v) => v !== value) : [...list, value]))
+  const filterCount = required.length + mains.length + costs.length + sets.length
+  const clearFilters = () => {
+    setRequired([])
+    setMains([])
+    setCosts([])
+    setSets([])
+  }
+  const sorted = useMemo(
+    () => filterAndSort(items, { required, mains, costs, sets, sortKey }),
+    [items, required, mains, costs, sets, sortKey],
+  )
+
+  // 세트 지정 팝업: 세트를 못 읽은(또는 잘못 읽은) 에코의 세트를 직접 고릅니다.
+  const [setPickKey, setSetPickKey] = useState(null)
+  const pickSet = (setId) => {
+    const target = items.find((i) => i.key === setPickKey)
+    setSetPickKey(null)
+    if (!target) return
+    const updated = withSet(target, setId)
+    setItems((list) => list.map((i) => (i.key === target.key ? updated : i)))
+    const { bestCharacter, score, validCount, validRows, ...stored } = updated
+    saveBagItem(stored).catch((e) => console.error('세트 저장 실패', e))
+  }
   // 정렬·필터가 바뀌면 행이 새 자리로 미끄러져 가고, 빠지는 행은 흐려지며 사라집니다.
   const { rendered, listRef } = useFlipList(sorted, (item) => item.key)
 
@@ -334,10 +388,13 @@ export default function EchoBagPage() {
                 전체 지우기
               </button>
             )}
-            <button type="button" className="btn btn--ghost echo-bag__debug-toggle" onClick={() => setDebug((d) => !d)}>
-              {debug ? '개발자 도구 닫기' : '개발자 도구'}
-            </button>
-            {debug && (
+            {/* 개발자 도구는 로컬 개발 서버에서만 보여 줍니다(운영 빌드에서는 버튼이 없습니다). */}
+            {import.meta.env.DEV && (
+              <button type="button" className="btn btn--ghost echo-bag__debug-toggle" onClick={() => setDebug((d) => !d)}>
+                {debug ? '개발자 도구 닫기' : '개발자 도구'}
+              </button>
+            )}
+            {import.meta.env.DEV && debug && (
               <div className="echo-bag__debug">
                 <p className="echo-bag__debug-diff">
                   {debugDiff
@@ -369,9 +426,10 @@ export default function EchoBagPage() {
 
         <div className="live-check__result echo-bag__result">
           <div className="echo-bag__toolbar">
-            <h3>
-              {required.length > 0 ? `조건에 맞는 에코 ${sorted.length.toLocaleString()}개` : '인식한 에코'}
-            </h3>
+            <h3>{filterCount > 0 ? `조건에 맞는 에코 ${sorted.length.toLocaleString()}개` : '인식한 에코'}</h3>
+            <button type="button" className={`echo-bag__filter-btn ${filterCount ? 'echo-bag__filter-btn--on' : ''}`} onClick={() => setFilterOpen(true)}>
+              필터{filterCount > 0 && <b>{filterCount}</b>}
+            </button>
             <select className="live-check__select echo-bag__sort" aria-label="정렬" value={sortKey} onChange={(e) => setSortKey(e.target.value)}>
               <option value="recent">최근 등록 순</option>
               <option value="score">점수 높은 순</option>
@@ -382,20 +440,8 @@ export default function EchoBagPage() {
               ))}
             </select>
           </div>
-          <div className="live-check__target-chips">
-            {SUB_STAT_NAMES.map((name) => (
-              <button
-                key={name}
-                type="button"
-                className={`live-check__chip ${required.includes(name) ? 'live-check__chip--on' : ''}`}
-                onClick={() => toggleRequired(name)}
-              >
-                {name}
-              </button>
-            ))}
-          </div>
           {sorted.length === 0 ? (
-            <p className="uploader__hint">{items.length === 0 ? '아직 인식한 에코가 없어요.' : '고른 옵션을 모두 가진 에코가 없어요.'}</p>
+            <p className="uploader__hint">{items.length === 0 ? '아직 인식한 에코가 없어요.' : '필터 조건에 맞는 에코가 없어요.'}</p>
           ) : (
             <ul className="echo-bag__list" ref={listRef}>
               <li className="echo-bag__head" aria-hidden="true">
@@ -415,11 +461,88 @@ export default function EchoBagPage() {
                   onToggle={() => setOpenKey((k) => (k === item.key ? null : item.key))}
                   highlight={(label) => required.includes(label) || sortKey === label}
                   onRemove={() => removeItem(item.key)}
+                  onPickSet={() => setSetPickKey(item.key)}
                 />
               ))}
             </ul>
           )}
         </div>
+      </div>
+
+      {/* 필터 서랍: 오른쪽에서 슉 나옵니다. */}
+      <div className={`echo-bag__drawer ${filterOpen ? 'echo-bag__drawer--open' : ''}`} aria-hidden={!filterOpen}>
+        <div className="echo-bag__drawer-backdrop" onClick={() => setFilterOpen(false)} />
+        <aside className="echo-bag__drawer-panel" role="dialog" aria-label="에코 필터">
+          <header className="echo-bag__drawer-head">
+            <h3>필터</h3>
+            <button type="button" className="echo-bag__drawer-reset" onClick={clearFilters} disabled={filterCount === 0}>
+              초기화
+            </button>
+            <button type="button" className="modal__close" onClick={() => setFilterOpen(false)} aria-label="닫기">
+              ×
+            </button>
+          </header>
+          <div className="echo-bag__drawer-body">
+            <FilterGroup title="부옵션" hint="고른 옵션을 모두 가진 에코" options={SUB_STAT_NAMES} selected={required} onToggle={toggleIn(setRequired)} />
+            <FilterGroup title="메인 옵션" hint="하나라도 해당" options={MAIN_LABELS} selected={mains} onToggle={toggleIn(setMains)} />
+            <FilterGroup title="코스트" options={[4, 3, 1]} format={(c) => `${c}코스트`} selected={costs} onToggle={toggleIn(setCosts)} />
+            <FilterGroup
+              title="세트"
+              options={Object.keys(ECHO_SETS)}
+              format={(id) => (
+                <>
+                  {ECHO_SETS[id].icon && <img src={ECHO_SETS[id].icon} alt="" />}
+                  {ECHO_SETS[id].name}
+                </>
+              )}
+              selected={sets}
+              onToggle={toggleIn(setSets)}
+            />
+          </div>
+          <footer className="echo-bag__drawer-foot">
+            <button type="button" className="btn btn--primary" onClick={() => setFilterOpen(false)}>
+              {sorted.length.toLocaleString()}개 보기
+            </button>
+          </footer>
+        </aside>
+      </div>
+
+      {/* 세트 지정 팝업 */}
+      <Modal wide open={!!setPickKey} title="세트 지정" onClose={() => setSetPickKey(null)}>
+        {Object.entries(ECHO_SETS).map(([id, set]) => (
+          <button key={id} type="button" className="picker-item picker-item--simple" onClick={() => pickSet(id)}>
+            {set.icon && <img src={set.icon} alt="" className="picker-item__icon" />}
+            <span>{set.name}</span>
+          </button>
+        ))}
+      </Modal>
+    </section>
+  )
+}
+
+// 메인 옵션 이름 목록(코스트 상관없이 한 번씩).
+const MAIN_LABELS = [...new Set(Object.values(MAIN_STAT_VALUES).flatMap((byLabel) => Object.keys(byLabel)))]
+
+/** 필터 서랍의 한 묶음(제목 + 칩들). */
+function FilterGroup({ title, hint, options, selected, onToggle, format = (v) => v }) {
+  return (
+    <section className="echo-bag__filter-group">
+      <h4>
+        {title}
+        {hint && <small>{hint}</small>}
+      </h4>
+      <div className="echo-bag__filter-chips">
+        {options.map((o) => (
+          <button
+            key={o}
+            type="button"
+            className={`live-check__chip ${selected.includes(o) ? 'live-check__chip--on' : ''}`}
+            onClick={() => onToggle(o)}
+            aria-pressed={selected.includes(o)}
+          >
+            {format(o)}
+          </button>
+        ))}
       </div>
     </section>
   )

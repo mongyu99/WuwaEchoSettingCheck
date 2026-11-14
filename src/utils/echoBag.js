@@ -26,6 +26,9 @@ export function toBagItem(recognized, now = Date.now()) {
   }
 }
 
+/** 세트를 사용자가 고쳐 지정합니다. 중복 판단 키는 처음 인식한 그대로 둡니다(저장소 기록을 같은 키로 덮어쓰기 위해). */
+export const withSet = (item, setId) => evaluateBagItem({ ...item, setId })
+
 /** 에코 하나를 평가합니다. 가장 잘 맞는 캐릭터와 그 캐릭터 기준 유효 점수를 붙입니다. */
 export function evaluateBagItem(item) {
   const [best] = recommend(item.subStats, item.setId, item.main?.label, 1)
@@ -50,11 +53,19 @@ export function subValue(item, label) {
 }
 
 /**
- * 고른 서브 옵션을 모두 가진 에코만 남기고 정렬합니다.
+ * 조건에 맞는 에코만 남기고 정렬합니다.
+ * required: 서브 옵션(모두 가져야 함) / mains·costs·sets: 메인 옵션 이름·코스트·세트 id(고른 것 중 하나라도)
  * sortKey: 'recent'(기본, 최근 등록 순) / 'score'(점수 순) / 서브 옵션 이름(그 옵션 수치 순, 같으면 점수 순)
  */
-export function filterAndSort(items, { required = [], sortKey = 'recent' } = {}) {
-  const kept = items.filter((item) => required.every((label) => subValue(item, label) !== null))
+export function filterAndSort(items, { required = [], mains = [], costs = [], sets = [], sortKey = 'recent' } = {}) {
+  const anyOf = (list, value) => list.length === 0 || list.includes(value)
+  const kept = items.filter(
+    (item) =>
+      required.every((label) => subValue(item, label) !== null) &&
+      anyOf(mains, item.main?.label) &&
+      anyOf(costs, Number(item.cost)) &&
+      anyOf(sets, item.setId),
+  )
   if (sortKey === 'recent') return [...kept].sort((a, b) => (b.capturedAt ?? 0) - (a.capturedAt ?? 0))
   if (sortKey === 'score') return sortByScore(kept)
   return [...kept].sort((a, b) => (subValue(b, sortKey) ?? -1) - (subValue(a, sortKey) ?? -1) || b.score - a.score)
