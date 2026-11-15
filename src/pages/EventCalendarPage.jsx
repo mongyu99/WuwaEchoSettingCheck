@@ -27,7 +27,8 @@ export default function EventCalendarPage() {
     let cancelled = false
     fetchEvents()
       .then((result) => {
-        if (!cancelled) setEvents(result)
+        // 커뮤니티 참여형 이벤트는 홈의 별도 배너 줄에서만 보여줍니다.
+        if (!cancelled) setEvents(result.filter((e) => !e.community))
       })
       .catch((err) => {
         if (!cancelled) setError(err.message || '이벤트를 불러오는 데 실패했어요.')

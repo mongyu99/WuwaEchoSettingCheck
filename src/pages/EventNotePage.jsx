@@ -13,7 +13,7 @@ export default function EventNotePage() {
   useEffect(() => {
     let cancelled = false
     fetchEvents()
-      .then((result) => !cancelled && setEvents(result))
+      .then((result) => !cancelled && setEvents(result.filter((e) => !e.community)))
       .catch((err) => !cancelled && setError(err.message || '이벤트를 불러오는 데 실패했어요.'))
       .finally(() => !cancelled && setLoading(false))
     return () => {

@@ -15,7 +15,7 @@ export default function EventSchedule() {
       .then((result) => {
         if (cancelled) return
         const ongoing = result
-          .filter((e) => daysRemaining(e.endsAt) !== null)
+          .filter((e) => !e.community && daysRemaining(e.endsAt) !== null)
           .sort((a, b) => new Date(a.endsAt) - new Date(b.endsAt))
         setEvents(ongoing)
       })

@@ -1,0 +1,87 @@
+/* 홈의 커뮤니티 이벤트: 같은 크기의 카드를 격자로 나란히 놓습니다(가로 스크롤 없음). */
+.community-events {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.community-events > li {
+  min-width: 0;
+}
+
+.community-events__card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--ww-row, var(--bg-surface-raised));
+  color: var(--ww-ink, var(--text-primary));
+  text-decoration: none;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+a.community-events__card:hover {
+  background: var(--ww-row-hover, var(--bg-surface-raised));
+  box-shadow: inset 0 -2px 0 var(--ww-gold, var(--accent-wave));
+}
+
+/* 이미지 비율이 제각각이라 같은 틀(16:9)에 잘라 맞춥니다. */
+.community-events__image {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.community-events__image img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+a.community-events__card:hover .community-events__image img {
+  transform: scale(1.04);
+}
+
+.community-events__badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+}
+
+.community-events__badge--dday {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(20, 24, 32, 0.82);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.community-events__title {
+  margin: 8px 10px 2px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  /* 긴 제목은 두 줄까지만 보여줍니다. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: calc(13px * 1.4 * 2);
+}
+
+.community-events__date {
+  margin: 0 10px 8px;
+  font-size: 11px;
+  opacity: 0.6;
+}

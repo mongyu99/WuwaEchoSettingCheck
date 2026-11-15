@@ -41,4 +41,8 @@ public class EventItem {
 
     @Column(nullable = false, length = 10)
     private String status;
+
+    /** INGAME(인게임 이벤트) 또는 COMMUNITY(커뮤니티 참여형). */
+    @Column(nullable = false, length = 10)
+    private String category;
 }
