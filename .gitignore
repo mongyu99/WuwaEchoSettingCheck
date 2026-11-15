@@ -23,3 +23,6 @@ src/admin/
 backend/src/main/java/com/wuwaecho/backend/admin/
 backend/src/main/resources/application-admin.yml
 backend/docker-compose.dev.yml
+
+# 개발 서버에서 모은 OCR 테스트 자료(게임 스크린샷)
+test/ocr-fixtures/

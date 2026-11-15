@@ -90,11 +90,13 @@ export async function loadCatalog() {
       w.id,
       {
         name: w.name,
+        rarity: num(w.rarity),
         type: w.type,
         icon: w.icon_path ? assetPath(w.icon_path) : null,
         atk: num(w.atk),
         ...(w.sub_stat ? { subStat: { category: w.sub_stat, value: num(w.sub_stat_value) } } : {}),
-        bonuses: (weaponBonuses[w.id] ?? []).map(bonus),
+        // rankRef: 무기 설명의 몇 번째 5단계 묶음(12%/15%/…)을 따르는 보너스인지(1부터). 없으면 고정값.
+        bonuses: (weaponBonuses[w.id] ?? []).map((r) => ({ ...bonus(r), ...(r.rank_ref ? { rankRef: r.rank_ref } : {}) })),
         ...(w.passive_name ? { passiveName: w.passive_name } : {}),
         description: w.description,
         ...(w.note ? { note: w.note } : {}),
@@ -131,6 +133,7 @@ export async function loadCatalog() {
         e.id,
         {
           name: e.name,
+          cost: num(e.cost),
           icon: e.icon_path ? assetPath(e.icon_path) : null,
           description: e.description,
           passiveDescription: e.passive_description ?? null,

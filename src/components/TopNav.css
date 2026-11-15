@@ -174,3 +174,53 @@
     display: none;
   }
 }
+
+/* 애니메이션 켜기/끄기 스위치 */
+.motion-switch {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.motion-switch__track {
+  position: relative;
+  width: 30px;
+  height: 16px;
+  border-radius: 999px;
+  border: 1px solid var(--ww-panel-border);
+  background: var(--ww-row);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.motion-switch__knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform 0.25s var(--ease-pop), background 0.2s ease;
+}
+
+.motion-switch--on {
+  color: var(--text-primary);
+}
+
+.motion-switch--on .motion-switch__track {
+  border-color: var(--accent-wave);
+}
+
+.motion-switch--on .motion-switch__knob {
+  transform: translateX(14px);
+  background: var(--accent-wave);
+}

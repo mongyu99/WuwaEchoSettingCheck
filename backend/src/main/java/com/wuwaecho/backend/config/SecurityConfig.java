@@ -45,7 +45,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**")
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/patch-notes", "/api/events", "/api/catalog", "/api/banners", "/api/pickups", "/api/broadcasts")
+                        .requestMatchers(HttpMethod.GET, "/api/patch-notes", "/api/events", "/api/event-notes/latest", "/api/catalog", "/api/banners", "/api/pickups", "/api/broadcasts")
                         .permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**", "/error")
                         .permitAll()

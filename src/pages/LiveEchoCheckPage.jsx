@@ -1,87 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
 import ConfirmDialog from '../components/ConfirmDialog'
 import Modal from '../components/Modal'
-import { screenCaptureSupported, findGameArea } from '../components/ScreenCapture'
+import { screenCaptureSupported } from '../components/ScreenCapture'
 import '../components/EchoPanel.css'
-import { CHARACTERS } from '../config/characters'
 import { getValidOptions } from '../config/characterValidOptions'
-import { getCharacterEchoCombos } from '../config/characterEchoSets'
 import { ECHO_SETS, getEchoSet } from '../config/echoSets'
-import { FIXED_REGIONS, LIVE_REGIONS } from '../config/regions'
-import { blobToDataURL, cropNormalizedImage, normalizeImage, preprocessForOcr } from '../utils/image'
 import { MAIN_STAT_VALUES, applyCostToMainStats } from '../config/echoMainStats'
-import { buildStatsFromLines, closestMatch, createOcrSession, getEchoCost, normalizeMainStats, parseStatLines, snapSubStatsToCatalog } from '../utils/ocr'
+import { createOcrSession, getEchoCost } from '../utils/ocr'
+import { recommend } from '../utils/echoRecommend'
+import { saveOcrSample } from '../utils/ocrSample'
+import { jelly } from '../utils/jelly'
+import { costOfMain, grabGameArea, recognizeEchoPanel } from '../utils/echoRecognition'
 import { SUB_STAT_NAMES, SUB_STAT_OPTIONS, formatSubStatValue } from '../config/subStatOptions'
 import { scoreValidStats } from '../utils/echoScore'
+import { exactRollProbability, optionSetProbability, successProbability, targetRollProbability, tierProbability } from '../utils/probability'
 import { panelSignature, signatureChanged } from '../utils/screenWatch'
 import '../components/ScreenCapture.css'
 import './LiveEchoCheckPage.css'
 
 const CHECK_INTERVAL_MS = 500
 const MAX_TOTAL_COST = 12
-const TOP_COUNT = 5
-/** 게임 화면을 높이 1080 기준으로 보고, 왼쪽 끝 기준 좌표의 영역을 잘라 냅니다(강화 화면용). */
-function cropFromLeft(source, h, region) {
-  const scale = h / 1080
-  // 공유 화면은 글자가 작아서 2배로 키워 인식합니다.
-  const canvas = document.createElement('canvas')
-  canvas.width = region.width * 2
-  canvas.height = region.height * 2
-  const ctx = canvas.getContext('2d')
-  ctx.imageSmoothingQuality = 'high'
-  ctx.drawImage(source, region.x * scale, region.y * scale, region.width * scale, region.height * scale, 0, 0, canvas.width, canvas.height)
-  return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
-}
-
-// 수치가 없는 줄은 배경 잡음이나 잠긴 옵션 줄입니다. 그대로 두면 짧은 잡음이 "HP"에 맞춰져 최저 수치로 채워집니다.
-const readSubStats = (lines) =>
-  snapSubStatsToCatalog(
-    buildStatsFromLines(lines)
-      .stats.filter((s) => s.valueText)
-      .slice(0, 5),
-  ).filter((s) => s.label && s.valueText)
-
-/** 화음 이펙트 영역의 줄들에서 세트 이름을 찾습니다. "(2/2)" 같은 표시와 기호는 빼고 세트 목록과 대조합니다. */
-function findSetId(lines) {
-  const names = Object.values(ECHO_SETS).map((set) => set.name)
-  for (const line of lines) {
-    const name = closestMatch(line.text.replace(/\(.*$/, '').replace(/[^가-힣\s]/g, '').trim(), names)
-    if (name) return Object.keys(ECHO_SETS).find((id) => ECHO_SETS[id].name === name)
-  }
-  return null
-}
-
-/** 메인 옵션 첫 줄(% 수치)만 씁니다. 둘째 줄은 코스트로 고정된 플랫이라 비교할 필요가 없습니다. */
-const readMainStat = (text) => {
-  const stat = normalizeMainStats(parseStatLines(text))[0]
-  return stat?.label && stat.valueText?.includes('%') ? { label: stat.label, valueText: stat.valueText } : null
-}
-
-const usesSet = (characterId, setId) =>
-  !!setId && (getCharacterEchoCombos(characterId) ?? []).some((combo) => combo.some((part) => part.setId === setId))
-
-/** 세트가 맞는 캐릭터를 먼저, 그다음 메인 옵션이 유효한 캐릭터, 그 안에서는 유효 점수가 높은 순으로 보여줍니다. */
-function recommend(subStats, setId, mainLabel) {
-  // 속성 피해 메인은 같은 속성 캐릭터에게만 쓸모가 있습니다.
-  const mainElement = mainLabel?.endsWith(' 피해 보너스') ? mainLabel.replace(' 피해 보너스', '') : null
-  return CHARACTERS.filter((c) => !c.upcoming && (!mainElement || c.element === mainElement))
-    .map((character) => ({
-      character,
-      setMatched: usesSet(character.id, setId),
-      mainMatched: !!mainLabel && getValidOptions(character.id).includes(`${mainLabel}%`),
-      ...scoreValidStats(subStats, getValidOptions(character.id)),
-    }))
-    .sort((a, b) => b.setMatched - a.setMatched || b.mainMatched - a.mainMatched || b.total - a.total)
-    .slice(0, TOP_COUNT)
-}
-
-/** 메인 옵션의 이름과 수치가 일치하는 코스트를 찾습니다. 강화 중이거나 잘못 읽었으면 찾지 못합니다. */
-function costOfMain(main) {
-  if (!main) return null
-  if (main.cost) return main.cost
-  return Object.keys(MAIN_STAT_VALUES).find((cost) => MAIN_STAT_VALUES[cost][main.label] === main.valueText) ?? null
-}
-
 function buildEcho(main, subStats, chosenCost) {
   const cost = chosenCost || costOfMain(main)
   return {
@@ -119,6 +57,98 @@ function EchoCompareColumn({ title, echo, characterId }) {
   )
 }
 
+/** 확률(%)을 "0.12% · 약 N개 중 1개"로 씁니다. 아주 작은 값은 지수 표기로 줄입니다. */
+function formatOdds(percent) {
+  const shown = percent < 0.01 ? percent.toExponential(1) : percent.toFixed(2)
+  return `${shown}% · 약 ${Math.round(100 / percent).toLocaleString()}개 중 1개`
+}
+
+/** 지금 서브 옵션이 종류와 수치까지 그대로 뜰 확률입니다. */
+function RollOdds({ stats }) {
+  const percent = exactRollProbability(stats)
+  if (!percent) return null
+  return (
+    <p className="live-check__odds">
+      이 옵션이 그대로 뜰 확률 <strong>{formatOdds(percent)}</strong>
+    </p>
+  )
+}
+
+const MAX_TARGETS = 5
+
+/** 원하는 옵션(최대 5개)과 최소 수치를 골라, 그런 에코가 뜰 확률을 계산합니다. 화면 인식과는 따로 동작합니다. */
+/** 원하는 옵션이 지금 에코에 (최소 수치 이상으로) 떠 있는지 봅니다. */
+const targetHit = (target, stats) =>
+  (stats ?? []).some((s) => s.label === target.label && (!target.minValue || parseFloat(s.valueText) >= target.minValue))
+
+function TargetOdds({ targets, setTargets, stats }) {
+  const allHit = targets.length > 0 && targets.every((t) => targetHit(t, stats))
+  const toggle = (label) =>
+    setTargets((list) =>
+      list.some((t) => t.label === label)
+        ? list.filter((t) => t.label !== label)
+        : list.length < MAX_TARGETS
+          ? [...list, { label, minValue: null }]
+          : list,
+    )
+  const setMin = (label, minValue) =>
+    setTargets((list) => list.map((t) => (t.label === label ? { ...t, minValue } : t)))
+  const percent = targetRollProbability(targets)
+
+  return (
+    <div className="live-check__target">
+      <h3>원하는 옵션 ({targets.length}/{MAX_TARGETS})</h3>
+      {allHit && <p className="live-check__target-hit">원하는 옵션이 모두 떴어요!</p>}
+      <div className="live-check__target-chips">
+        {SUB_STAT_NAMES.map((name) => {
+          const on = targets.some((t) => t.label === name)
+          return (
+            <button
+              key={name}
+              type="button"
+              className={`live-check__chip ${on ? 'live-check__chip--on' : ''}`}
+              disabled={!on && targets.length >= MAX_TARGETS}
+              onClick={() => toggle(name)}
+            >
+              {name}
+            </button>
+          )
+        })}
+      </div>
+      {targets.length > 0 && (
+        <>
+          <ul className="live-check__sub-rows">
+            {targets.map((t) => (
+              <li key={t.label} className={targetHit(t, stats) ? 'live-check__target--hit' : ''}>
+                <span>
+                  {targetHit(t, stats) ? '✓ ' : ''}
+                  {t.label}
+                </span>
+                <select
+                  className="live-check__select"
+                  aria-label={`${t.label} 최소 수치`}
+                  value={t.minValue ?? ''}
+                  onChange={(e) => setMin(t.label, e.target.value ? Number(e.target.value) : null)}
+                >
+                  <option value="">수치 무관</option>
+                  {(SUB_STAT_OPTIONS[t.label] ?? []).map((value) => (
+                    <option key={value} value={value}>
+                      {formatSubStatValue(t.label, value)} 이상
+                    </option>
+                  ))}
+                </select>
+              </li>
+            ))}
+          </ul>
+          <p className="live-check__odds">
+            이 옵션이 뜰 확률 <strong>{formatOdds(percent)}</strong>
+          </p>
+        </>
+      )}
+    </div>
+  )
+}
+
 const EMPTY_MANUAL_STATS = [0, 1, 2, 3, 4].map((i) => ({ id: `manual-${i}`, label: '', valueText: '' }))
 
 /** 공유 화면을 0.5초마다 확인해서, 지금 보고 있는 에코의 서브 스탯에 잘 맞는 캐릭터를 추천합니다. 모든 처리는 브라우저 안에서 합니다. */
@@ -133,6 +163,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
   const setId = manualSetId || detectedSetId
   // 인식 결과의 각 칸을 직접 고쳐 쓸 수 있습니다. 고친 칸은 다음 인식에도 그대로 유지됩니다.
   const [manualStats, setManualStats] = useState(EMPTY_MANUAL_STATS)
+  const [targets, setTargets] = useState([]) // 원하는 옵션: [{ label, minValue }]
   const statSlots = manualStats.map((row, i) => {
     // 옵션만 고르고 수치를 아직 안 고른 칸은 이전 인식 값을 쓰지 않고 비워 둡니다.
     if (row.label) return row.valueText ? row : null
@@ -203,60 +234,23 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
       if (busy || !video?.videoWidth) return
       busy = true
       try {
-        const frame = document.createElement('canvas')
-        frame.width = video.videoWidth
-        frame.height = video.videoHeight
-        const frameCtx = frame.getContext('2d', { willReadFrequently: true })
-        frameCtx.drawImage(video, 0, 0)
-        const { x, y, w, h } = findGameArea(frameCtx, frame.width, frame.height)
-        const area = document.createElement('canvas')
-        area.width = w
-        area.height = h
-        area.getContext('2d').drawImage(frame, x, y, w, h, 0, 0, w, h)
-
-        const signature = panelSignature(area, w, h)
+        const area = grabGameArea(video)
+        const signature = panelSignature(area, area.width, area.height)
         // 화면이 움직이는 동안(에코 전환, 강화 연출 등)은 기다렸다가, 멈춘 뒤에 한 번만 인식합니다.
         const moving = signatureChanged(previousSignature, signature)
         previousSignature = signature
         if (moving || !signatureChanged(lastSignature, signature)) return
         lastSignature = signature
 
-        const blob = await new Promise((resolve) => area.toBlob(resolve, 'image/png'))
-        const { dataUrl } = await normalizeImage(new File([blob], 'live.png', { type: 'image/png' }))
-        const crop = await cropNormalizedImage(dataUrl, FIXED_REGIONS.subStat)
-        // 전처리한 이미지(실제로 글자 인식이 보는 그림)와 읽은 글자를 화면에 보여 주려고 함께 모읍니다.
-        const views = []
-        const read = async (title, blob, preprocess = true) => {
-          const image = preprocess ? await preprocessForOcr(blob) : blob
-          const result = await session.recognize(image)
-          views.push({ title, image: await blobToDataURL(image), text: result.text.trim() })
-          return result
-        }
-
-        let found = readSubStats((await read('오른쪽 서브 옵션', crop)).lines)
-        let foundSetId = null
-        let foundMain = null
-        if (found.length > 0) {
-          const mainCrop = await cropNormalizedImage(dataUrl, FIXED_REGIONS.mainStat)
-          foundMain = readMainStat((await read('오른쪽 메인 옵션', mainCrop)).text)
-          foundSetId = findSetId(
-            (await read('화음 이펙트', await cropNormalizedImage(dataUrl, LIVE_REGIONS.sonata), false)).lines,
-          )
-        } else {
-          // 오른쪽에서 못 읽으면 강화 화면으로 보고 왼쪽 패널을 읽습니다. 강화 화면에는 세트 표시가 없습니다.
-          const enhanceCrop = await cropFromLeft(area, h, LIVE_REGIONS.enhanceSubStat)
-          found = readSubStats((await read('왼쪽 서브 옵션', enhanceCrop)).lines)
-          if (found.length > 0) {
-            const mainCrop = await cropFromLeft(area, h, LIVE_REGIONS.enhanceMainStat)
-            foundMain = readMainStat((await read('왼쪽 메인 옵션', mainCrop)).text)
-          }
-        }
+        const recognized = await recognizeEchoPanel(area, session)
+        saveOcrSample(area, recognized, 'live')
+        const { subStats: found, main: foundMain, setId: foundSetId, views } = recognized
         if (!cancelled) setDebugViews(views)
         if (cancelled) return
         // 스탯이 안 읽히면 에코 화면이 아닌 것으로 보고 빈 상태로 돌립니다.
         setSubStats(found.length > 0 ? found : null)
         setDetectedSetId(foundSetId)
-        setDetectedMain(found.length > 0 ? foundMain : null)
+        setDetectedMain(foundMain)
       } catch (err) {
         console.error(err)
       } finally {
@@ -273,6 +267,16 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
   }, [sharing])
 
   const results = shownStats ? recommend(shownStats, setId, shownMain?.label) : []
+
+  // 새 에코를 읽을 때마다(인식 결과가 바뀔 때) 결과 상자를 젤리처럼 흔들어 "읽었다"는 걸 보여 줍니다.
+  const optionBoxRef = useRef(null)
+  const rankBoxRef = useRef(null)
+  const recognizedKey = JSON.stringify(subStats ?? null)
+  useEffect(() => {
+    if (!subStats) return
+    jelly(optionBoxRef.current)
+    setTimeout(() => jelly(rankBoxRef.current), 70)
+  }, [recognizedKey]) // eslint-disable-line react-hooks/exhaustive-deps
   const setName = getEchoSet(setId)?.name
 
   return (
@@ -320,7 +324,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
           </div>
         )}
 
-          <div className="live-check__result">
+          <div className="live-check__result" ref={optionBoxRef}>
             {shownStats && (
               <div className="live-check__echo">
                 <strong>{setName ?? '세트를 읽지 못했어요'}</strong>
@@ -367,14 +371,18 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
             </select>
 
             <h3>서브 옵션{shownStats ? ` (${shownStats.length}/5)` : ''}</h3>
+            {shownStats && <RollOdds stats={shownStats} />}
             <ul className="live-check__sub-rows">
               {manualStats.map((row, i) => {
                 // 직접 고른 값이 없으면 인식 결과를 보여 줍니다.
                 const recognized = subStats?.[i]
                 const label = row.label || recognized?.label || ''
                 const valueText = row.label ? row.valueText : recognized?.valueText ?? ''
+                const value = parseFloat(valueText)
+                const chance = valueText ? tierProbability(label, value) : null
+                const wanted = targets.some((t) => t.label === label)
                 return (
-                  <li key={row.id}>
+                  <li key={row.id} className={wanted ? 'live-check__sub--wanted' : ''}>
                     <select
                       className="live-check__select"
                       aria-label={`서브 옵션 ${i + 1}`}
@@ -398,6 +406,11 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
                         <option key={value} value={formatSubStatValue(label, value)}>{formatSubStatValue(label, value)}</option>
                       ))}
                     </select>
+                    {chance !== null && (
+                      <small className="live-check__tier-odds">
+                        이 수치 확률 {chance.toFixed(1)}% · 상위 {successProbability(label, value).toFixed(1)}%
+                      </small>
+                    )}
                   </li>
                 )
               })}
@@ -407,9 +420,11 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
                 직접 고친 값 지우기
               </button>
             )}
+
+            <TargetOdds targets={targets} setTargets={setTargets} stats={shownStats} />
           </div>
 
-          <div className="live-check__result">
+          <div className="live-check__result" ref={rankBoxRef}>
             <h3>추천 캐릭터</h3>
             {savedNotice && <p className="live-check__saved">{savedNotice}</p>}
             {results.length === 0 && <p className="uploader__hint">에코를 인식하거나 옵션을 고르면 추천해 드려요.</p>}
@@ -435,6 +450,12 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
                       유효 {validCount}/{shownStats.length}
                       {rows.length > 0 && <br />}
                       {rows.map((r) => r.label).join(' · ')}
+                      {rows.length > 0 && (
+                        <>
+                          <br />
+                          유효 옵션이 뜰 확률 {formatOdds(optionSetProbability(rows.map((r) => r.label)))}
+                        </>
+                      )}
                     </small>
                   </div>
                 </li>

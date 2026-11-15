@@ -46,3 +46,40 @@ export function echoSuccessProbability(requiredCount, label, neededValue) {
 export function expectedAttempts(probabilityPercent) {
   return probabilityPercent > 0 ? 100 / probabilityPercent : Infinity
 }
+
+/** 지정한 옵션 종류들이 새 에코에 모두 뜰 확률(%)입니다. 수치는 보지 않습니다(예: 크크공이 뜰 확률). */
+export function optionSetProbability(labels) {
+  if (labels.length === 0 || new Set(labels).size !== labels.length) return 0
+  return allPresentProbability(labels.length) * 100
+}
+
+/** 지금 서브 옵션이 종류와 수치까지 그대로 뜰 확률(%)입니다. 옵션이 덜 열린 강화 중 에코는 열린 옵션만 계산합니다. */
+export function exactRollProbability(subStats) {
+  const labels = subStats.map((s) => s.label)
+  const setChance = optionSetProbability(labels)
+  if (!setChance) return 0
+  return subStats.reduce((p, s) => {
+    const index = (SUB_STAT_OPTIONS[s.label] ?? []).indexOf(parseFloat(s.valueText))
+    const tierChance = index < 0 ? 0 : SUB_STAT_PROBABILITIES[s.label]?.[index] ?? 0
+    return p * (tierChance / 100)
+  }, setChance)
+}
+
+/**
+ * 원하는 옵션들이 모두 뜨고, 최소 수치를 정한 옵션은 그 수치 이상이 나올 확률(%)입니다.
+ * targets: [{ label, minValue }] — minValue가 없으면 수치는 보지 않습니다.
+ */
+export function targetRollProbability(targets) {
+  const setChance = optionSetProbability(targets.map((t) => t.label))
+  if (!setChance) return 0
+  return targets.reduce(
+    (p, t) => (t.minValue ? p * (successProbability(t.label, t.minValue) / 100) : p),
+    setChance,
+  )
+}
+
+/** 이 수치(티어)가 한 번에 나올 확률(%)입니다. 티어표에 없는 수치면 null. */
+export function tierProbability(label, value) {
+  const index = (SUB_STAT_OPTIONS[label] ?? []).indexOf(value)
+  return index < 0 ? null : SUB_STAT_PROBABILITIES[label]?.[index] ?? null
+}

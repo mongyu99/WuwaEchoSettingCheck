@@ -18,11 +18,11 @@ public class BuildSnapshotRecorder {
     private final JdbcClient jdbc;
     private final ObjectMapper objectMapper;
 
-    /** 다음 버전 배너가 시작되기 전까지는, 배너 기간이 끝났어도 가장 최근 시작한 배너의 제목을 버전으로 봅니다. */
+    /** 다음 버전 배너가 시작되기 전까지는, 배너 기간이 끝났어도 가장 최근 시작한 배너의 제목을 버전으로 봅니다(UPCOMING으로 등록해 둔 배너도 시작 시각이 지나면 포함). */
     public String currentVersion() {
         return jdbc.sql("""
                         SELECT title FROM main_banners
-                        WHERE status = 'ACTIVE' AND starts_at <= now()
+                        WHERE status IN ('ACTIVE', 'UPCOMING') AND starts_at <= now()
                         ORDER BY starts_at DESC LIMIT 1
                         """)
                 .query(String.class)

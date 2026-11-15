@@ -1212,8 +1212,11 @@
   cursor: help;
 }
 
-.optimizer__info:hover,
 .optimizer__info:focus {
+  outline: none;
+}
+
+.optimizer__info:hover {
   border-color: var(--accent-wave);
   color: var(--accent-wave);
   outline: none;
@@ -1243,8 +1246,7 @@
   margin-bottom: 0;
 }
 
-.optimizer__info:hover + .optimizer__formula,
-.optimizer__info:focus + .optimizer__formula {
+.optimizer__info:hover + .optimizer__formula {
   display: block;
 }
 
@@ -1413,4 +1415,96 @@
 
 .full-aggregate-table__detail .full-aggregate-table__group:last-child {
   margin-bottom: 0;
+}
+
+/* 추천 조합 카드: 세트마다 아이콘 + 이름을 한 줄로 보여줍니다. */
+.picker-item__combo-part {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 추천 조합 카드 안의 "5세트" 배지: 카드 글자 크기(14px) 대신 아래 단계 버튼과 같은 크기로 맞춥니다. */
+.picker-item--simple .picker-item__tier-btn {
+  font-size: 11px;
+  cursor: inherit;
+}
+
+/* 무기 돌파 단계(1~5) 선택. 수치표가 있는 무기에만 보입니다. */
+.stats-page__rank-select {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 3px 6px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 6px;
+  background: var(--bg-surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 12px;
+}
+
+.stats-page__rank-select + .stats-page__swap-btn {
+  margin-left: 0;
+}
+
+/* 무기(성급)·메인 에코(코스트) 선택 팝업의 분류 탭 */
+.picker-tabs {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.picker-tabs__btn {
+  padding: 5px 12px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 999px;
+  background: var(--bg-surface-raised);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.picker-tabs__btn--on {
+  border-color: var(--accent-wave);
+  color: var(--accent-wave);
+}
+
+/* 분류 탭: 선택 표시(알약)가 탭 사이를 스프링처럼 따라 움직입니다. */
+.picker-tabs {
+  position: relative;
+}
+
+.picker-tabs__pill {
+  position: absolute;
+  z-index: 0;
+  border: 1px solid var(--accent-wave);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-wave) 14%, transparent);
+  transition:
+    left 0.45s var(--ease-spring),
+    top 0.45s var(--ease-spring),
+    width 0.45s var(--ease-spring),
+    height 0.45s var(--ease-spring);
+  pointer-events: none;
+}
+
+.picker-tabs__btn {
+  position: relative;
+  z-index: 1;
+  transition: color 0.2s ease, transform 0.3s var(--ease-pop);
+}
+
+/* 알약이 테두리를 그리므로 버튼 자체 테두리는 숨깁니다. */
+.picker-tabs__btn--on {
+  border-color: transparent;
+  background: transparent;
+}
+
+.picker-tabs__btn:active {
+  transform: scale(0.92);
 }

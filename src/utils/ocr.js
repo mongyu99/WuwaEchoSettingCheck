@@ -232,6 +232,29 @@ export function createOcrSession() {
   }
 }
 
+/**
+ * OCR 작업자(worker) 여러 개를 두고 동시에 읽습니다. 한 화면에서 여러 영역(서브·메인·이름)을 읽을 때
+ * 하나씩 차례로 읽는 것보다 빠릅니다. 쉬는 작업자에게 먼저 일을 줍니다.
+ */
+export function createOcrPool(size = 3) {
+  const sessions = Array.from({ length: size }, () => createOcrSession())
+  const idle = [...sessions]
+  const waiting = []
+  const acquire = () => (idle.length ? Promise.resolve(idle.pop()) : new Promise((resolve) => waiting.push(resolve)))
+  const release = (session) => (waiting.length ? waiting.shift()(session) : idle.push(session))
+  return {
+    async recognize(image) {
+      const session = await acquire()
+      try {
+        return await session.recognize(image)
+      } finally {
+        release(session)
+      }
+    },
+    terminate: () => Promise.all(sessions.map((s) => s.terminate())),
+  }
+}
+
 /** 기존 호출부와의 호환을 위한 텍스트 전용 버전 */
 export async function extractText(image, onProgress) {
   const { text } = await recognizeRegion(image, onProgress)
