@@ -155,23 +155,130 @@
   }
 }
 
-/* 좁은 화면: 메뉴를 두 번째 줄로 내리고, 넘치면 가로로 스크롤합니다. */
+/* 데스크톱: 서랍 상자는 없는 것처럼 두어 메뉴와 오른쪽 설정이 상단바에 그대로 펼쳐집니다. */
+.top-nav__drawer {
+  display: contents;
+}
+
+.top-nav__burger,
+.top-nav__backdrop {
+  display: none;
+}
+
+/* 좁은 화면: 왼쪽 햄버거 버튼 → 왼쪽에서 밀려 나오는 서랍(메뉴 + 설정). */
 @media (max-width: 760px) {
   .top-nav {
-    padding: 10px 16px;
-    flex-wrap: wrap;
+    justify-content: flex-start;
+    padding: 0 12px;
+    /* backdrop-filter가 있으면 안쪽 fixed 서랍이 화면이 아니라 상단바 기준으로 붙어서 끕니다. */
+    backdrop-filter: none;
+  }
+
+  .top-nav__burger {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    width: 36px;
+    height: 36px;
+    padding: 0 8px;
+    border: none;
+    border-radius: 4px;
+    background: none;
+    cursor: pointer;
+  }
+
+  .top-nav__burger span {
+    display: block;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--ww-ink);
+    transition: transform 0.25s ease, opacity 0.2s ease;
+  }
+
+  /* 열리면 X 모양 */
+  .top-nav__burger--open span:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+  }
+  .top-nav__burger--open span:nth-child(2) {
+    opacity: 0;
+  }
+  .top-nav__burger--open span:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
+  }
+
+  .top-nav__backdrop {
+    display: block;
+    position: fixed;
+    inset: var(--top-nav-height) 0 0 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1;
+  }
+
+  .top-nav__drawer {
+    position: fixed;
+    top: var(--top-nav-height);
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+    width: min(280px, 82vw);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px 12px 24px;
+    overflow-y: auto;
+    background: var(--ww-panel);
+    border-right: 1px solid var(--ww-gold-soft);
+    backdrop-filter: blur(14px);
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 0.28s;
+  }
+
+  .top-nav__drawer--open {
+    transform: translateX(0);
+    visibility: visible;
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .top-nav__menu {
-    order: 3;
-    flex-basis: 100%;
+    flex: none;
+    flex-direction: column;
+    align-items: stretch;
     margin-left: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
   }
 
-  .top-nav__menu::-webkit-scrollbar {
-    display: none;
+  .top-nav__menu .top-nav__link,
+  .top-nav__right > .top-nav__link {
+    text-align: left;
+    padding: 12px 14px;
+  }
+
+  /* 선택 표시: 아래 선 대신 왼쪽 금색 막대 */
+  .top-nav__link--active {
+    background: var(--ww-gold-soft);
+  }
+  .top-nav__link--active::after {
+    left: 0;
+    right: auto;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    height: auto;
+  }
+
+  .top-nav__right {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--ww-line, var(--ww-gold-soft));
+  }
+
+  .top-nav__right > .motion-switch,
+  .top-nav__right > .theme-switch {
+    align-self: flex-start;
+    margin-left: 14px;
   }
 }
 

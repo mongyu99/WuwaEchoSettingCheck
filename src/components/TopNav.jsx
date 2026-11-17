@@ -26,19 +26,44 @@ export default function TopNav({ currentPage, theme, onToggleTheme, characterDat
   // 애니메이션 켜기/끄기(움직임이 싫은 사용자용). 이 기기에만 기억합니다.
   const [motionOn, setMotionOn] = useState(loadMotion)
   useEffect(() => applyMotion(motionOn), [motionOn])
+  // 모바일: 메뉴와 오른쪽 설정을 왼쪽에서 나오는 서랍에 넣습니다(데스크톱에서는 서랍 없이 그대로 펼쳐 보입니다).
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  useEffect(() => {
+    if (!drawerOpen) return
+    const onKey = (e) => e.key === 'Escape' && setDrawerOpen(false)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [drawerOpen])
+  const go = (handler) => () => {
+    setDrawerOpen(false)
+    handlers[handler]?.()
+  }
 
   return (
     <div className="top-nav">
-      <button className="top-nav__brand" onClick={handlers.onGoHome}>
+      <button
+        type="button"
+        className={`top-nav__burger ${drawerOpen ? 'top-nav__burger--open' : ''}`}
+        aria-label={drawerOpen ? '메뉴 닫기' : '메뉴 열기'}
+        aria-expanded={drawerOpen}
+        onClick={() => setDrawerOpen((o) => !o)}
+      >
+        <span />
+        <span />
+        <span />
+      </button>
+      <button className="top-nav__brand" onClick={go('onGoHome')}>
         명체크
       </button>
+      {drawerOpen && <div className="top-nav__backdrop" onClick={() => setDrawerOpen(false)} />}
+      <div className={`top-nav__drawer ${drawerOpen ? 'top-nav__drawer--open' : ''}`}>
       <nav className="top-nav__menu" aria-label="주요 메뉴">
         {MENU.map((item) => (
           <button
             key={item.page}
             className={`top-nav__link ${currentPage === item.page ? 'top-nav__link--active' : ''}`}
             aria-current={currentPage === item.page ? 'page' : undefined}
-            onClick={handlers[item.handler]}
+            onClick={go(item.handler)}
           >
             {item.label}
           </button>
@@ -49,7 +74,7 @@ export default function TopNav({ currentPage, theme, onToggleTheme, characterDat
         <button
           className={`top-nav__link ${currentPage === PATCH_NOTES.page ? 'top-nav__link--active' : ''}`}
           aria-current={currentPage === PATCH_NOTES.page ? 'page' : undefined}
-          onClick={handlers[PATCH_NOTES.handler]}
+          onClick={go(PATCH_NOTES.handler)}
         >
           {PATCH_NOTES.label}
         </button>
@@ -77,6 +102,7 @@ export default function TopNav({ currentPage, theme, onToggleTheme, characterDat
           <span className="theme-switch__knob" />
         </button>
         <AuthPanel characterData={characterData} onLoadCloudData={onLoadCloudData} />
+      </div>
       </div>
     </div>
   )
