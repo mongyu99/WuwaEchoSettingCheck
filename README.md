@@ -1,120 +1,59 @@
-# Echo Setting Check
+# 명체크 (Echo Setting Check)
 
-```
-.
-├── index.html
-├── admin.html
-├── Dockerfile
-├── nginx.conf
-├── package.json
-├── vite.config.js
-│
-├── src/
-│   ├── main.jsx
-│   ├── App.jsx
-│   ├── App.css
-│   ├── index.css
-│   ├── admin/
-│   │   ├── main.jsx
-│   │   ├── AdminApp.jsx
-│   │   └── admin.css
-│   ├── pages/
-│   │   ├── HomePage.jsx
-│   │   ├── CharacterSelectPage.jsx
-│   │   ├── CapturePage.jsx
-│   │   ├── EditPage.jsx
-│   │   ├── StatsPage.jsx
-│   │   ├── PatchNotesPage.jsx
-│   │   └── EventCalendarPage.jsx
-│   ├── components/
-│   │   ├── TopNav.jsx
-│   │   ├── SideNav.jsx
-│   │   ├── SiteLayout.jsx
-│   │   ├── SiteFooter.jsx
-│   │   ├── SidePanel.jsx
-│   │   ├── VersionBanner.jsx
-│   │   ├── VersionTimer.jsx
-│   │   ├── PatchNotesList.jsx
-│   │   ├── ImageUploader.jsx
-│   │   ├── EchoPanel.jsx
-│   │   ├── ProcessingOverlay.jsx
-│   │   ├── Modal.jsx
-│   │   ├── ConfirmDialog.jsx
-│   │   └── AuthPanel.jsx
-│   ├── config/
-│   │   ├── characters.js
-│   │   ├── characterBaseStats.js
-│   │   ├── characterValidOptions.js
-│   │   ├── characterWeapons.js
-│   │   ├── characterEchoSets.js
-│   │   ├── characterMainEchoBonus.js
-│   │   ├── characterRecommendations.js
-│   │   ├── weapons.js
-│   │   ├── echoSets.js
-│   │   ├── mainEchoes.js
-│   │   ├── echoSetMainEchoes.js
-│   │   ├── subStatOptions.js
-│   │   ├── subStatProbabilities.js
-│   │   ├── mainStatBonusNames.js
-│   │   ├── regions.js
-│   │   ├── versionBanner.js
-│   │   ├── legalNotices.js
-│   │   └── assetPath.js
-│   ├── context/
-│   │   └── AuthContext.jsx
-│   └── utils/
-│       ├── api.js
-│       ├── ocr.js
-│       ├── image.js
-│       ├── pipeline.js
-│       ├── highlight.js
-│       ├── probability.js
-│       ├── probability.test.js
-│       ├── optimizer.js
-│       ├── optimizer.test.js
-│       ├── scoreCalculator.js
-│       ├── persist.js
-│       └── theme.js
-│
-├── public/
-│   ├── main/
-│   ├── banners/
-│   ├── characters/
-│   ├── weapons/
-│   ├── echo-sets/
-│   └── main-echoes/
-│
-├── scripts/
-│   ├── prepare-banner-images.mjs
-│   ├── prepare-character-images.mjs
-│   ├── prepare-weapon-images.mjs
-│   ├── prepare-echo-set-images.mjs
-│   ├── prepare-main-echo-images.mjs
-│   └── generate-placeholder-images.mjs
-│
-└── backend/
-    ├── Dockerfile
-    ├── docker-compose.yml
-    ├── build.gradle
-    └── src/
-        ├── main/
-        │   ├── java/com/wuwaecho/backend/
-        │   │   ├── BackendApplication.java
-        │   │   ├── admin/
-        │   │   ├── auth/
-        │   │   ├── build/
-        │   │   ├── config/
-        │   │   ├── event/
-        │   │   ├── patchnote/
-        │   │   └── user/
-        │   └── resources/
-        │       ├── application.yml
-        │       ├── application-admin.yml
-        │       ├── application-google.yml
-        │       └── db/migration/
-        └── test/
-            └── java/com/wuwaecho/backend/
-                ├── auth/
-                ├── build/
-                └── config/
-```
+명조 에코 세팅 체크하는 사이트임.
+에코 스샷 올리거나 게임 화면 공유하면 알아서 읽어서 점수 매겨줌.
+
+화면 공유 기능은 PC 브라우저에서만 됨.
+인식한 데이터는 전부 내 브라우저에만 저장됨.
+
+## 캐릭터 빌드 체크
+
+캐릭터 고르고 에코 스샷 올리면 유효 옵션 기준으로 점수 매겨줌.
+
+- OCR은 서버 안 거치고 브라우저에서 바로 돌림 (tesseract.js). 스샷이 서버로 안 올라감
+- 스샷 통째로 읽으면 정확도 떨어져서, 옵션 있는 영역만 잘라서 대비 올린 다음에 읽음
+- 읽은 글자는 옵션 이름 목록이랑 맞춰보고, 수치는 실제 나올 수 있는 단계값이랑 비교해서 이상하면 걸러냄
+- 캐릭터마다 유효 옵션이 달라서 그거 기준으로 점수 냄. 부옵 단계별 확률도 같이 보여줌
+- 무기 돌파(1~5)도 고를 수 있음. 무기 설명에 `a/b/c/d/e`처럼 돌파별 수치가 이미 들어 있어서, 그걸 파싱해서 단계별 효과 값으로 씀
+
+## 실시간 에코 체크 (베타)
+
+게임 화면 공유 걸어두면 에코 볼 때마다 바로바로 체크해줌.
+
+- 브라우저 화면 공유(`getDisplayMedia`)로 게임 화면 받아옴
+- 매 프레임 OCR 돌리면 무거워서, 화면을 칸으로 나눠서 바뀐 칸 수만 셈. 일정 이상 바뀌었을 때만 읽음
+- 1920×1080 기준 좌표로 영역 잡고, 해상도 다르면 비율 맞춰서 자름
+
+## 에코 가방 정리 (베타)
+
+가방 쭉 넘기면서 에코 한꺼번에 인식함. 필터 걸고 정렬해서 버릴 거 골라내기 좋음.
+
+- 0.25초마다 화면 확인해서 에코 바뀌면 캡쳐 → 대기열에 넣고 OCR 워커 2개로 나눠서 처리함
+- 3D 모델이 움직이면 화면이 계속 바뀐 걸로 잡혀서, 글자 있는 영역만 비교함
+- 세트는 글자로 안 읽고 세트 아이콘을 작게 줄여서 아이콘 목록이랑 색 비교해서 맞춤. 애매하면 직접 고르게 팝업 띄움
+- 같은 에코 두 번 안 들어가게 세트·주옵·부옵 수치로 키 만들어서 중복 거름
+- 저장은 IndexedDB. 수천 개 넣어도 브라우저에 남아 있음
+- 목록은 200개씩 끊어서 그림. 한 번에 다 그리면 느려짐
+- 어울리는 캐릭터 하나 골라서 점수 티어로 보여줌
+- 정렬 바뀌면 줄이 제자리로 미끄러져 가게 FLIP 애니메이션 넣음. 캡쳐되면 사진이 목록으로 날아감
+
+## 이벤트 캘린더 / 이벤트 노트
+
+진행 중인 이벤트랑 버전 일정 한눈에 보기.
+
+- 이벤트는 관리자 페이지에서 등록함. 시작·종료 시간 기준이라 시간 되면 알아서 열리고 끝나면 지난 이벤트로 빠짐
+- 이벤트 노트는 기간을 막대로 그린 타임라인임. 공식 이벤트 노트 이미지도 원본 크기로 올려둘 수 있음
+- 인게임 이벤트랑 커뮤니티 참여형 이벤트 나눠놨음. 커뮤니티 쪽은 홈에 따로 보여줌
+
+## 백업 / 복원
+
+로그인 없이 세팅 JSON으로 뽑아두고 다시 불러올 수 있음.
+
+- 세팅은 원래 브라우저 저장소에만 있어서, 브라우저 바꾸거나 기록 지우면 날아감. 그래서 파일로 뽑아두는 기능 넣음
+- 불러올 때 파일 형식 검사하고 덮어쓰기 전에 한 번 물어봄
+
+## 기타
+
+- 프론트는 React + Vite, 백엔드는 Spring Boot + PostgreSQL
+- 캐릭터·무기·에코 같은 게임 데이터는 서버에서 받아오고 Redis에 캐시해둠
+- 애니메이션 싫으면 오른쪽 위 스위치로 끌 수 있음. 다크모드도 거기 있음

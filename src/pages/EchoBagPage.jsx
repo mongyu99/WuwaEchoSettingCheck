@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { screenCaptureSupported } from '../components/ScreenCapture'
 import { SUB_STAT_NAMES } from '../config/subStatOptions'
 import { ECHO_SETS, getEchoSet } from '../config/echoSets'
@@ -25,6 +26,8 @@ import './EchoBagPage.css'
 const CHECK_INTERVAL_MS = 250
 
 /** 가방 에코 한 줄. 마우스를 올리면 상세가 살짝 보이고, 누르면 펼친 채로 고정됩니다. */
+const PAGE_SIZE = 200 // 목록에 한 번에 그리는 에코 수("더 보기"로 늘립니다)
+
 function BagRow({ item, index, open, incoming, exiting, onToggle, highlight, onRemove, onPickSet }) {
   const score = useCountUp(item.score)
   const set = getEchoSet(item.setId)
@@ -129,6 +132,7 @@ export default function EchoBagPage() {
   const [sharing, setSharing] = useState(false)
   const [error, setError] = useState(null)
   const [items, setItems] = useState([]) // 평가까지 끝난 에코들
+  const [loaded, setLoaded] = useState(false) // 저장된 기록을 다 불러왔는지(그 전엔 "없어요" 대신 불러오는 중으로 보여줍니다)
   const [stats, setStats] = useState({ duplicate: 0, pending: 0 })
   // 개발자 도구: 어디를 읽는지(박스)와 0.25초마다의 판단을 보여 줍니다.
   const [debug, setDebug] = useState(false)
@@ -148,6 +152,7 @@ export default function EchoBagPage() {
     loadBag()
       .then((rows) => setItems(rows.map(evaluateBagItem)))
       .catch((e) => console.error('가방 정리 기록을 불러오지 못했어요.', e))
+      .finally(() => setLoaded(true))
   }, [])
 
   const keysRef = useRef(new Set())
@@ -277,6 +282,11 @@ export default function EchoBagPage() {
     () => filterAndSort(items, { required, mains, costs, sets, sortKey }),
     [items, required, mains, costs, sets, sortKey],
   )
+  // 수천 개를 한 번에 그리면 느려서, 정렬·필터 결과 중 앞에서부터 PAGE_SIZE개씩만 그립니다.
+  // 조건이 바뀌면 다시 처음 PAGE_SIZE개부터 보여줍니다.
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  useEffect(() => setVisibleCount(PAGE_SIZE), [required, mains, costs, sets, sortKey])
+  const shown = useMemo(() => sorted.slice(0, visibleCount), [sorted, visibleCount])
 
   // 세트 지정 팝업: 세트를 못 읽은(또는 잘못 읽은) 에코의 세트를 직접 고릅니다.
   const [setPickKey, setSetPickKey] = useState(null)
@@ -290,7 +300,7 @@ export default function EchoBagPage() {
     saveBagItem(stored).catch((e) => console.error('세트 저장 실패', e))
   }
   // 정렬·필터가 바뀌면 행이 새 자리로 미끄러져 가고, 빠지는 행은 흐려지며 사라집니다.
-  const { rendered, listRef } = useFlipList(sorted, (item) => item.key)
+  const { rendered, listRef } = useFlipList(shown, (item) => item.key)
 
   const [openKey, setOpenKey] = useState(null) // 눌러서 펼쳐 둔 에코
 
@@ -304,8 +314,8 @@ export default function EchoBagPage() {
     const preview = previewRef.current?.getBoundingClientRect()
     const row = listRef.current?.querySelector(`[data-key="${CSS.escape(key)}"]`)
     // 목록은 한 박자 늦게 그려지므로(정렬 애니메이션), 행이 생길 때까지 기다립니다.
-    // 필터에 걸려 목록에 안 나오는 에코면 기다리지 않고 날리지 않습니다.
-    if (!row && sorted.some((i) => i.key === key)) return
+    // 필터에 걸리거나 "더 보기" 뒤쪽이라 목록에 안 나오는 에코면 기다리지 않고 날리지 않습니다.
+    if (!row && shown.some((i) => i.key === key)) return
     setPendingFly(null)
     if (!preview || !row) {
       setFlyingKey(null)
@@ -440,7 +450,9 @@ export default function EchoBagPage() {
               ))}
             </select>
           </div>
-          {sorted.length === 0 ? (
+          {!loaded ? (
+            <p className="uploader__hint">불러오는 중...</p>
+          ) : sorted.length === 0 ? (
             <p className="uploader__hint">{items.length === 0 ? '아직 인식한 에코가 없어요.' : '필터 조건에 맞는 에코가 없어요.'}</p>
           ) : (
             <ul className="echo-bag__list" ref={listRef}>
@@ -466,10 +478,21 @@ export default function EchoBagPage() {
               ))}
             </ul>
           )}
+          {sorted.length > shown.length && (
+            <button
+              type="button"
+              className="btn btn--ghost echo-bag__more"
+              onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
+            >
+              {Math.min(PAGE_SIZE, sorted.length - shown.length)}개 더 보기 ({shown.length.toLocaleString()} / {sorted.length.toLocaleString()})
+            </button>
+          )}
         </div>
       </div>
 
-      {/* 필터 서랍: 오른쪽에서 슉 나옵니다. */}
+      {/* 필터 서랍: 오른쪽에서 슉 나옵니다.
+          페이지 등장 애니메이션(transform) 중에는 fixed가 화면이 아니라 페이지 기준이 되어 서랍이 잠깐 보여서 body에 그립니다. */}
+      {createPortal(
       <div className={`echo-bag__drawer ${filterOpen ? 'echo-bag__drawer--open' : ''}`} aria-hidden={!filterOpen}>
         <div className="echo-bag__drawer-backdrop" onClick={() => setFilterOpen(false)} />
         <aside className="echo-bag__drawer-panel" role="dialog" aria-label="에코 필터">
@@ -505,7 +528,9 @@ export default function EchoBagPage() {
             </button>
           </footer>
         </aside>
-      </div>
+      </div>,
+      document.body,
+      )}
 
       {/* 세트 지정 팝업 */}
       <Modal wide open={!!setPickKey} title="세트 지정" onClose={() => setSetPickKey(null)}>
