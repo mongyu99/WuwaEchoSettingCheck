@@ -26,3 +26,7 @@ backend/docker-compose.dev.yml
 
 # 개발 서버에서 모은 OCR 테스트 자료(게임 스크린샷)
 test/ocr-fixtures/
+
+# 에디터가 만드는 개인 설정·캐시 (Visual Studio, VS Code)
+.vs/
+.vscode/
