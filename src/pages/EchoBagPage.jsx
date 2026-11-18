@@ -25,6 +25,8 @@ import './EchoBagPage.css'
 const CHECK_INTERVAL_MS = 250
 
 /** 가방 에코 한 줄. 마우스를 올리면 상세가 살짝 보이고, 누르면 펼친 채로 고정됩니다. */
+const PAGE_SIZE = 200 // 목록에 한 번에 그리는 에코 수("더 보기"로 늘립니다)
+
 function BagRow({ item, index, open, incoming, exiting, onToggle, highlight, onRemove, onPickSet }) {
   const score = useCountUp(item.score)
   const set = getEchoSet(item.setId)
@@ -277,6 +279,11 @@ export default function EchoBagPage() {
     () => filterAndSort(items, { required, mains, costs, sets, sortKey }),
     [items, required, mains, costs, sets, sortKey],
   )
+  // 수천 개를 한 번에 그리면 느려서, 정렬·필터 결과 중 앞에서부터 PAGE_SIZE개씩만 그립니다.
+  // 조건이 바뀌면 다시 처음 PAGE_SIZE개부터 보여줍니다.
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  useEffect(() => setVisibleCount(PAGE_SIZE), [required, mains, costs, sets, sortKey])
+  const shown = useMemo(() => sorted.slice(0, visibleCount), [sorted, visibleCount])
 
   // 세트 지정 팝업: 세트를 못 읽은(또는 잘못 읽은) 에코의 세트를 직접 고릅니다.
   const [setPickKey, setSetPickKey] = useState(null)
@@ -290,7 +297,7 @@ export default function EchoBagPage() {
     saveBagItem(stored).catch((e) => console.error('세트 저장 실패', e))
   }
   // 정렬·필터가 바뀌면 행이 새 자리로 미끄러져 가고, 빠지는 행은 흐려지며 사라집니다.
-  const { rendered, listRef } = useFlipList(sorted, (item) => item.key)
+  const { rendered, listRef } = useFlipList(shown, (item) => item.key)
 
   const [openKey, setOpenKey] = useState(null) // 눌러서 펼쳐 둔 에코
 
@@ -304,8 +311,8 @@ export default function EchoBagPage() {
     const preview = previewRef.current?.getBoundingClientRect()
     const row = listRef.current?.querySelector(`[data-key="${CSS.escape(key)}"]`)
     // 목록은 한 박자 늦게 그려지므로(정렬 애니메이션), 행이 생길 때까지 기다립니다.
-    // 필터에 걸려 목록에 안 나오는 에코면 기다리지 않고 날리지 않습니다.
-    if (!row && sorted.some((i) => i.key === key)) return
+    // 필터에 걸리거나 "더 보기" 뒤쪽이라 목록에 안 나오는 에코면 기다리지 않고 날리지 않습니다.
+    if (!row && shown.some((i) => i.key === key)) return
     setPendingFly(null)
     if (!preview || !row) {
       setFlyingKey(null)
@@ -465,6 +472,15 @@ export default function EchoBagPage() {
                 />
               ))}
             </ul>
+          )}
+          {sorted.length > shown.length && (
+            <button
+              type="button"
+              className="btn btn--ghost echo-bag__more"
+              onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
+            >
+              {Math.min(PAGE_SIZE, sorted.length - shown.length)}개 더 보기 ({shown.length.toLocaleString()} / {sorted.length.toLocaleString()})
+            </button>
           )}
         </div>
       </div>
