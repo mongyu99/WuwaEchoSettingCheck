@@ -165,8 +165,15 @@
   display: none;
 }
 
-/* 좁은 화면: 왼쪽 햄버거 버튼 → 왼쪽에서 밀려 나오는 서랍(메뉴 + 설정). */
-@media (max-width: 760px) {
+.top-nav__toggles {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 좁은 화면(PC 창을 줄인 경우 포함): 메뉴와 오른쪽 설정이 겹치기 전에 왼쪽 햄버거 버튼 → 서랍으로 바꿉니다. */
+@media (max-width: 1280px) {
   .top-nav {
     justify-content: flex-start;
     padding: 0 12px;
@@ -275,10 +282,9 @@
     border-top: 1px solid var(--ww-line, var(--ww-gold-soft));
   }
 
-  .top-nav__right > .motion-switch,
-  .top-nav__right > .theme-switch {
-    align-self: flex-start;
-    margin-left: 14px;
+  /* 서랍 모드에서도 스위치는 상단바 오른쪽 끝 */
+  .top-nav__toggles {
+    margin-left: auto;
   }
 }
 

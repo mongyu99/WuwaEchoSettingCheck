@@ -78,6 +78,11 @@ export default function TopNav({ currentPage, theme, onToggleTheme, characterDat
         >
           {PATCH_NOTES.label}
         </button>
+        <AuthPanel characterData={characterData} onLoadCloudData={onLoadCloudData} />
+      </div>
+      </div>
+      {/* 애니메이션·테마 스위치는 화면 폭과 상관없이 항상 상단바 오른쪽 끝에 둡니다(서랍에 넣지 않음). */}
+      <div className="top-nav__toggles">
         <button
           className={`motion-switch ${motionOn ? 'motion-switch--on' : ''}`}
           onClick={() => setMotionOn((on) => !on)}
@@ -101,8 +106,6 @@ export default function TopNav({ currentPage, theme, onToggleTheme, characterDat
           <span className="theme-switch__icon theme-switch__icon--moon">🌙</span>
           <span className="theme-switch__knob" />
         </button>
-        <AuthPanel characterData={characterData} onLoadCloudData={onLoadCloudData} />
-      </div>
       </div>
     </div>
   )

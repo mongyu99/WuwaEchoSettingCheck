@@ -1,0 +1,27 @@
+/* 백업 / 복원 창: 두 기능을 위아래 칸으로 나눠 보여줍니다. */
+.backup-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.backup-panel__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 6px;
+  background: var(--ww-row, var(--bg-surface-raised));
+}
+
+.backup-panel__item h4 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.backup-panel__item p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
