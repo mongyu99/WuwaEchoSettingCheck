@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { screenCaptureSupported } from '../components/ScreenCapture'
 import { SUB_STAT_NAMES } from '../config/subStatOptions'
 import { ECHO_SETS, getEchoSet } from '../config/echoSets'
@@ -131,6 +132,7 @@ export default function EchoBagPage() {
   const [sharing, setSharing] = useState(false)
   const [error, setError] = useState(null)
   const [items, setItems] = useState([]) // 평가까지 끝난 에코들
+  const [loaded, setLoaded] = useState(false) // 저장된 기록을 다 불러왔는지(그 전엔 "없어요" 대신 불러오는 중으로 보여줍니다)
   const [stats, setStats] = useState({ duplicate: 0, pending: 0 })
   // 개발자 도구: 어디를 읽는지(박스)와 0.25초마다의 판단을 보여 줍니다.
   const [debug, setDebug] = useState(false)
@@ -150,6 +152,7 @@ export default function EchoBagPage() {
     loadBag()
       .then((rows) => setItems(rows.map(evaluateBagItem)))
       .catch((e) => console.error('가방 정리 기록을 불러오지 못했어요.', e))
+      .finally(() => setLoaded(true))
   }, [])
 
   const keysRef = useRef(new Set())
@@ -447,7 +450,9 @@ export default function EchoBagPage() {
               ))}
             </select>
           </div>
-          {sorted.length === 0 ? (
+          {!loaded ? (
+            <p className="uploader__hint">불러오는 중...</p>
+          ) : sorted.length === 0 ? (
             <p className="uploader__hint">{items.length === 0 ? '아직 인식한 에코가 없어요.' : '필터 조건에 맞는 에코가 없어요.'}</p>
           ) : (
             <ul className="echo-bag__list" ref={listRef}>
@@ -485,7 +490,9 @@ export default function EchoBagPage() {
         </div>
       </div>
 
-      {/* 필터 서랍: 오른쪽에서 슉 나옵니다. */}
+      {/* 필터 서랍: 오른쪽에서 슉 나옵니다.
+          페이지 등장 애니메이션(transform) 중에는 fixed가 화면이 아니라 페이지 기준이 되어 서랍이 잠깐 보여서 body에 그립니다. */}
+      {createPortal(
       <div className={`echo-bag__drawer ${filterOpen ? 'echo-bag__drawer--open' : ''}`} aria-hidden={!filterOpen}>
         <div className="echo-bag__drawer-backdrop" onClick={() => setFilterOpen(false)} />
         <aside className="echo-bag__drawer-panel" role="dialog" aria-label="에코 필터">
@@ -521,7 +528,9 @@ export default function EchoBagPage() {
             </button>
           </footer>
         </aside>
-      </div>
+      </div>,
+      document.body,
+      )}
 
       {/* 세트 지정 팝업 */}
       <Modal wide open={!!setPickKey} title="세트 지정" onClose={() => setSetPickKey(null)}>

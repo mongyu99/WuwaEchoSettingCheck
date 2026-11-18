@@ -565,15 +565,20 @@
 }
 
 /* ── 필터 서랍(오른쪽에서 슉) ── */
+/* 닫혀 있을 땐 숨겨 둡니다(닫히는 애니메이션이 끝난 뒤에 숨김). */
 .echo-bag__drawer {
   position: fixed;
   inset: 0;
   z-index: 900;
   pointer-events: none;
+  visibility: hidden;
+  transition: visibility 0s linear 0.35s;
 }
 
 .echo-bag__drawer--open {
   pointer-events: auto;
+  visibility: visible;
+  transition: none;
 }
 
 .echo-bag__drawer-backdrop {
