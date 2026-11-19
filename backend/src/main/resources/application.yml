@@ -1,5 +1,11 @@
 server:
   port: 8080
+  # JSON 응답을 app에서 압축해 보냅니다. nginx가 catalog를 압축된 채로 저장해 두고 그대로 내주므로,
+  # 요청마다 nginx가 다시 압축하느라 CPU를 쓰지 않습니다.
+  compression:
+    enabled: true
+    mime-types: application/json
+    min-response-size: 1024
 
 spring:
   config:

@@ -1,6 +1,9 @@
 # Docker Desktop에서 이 프로젝트 컨테이너를 "wuwaecho" 그룹으로 묶어 다른 컨테이너와 구분합니다.
 name: wuwaecho
 
+# 서버는 메모리 2GB·CPU 2코어라, 컨테이너마다 쓸 수 있는 양에 상한을 둡니다(합계 약 1.2GB, 나머지는 OS 몫).
+# 하나가 메모리를 다 먹어서 서버 전체가 멈추는 대신, 넘친 컨테이너만 재시작됩니다(restart: unless-stopped).
+
 # 밖으로 여는 포트는 web(80) 하나뿐입니다. postgres·redis·app은 compose 내부 네트워크에서
 # 서비스 이름(postgres, redis, app)으로만 서로 찾아갑니다.
 
@@ -18,18 +21,23 @@ services:
       interval: 3s
       timeout: 3s
       retries: 20
+    mem_limit: 256m
+    cpus: 0.5
     restart: unless-stopped
 
 
   # 게임 데이터(catalog) 캐시. 캐시라 데이터 보존이 필요 없어 볼륨 없이 메모리에만 둡니다.
   redis:
     image: redis:7-alpine
-    command: ['redis-server', '--save', '', '--appendonly', 'no']
+    # maxmemory: 상한(64m)보다 조금 낮게 잡아, 넘치면 컨테이너가 죽는 대신 오래된 키부터 지웁니다.
+    command: ['redis-server', '--save', '', '--appendonly', 'no', '--maxmemory', '48mb', '--maxmemory-policy', 'allkeys-lru']
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 3s
       timeout: 3s
       retries: 20
+    mem_limit: 64m
+    cpus: 0.25
     restart: unless-stopped
 
 
@@ -47,6 +55,8 @@ services:
       CATALOG_CACHE_ENABLED: ${CATALOG_CACHE_ENABLED:-true}
       # Redis·DB가 모두 죽었을 때 읽는 백업 JSON. 볼륨에 둬서 컨테이너를 새로 만들어도 남습니다.
       CATALOG_FALLBACK_FILE: /app/data/catalog-fallback.json
+      # JVM 힙을 컨테이너 메모리 상한(768m)의 70%로 맞춥니다. 나머지는 스레드·메타스페이스 등 JVM 자체가 씁니다.
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=70
     volumes:
       - wuwaecho-catalog:/app/data
     depends_on:
@@ -54,6 +64,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    mem_limit: 768m
+    cpus: 1.5
     restart: unless-stopped
 
   # 사이트 화면. http://localhost 로 접속하면 되고, /api 요청은 nginx가 app으로 넘깁니다.
@@ -66,6 +78,8 @@ services:
       - '80:80'
     depends_on:
       - app
+    mem_limit: 128m
+    cpus: 0.5
     restart: unless-stopped
 
 volumes:
