@@ -380,7 +380,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes, charac
   return (
     <section className="live-check">
       <header className="page-head--help">
-        <span className="uploader__eyebrow">에코 체크 - 베타</span>
+        <span className="uploader__eyebrow">에코 체크</span>
         <h2>이 에코, 누가 쓰면 좋을까요?</h2>
         <p className="uploader__hint">
           화면 공유나 스크린샷으로 에코를 읽고, 어울리는 캐릭터와 바꿨을 때 달라지는 스탯을 알려 드려요.

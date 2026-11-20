@@ -394,7 +394,7 @@ export default function EchoBagPage({ onGoToRecommend }) {
     <section className="live-check echo-bag">
       <header className="page-head--help">
         <OcrHelpLink />
-        <span className="uploader__eyebrow">에코 가방 - 베타</span>
+        <span className="uploader__eyebrow">에코 가방</span>
         <h2>가방의 에코, 한 번에 정리해요</h2>
         <p className="uploader__hint">
           화면을 공유한 뒤 게임 가방에서 에코를 하나씩 눌러 주세요. 화면이 멈출 때마다 에코를 읽어 모읍니다.

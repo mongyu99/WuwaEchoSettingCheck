@@ -1,69 +1,87 @@
+/* 인식 중 표시: 사이트 패널(유리판 + 금색 가는 선)과 같은 모양 */
 .processing-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(6, 8, 14, 0.72);
-  backdrop-filter: blur(2px);
   z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(6, 8, 14, 0.6);
+  backdrop-filter: blur(2px);
 }
 
 .processing-overlay__card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 12px;
+  width: min(320px, 86vw);
+  padding: 26px 28px 22px;
+  border: 1px solid var(--ww-panel-border);
+  border-top: 1px solid var(--ww-gold-soft);
+  border-radius: 8px;
+  background: var(--ww-panel);
+  box-shadow: var(--ww-shadow);
+  color: var(--ww-ink);
 }
 
-.processing-overlay__ring {
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  padding: 6px;
-  background: conic-gradient(var(--accent-wave), var(--accent-resonance), var(--accent-wave));
-  animation: processing-spin 1.1s linear infinite;
-}
-
-.processing-overlay__avatar {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  overflow: hidden;
-  background: var(--bg-surface);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.processing-overlay__avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+/* 금색 마름모가 천천히 돌며 깜빡입니다(패널 제목 장식과 같은 모양). */
+.processing-overlay__mark {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--ww-gold);
+  transform: rotate(45deg);
+  animation: processing-mark 1.6s ease-in-out infinite;
 }
 
 .processing-overlay__label {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  color: var(--text-primary);
   margin: 0;
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.04em;
 }
 
-@keyframes processing-spin {
-  from {
-    transform: rotate(0deg);
+.processing-overlay__bar {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--ww-row);
+  overflow: hidden;
+}
+
+.processing-overlay__bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--ww-gold-soft), var(--ww-gold));
+  box-shadow: 0 0 8px var(--ww-gold);
+  transition: width 0.3s ease;
+}
+
+.processing-overlay__percent {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ww-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes processing-mark {
+  0%,
+  100% {
+    transform: rotate(45deg) scale(1);
+    opacity: 1;
   }
-  to {
-    transform: rotate(360deg);
+  50% {
+    transform: rotate(225deg) scale(0.8);
+    opacity: 0.55;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .processing-overlay__ring {
+  .processing-overlay__mark {
     animation: none;
+  }
+  .processing-overlay__bar span {
+    transition: none;
   }
 }

@@ -10,10 +10,10 @@ const MENU = [
   { page: 'home', label: '홈', handler: 'onGoHome' },
   { page: 'characters', label: '캐릭터 빌드 체크', handler: 'onGoToCharacterList' },
   // 에코 체크는 모바일에서도 캡쳐 인식(스크린샷 올리기)으로 쓸 수 있어서 항상 보여 줍니다.
-  { page: 'live', label: '에코 체크 - 베타', handler: 'onGoToLiveCheck' },
+  { page: 'live', label: '에코 체크', handler: 'onGoToLiveCheck' },
   // 아래는 화면 공유가 필요한 기능이라 모바일에서는 메뉴에 넣지 않습니다.
   ...(screenCaptureSupported ? [
-        { page: 'bag', label: '에코 가방 - 베타', handler: 'onGoToEchoBag' },
+        { page: 'bag', label: '에코 가방', handler: 'onGoToEchoBag' },
         // 가방 정리로 모은 에코로 캐릭터마다 5개 조합을 짜 줍니다(가방 정리와 같은 PC 전용 묶음).
         { page: 'recommend', label: '캐릭터 추천 - 베타', handler: 'onGoToRecommend' },
       ] : []),
