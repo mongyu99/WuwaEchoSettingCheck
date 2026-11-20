@@ -1,5 +1,5 @@
 import { SUB_STAT_OPTIONS } from '../config/subStatOptions'
-import { echoSuccessProbability, expectedAttempts } from './probability'
+import { echoMultiTargetProbability, echoSuccessProbability, expectedAttempts } from './probability'
 
 // (기준값 + %) 형태로 계산해야 하는 카테고리와, %만으로 계산되는 카테고리
 export const BASE_PERCENT_CATEGORIES = {
@@ -11,6 +11,11 @@ export const PERCENT_ONLY_CATEGORIES = {
   '공명 효율': { percentLabel: '공명 효율%' },
   크리티컬: { percentLabel: '크리티컬%' },
   '크리티컬 피해': { percentLabel: '크리티컬 피해%' },
+  // 에코 서브 옵션으로 챙길 수 있는 피해 보너스도 목표로 넣을 수 있습니다.
+  '일반 공격 피해': { percentLabel: '일반 공격 피해 보너스%' },
+  '강공격 피해': { percentLabel: '강공격 피해 보너스%' },
+  '공명 스킬 피해': { percentLabel: '공명 스킬 피해 보너스%' },
+  '공명 해방 피해': { percentLabel: '공명 해방 피해 보너스%' },
 }
 export const OPTIMIZER_CATEGORIES = { ...BASE_PERCENT_CATEGORIES, ...PERCENT_ONLY_CATEGORIES }
 
@@ -30,27 +35,10 @@ function isSecondaryLabel(label, validLabels) {
  * "2순위"(예: %가 유효 옵션인 캐릭터의 플랫 스탯) 자리를 대신 교체 대상으로 씁니다.
  */
 function findReplaceableStat(echo, validLabels) {
-  const invalid = echo.subStats.find((s) => s.label && s.valueText && !validLabels.includes(s.label))
+  // free: 목표 수치를 넘친 몫이라 빼도 되는 옵션(빌드 체크에서 표시해서 넘김) → 무효 옵션과 똑같이 봅니다.
+  const invalid = echo.subStats.find((s) => s.label && s.valueText && (!validLabels.includes(s.label) || s.free))
   if (invalid) return invalid
   return echo.subStats.find((s) => s.label && s.valueText && isSecondaryLabel(s.label, validLabels))
-}
-
-/**
- * sourceLabel(% 서브스탯)을 가진 서브스탯 중, 빼도 marginBudget(퍼센트 포인트) 이내라서 목표를
- * 계속 달성한 상태로 남는 것들 중 가장 큰 값을 재배치 후보로 고릅니다(여유분을 최대한 활용).
- * 그런 서브스탯이 여러 에코에 있으면 값이 가장 큰 것 하나만 반환합니다.
- */
-export function findReallocationCandidate(sourceLabel, marginBudget, echoes) {
-  let best = null
-  echoes.forEach((echo, echoIndex) => {
-    echo.subStats.forEach((s) => {
-      if (s.label !== sourceLabel) return
-      const value = parseFloat(s.valueText)
-      if (Number.isNaN(value) || value > marginBudget) return
-      if (!best || value > best.value) best = { echoIndex, value, valueText: s.valueText }
-    })
-  })
-  return best
 }
 
 /**
@@ -82,7 +70,7 @@ function pickSufficientTier(options, remaining) {
  * 바꾸는 자리라 셈에서 제외합니다.
  */
 function requiredStatCount(echo, validLabels, excluded) {
-  return echo.subStats.filter((s) => s !== excluded && s.label && s.valueText && validLabels.includes(s.label))
+  return echo.subStats.filter((s) => s !== excluded && s.label && s.valueText && validLabels.includes(s.label) && !s.free)
     .length
 }
 
@@ -203,4 +191,162 @@ export function runOptimizerFromGap({ category, gapValue, base, echoes, validLab
     impossible: steps.length === 0 || remainingPercent > 0.01,
     remainingPercent: Math.max(0, Math.round(remainingPercent * 100) / 100),
   }
+}
+
+/**
+ * 한 에코에서 할 수 있는 교체를 단계별로 전부 만듭니다(부족분과 관계없이 6.4%·7.1%·…·최고 단계 각각).
+ * gainPercent는 % 단위로 맞춘 증가량(플랫은 기준값으로 환산)입니다.
+ * 증가량이 같거나 더 크면서 시도 횟수도 같거나 적은 후보가 있으면 뺍니다(어차피 고를 일이 없음).
+ */
+/**
+ * 새 에코가 지켜야 할 기존 유효 옵션: 지금 수치 이상으로 다시 붙어야 합니다(그래야 다른 스탯이 안 떨어짐).
+ * 목표를 넘친 몫(free)이거나 이번에 바꾸는 자리(excluded)는 뺍니다.
+ */
+function keepTargets(echo, validLabels, excluded) {
+  return echo.subStats
+    .filter((s) => !excluded.includes(s) && s.label && s.valueText && validLabels.includes(s.label) && !s.free)
+    .map((s) => ({ label: s.label, value: parseFloat(s.valueText) }))
+}
+
+function allCandidates({ echo, validLabels, info, options, flatOptions, base }) {
+  const list = []
+  const percentStat = echo.subStats.find((s) => s.label === info.percentLabel && s.valueText)
+  const hasFlat = info.flatLabel && echo.subStats.some((s) => s.label === info.flatLabel && s.valueText)
+  const filledCount = echo.subStats.filter((s) => s.label && s.valueText).length
+  const replaceable = filledCount < 5 ? null : findReplaceableStat(echo, validLabels)
+  const slot = filledCount < 5 ? { action: 'add' } : replaceable ? { action: 'replace', from: replaceable } : null
+
+  if (slot) {
+    const slotFields =
+      slot.action === 'replace' ? { action: 'replace', fromLabel: slot.from.label, fromValue: slot.from.valueText } : { action: 'add' }
+    const keep = keepTargets(echo, validLabels, [slot.from])
+    if (!percentStat) {
+      for (const tier of options) {
+        list.push({ ...slotFields, label: info.percentLabel, toValue: `${tier}%`, gain: tier, gainIsFlat: false, gainPercent: tier,
+          probability: echoMultiTargetProbability(0, [...keep, { label: info.percentLabel, value: tier }]) })
+      }
+    }
+    if (info.flatLabel && !hasFlat && base > 0) {
+      for (const tier of flatOptions) {
+        list.push({ ...slotFields, label: info.flatLabel, toValue: `${tier}`, gain: tier, gainIsFlat: true, gainPercent: (tier / base) * 100,
+          probability: echoMultiTargetProbability(0, [...keep, { label: info.flatLabel, value: tier }]) })
+      }
+    }
+  }
+  const currentValue = percentStat ? parseFloat(percentStat.valueText) : NaN
+  if (!Number.isNaN(currentValue)) {
+    const keep = keepTargets(echo, validLabels, [percentStat])
+    for (const tier of options.filter((v) => v > currentValue)) {
+      list.push({ action: 'upgrade', label: info.percentLabel, fromValue: percentStat.valueText, toValue: `${tier}%`,
+        gain: tier - currentValue, gainIsFlat: false, gainPercent: tier - currentValue,
+        probability: echoMultiTargetProbability(0, [...keep, { label: info.percentLabel, value: tier }]) })
+    }
+  }
+  // 한 에코에서 두 군데를 같이: 공격력%를 더 높은 단계로 다시 띄우면서, 빈/무효 자리에 깡공격력도 같이 붙는 에코.
+  // (민맥싱만으로는 증가량이 작고, 깡만으로는 높은 단계가 잘 안 떠서, 둘을 한 번에 노리는 게 나을 때가 많습니다.)
+  if (slot && percentStat && info.flatLabel && !hasFlat && base > 0) {
+    const keep = keepTargets(echo, validLabels, [percentStat, slot.from])
+    for (const tier of options.filter((v) => v > currentValue)) {
+      for (const flat of flatOptions) {
+        list.push({
+          action: 'combo',
+          label: info.percentLabel,
+          fromValue: percentStat.valueText,
+          toValue: `${tier}%`,
+          slotAction: slot.action,
+          slotFromLabel: slot.from?.label ?? null,
+          slotFromValue: slot.from?.valueText ?? null,
+          flatLabel: info.flatLabel,
+          flatToValue: `${flat}`,
+          gain: tier - currentValue + (flat / base) * 100,
+          gainIsFlat: false,
+          gainPercent: tier - currentValue + (flat / base) * 100,
+          probability: echoMultiTargetProbability(0, [
+            ...keep,
+            { label: info.percentLabel, value: tier },
+            { label: info.flatLabel, value: flat },
+          ]),
+        })
+      }
+    }
+  }
+  return list.filter((c) => c.probability > 0).map((c) => ({ ...c, attempts: expectedAttempts(c.probability) }))
+}
+
+/** 증가량이 같거나 더 크면서 시도 횟수도 같거나 적은 후보가 있으면 뺍니다(어차피 고를 일이 없음). */
+const pruneDominated = (list) =>
+  list.filter(
+    (c) => !list.some((o) => o !== c && o.gainPercent >= c.gainPercent && o.attempts <= c.attempts && (o.gainPercent > c.gainPercent || o.attempts < c.attempts)),
+  )
+
+/**
+ * 후보들로 부족분(needed, % 단위)을 채우는 조합을 찾습니다(에코마다 많아야 한 번).
+ * fast: 평균 시도 횟수 합 최소 / safe: 가장 어려운 교체의 확률 최대. 못 채우면 둘 다 null이고 maxGain(최대로 올릴 수 있는 양)을 돌려줍니다.
+ */
+function searchPlans(perEcho, needed) {
+  const maxGainAfter = perEcho.map((_, i) => perEcho.slice(i).reduce((sum, e) => sum + Math.max(...e.cands.map((c) => c.gainPercent)), 0))
+  const maxGain = maxGainAfter[0] ?? 0
+  const done = (gain) => gain >= needed - 0.01
+  let fast = null
+  let safe = null
+  const chosen = []
+  const walk = (i, gain, attempts, minProb) => {
+    if (done(gain)) {
+      if (!fast || attempts < fast.totalAttempts) fast = { steps: [...chosen], totalAttempts: attempts, minProbability: minProb }
+      if (!safe || minProb > safe.minProbability || (minProb === safe.minProbability && attempts < safe.totalAttempts)) {
+        safe = { steps: [...chosen], totalAttempts: attempts, minProbability: minProb }
+      }
+      return
+    }
+    if (i >= perEcho.length || gain + maxGainAfter[i] < needed - 0.01) return
+    // 두 계획 모두 이미 찾은 것보다 나쁠 수밖에 없는 갈래는 멈춥니다.
+    if (fast && safe && attempts >= fast.totalAttempts && minProb < safe.minProbability) return
+    walk(i + 1, gain, attempts, minProb)
+    for (const c of perEcho[i].cands) {
+      chosen.push({ echoIndex: perEcho[i].index, ...c })
+      walk(i + 1, gain + c.gainPercent, attempts + c.attempts, Math.min(minProb, c.probability))
+      chosen.pop()
+    }
+  }
+  walk(0, 0, 0, Infinity)
+  return { fast, safe, maxGain }
+}
+
+// 비교용 방법: 민맥싱(% 옵션만) / 깡(고정 수치만) / 섞어서(전부, 한 에코에 둘 다 포함)
+const STRATEGIES = {
+  minmax: (c, info) => c.action !== 'combo' && c.label === info.percentLabel,
+  flat: (c) => c.action !== 'combo' && c.gainIsFlat,
+  mixed: () => true,
+}
+
+/**
+ * 목표까지 남은 값을 채우는 계획 두 가지를 만듭니다(에코마다 많아야 한 번 교체).
+ * - fast(빠른 계획): 평균 시도 횟수 합이 가장 적은 조합. 작은 교체 여러 번보다 큰 교체 한 번이 적으면 그쪽.
+ * - safe(안정적인 계획): 가장 어려운 교체의 확률이 가장 높은 조합(같으면 시도 횟수 합이 적은 쪽).
+ * 모든 조합을 비교하되, 이미 찾은 계획보다 나빠지는 갈래는 더 보지 않습니다.
+ */
+export function planOptimizerFromGap({ category, gapValue, base, echoes, validLabels }) {
+  const info = OPTIMIZER_CATEGORIES[category]
+  if (!info) return null
+  if (gapValue <= 0) return { achieved: true, fast: null, safe: null }
+  const isBasePercent = category in BASE_PERCENT_CATEGORIES
+  const needed = isBasePercent ? (base > 0 ? (gapValue / base) * 100 : null) : gapValue
+  const options = SUB_STAT_OPTIONS[info.percentLabel] ?? []
+  if (needed === null || !options.length) return { achieved: false, fast: null, safe: null, impossible: true, neededPercentTotal: needed ?? 0 }
+  const flatOptions = info.flatLabel ? SUB_STAT_OPTIONS[info.flatLabel] ?? [] : []
+
+  const all = echoes.map((echo, index) => ({ index, cands: allCandidates({ echo, validLabels, info, options, flatOptions, base }) }))
+  const solve = (keep) =>
+    searchPlans(
+      all.map((e) => ({ index: e.index, cands: pruneDominated(e.cands.filter((c) => keep(c, info))) })).filter((e) => e.cands.length > 0),
+      needed,
+    )
+  // 방법별 비교: 민맥싱만 / 깡만 / 섞어서. 섞어서의 두 계획(빠른·안정적인)을 아래 카드로 보여 줍니다.
+  const strategies = Object.fromEntries(
+    Object.entries(STRATEGIES)
+      .filter(([key]) => key !== 'flat' || (info.flatLabel && base > 0))
+      .map(([key, keep]) => [key, solve(keep)]),
+  )
+  const { fast, safe } = strategies.mixed
+  return { achieved: false, neededPercentTotal: needed, fast, safe, strategies, impossible: !fast }
 }

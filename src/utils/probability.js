@@ -42,6 +42,15 @@ export function echoSuccessProbability(requiredCount, label, neededValue) {
   return allPresentProbability(requiredCount + 1) * successProbability(label, neededValue)
 }
 
+/**
+ * 새 에코 하나가 "지켜야 할 기존 유효 옵션 requiredCount종 + targets(옵션마다 최소 수치)"를 모두 만족할 확률(%)입니다.
+ * 예: 공격력% 11.6 이상과 깡공격력 50 이상이 한 에코에 같이 붙어야 하는 경우.
+ */
+export function echoMultiTargetProbability(requiredCount, targets) {
+  const allPresent = allPresentProbability(requiredCount + targets.length)
+  return targets.reduce((p, t) => p * (successProbability(t.label, t.value) / 100), allPresent) * 100
+}
+
 /** 확률(%)로 성공할 때까지 평균 몇 개의 에코를 띄워야 하는지(기하분포 기댓값)입니다. */
 export function expectedAttempts(probabilityPercent) {
   return probabilityPercent > 0 ? 100 / probabilityPercent : Infinity

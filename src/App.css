@@ -1,7 +1,8 @@
 .app {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 48px 32px 100px;
+  /* 아래 여백은 푸터 밑에 남는 공간이라 작게 둡니다(100px이면 푸터 아래가 휑하게 비었음). */
+  padding: 48px 32px 16px;
 }
 
 .app__header {

@@ -10,9 +10,11 @@ import { getCharacterEchoCombos } from '../config/characterEchoSets'
 import { getMainEcho } from '../config/mainEchoes'
 import { getMainEchoIdsForCombo } from '../config/echoSetMainEchoes'
 import { getMainEchoDamageBonus } from '../config/characterMainEchoBonus'
-import { SUB_STAT_OPTIONS, SUB_STAT_NAMES } from '../config/subStatOptions'
+import { SUB_STAT_NAMES } from '../config/subStatOptions'
 import { getEchoCost } from '../utils/ocr'
-import { runOptimizerFromGap, OPTIMIZER_CATEGORIES, findReallocationCandidate } from '../utils/optimizer'
+import { OPTIMIZER_CATEGORIES } from '../utils/optimizer'
+import { startMission } from '../utils/enhanceMission'
+import { planJoint } from '../utils/jointOptimizer'
 import ConfirmDialog from '../components/ConfirmDialog'
 import EchoPanel from '../components/EchoPanel'
 import MobileSection from '../components/MobileSection'
@@ -43,10 +45,13 @@ function getCategoryBaseNames(element) {
     '공명 스킬 피해': ['공명 스킬 피해', '공명 스킬 피해 보너스'],
     '공명 해방 피해': ['공명 해방 피해', '공명 해방 피해 보너스'],
     '에코 피해': ['에코 피해'],
+    // 치료 효과 보너스: 4코 메인 옵션·에코·세트 효과에서 붙습니다(힐러용).
+    '치료 효과 보너스': ['치료 효과 보너스', '치료 효과'],
   }
 }
 const BASE_TOTAL_CATEGORIES = new Set(['HP', '공격력', '방어력', '공명 효율', '크리티컬', '크리티컬 피해'])
-const OPTIMIZER_TARGET_ORDER = ['HP', '공격력', '방어력', '크리티컬', '공명 효율', '크리티컬 피해']
+// 목표 스탯 계산기에 넣을 수 있는 스탯: 에코 서브 옵션으로 챙길 수 있는 것 전부(속성 피해·에코 피해는 서브 옵션에 없어서 제외)
+const OPTIMIZER_TARGET_ORDER = ['HP', '공격력', '방어력', '크리티컬', '크리티컬 피해', '공명 효율', '일반 공격 피해', '강공격 피해', '공명 스킬 피해', '공명 해방 피해']
 
 // 에코 5개의 코스트 합계 한도입니다.
 const MAX_TOTAL_COST = 12
@@ -186,6 +191,12 @@ function computeCategoryTotal(cat, raw, baseStats, weapon) {
       const total = base + raw.percentSum
       return { base, total, additional: raw.percentSum }
     }
+    // 피해 보너스류는 기본값 없이 %를 더한 값 그대로입니다.
+    case '일반 공격 피해':
+    case '강공격 피해':
+    case '공명 스킬 피해':
+    case '공명 해방 피해':
+      return { base: 0, total: raw?.percentSum ?? 0, additional: raw?.percentSum ?? 0 }
     default:
       return null
   }
@@ -340,43 +351,229 @@ function MainEchoPickerModal({ open, onClose, onSelect, mainEchoIds }) {
 
 const BASE_ONLY_CATEGORIES = new Set(['HP', '공격력', '방어력'])
 
-// 스텝을 클릭했을 때 깜빡여줄 자리(라벨+수치)입니다. 'add'는 아직 없던 자리라 깜빡일 대상이 없습니다.
-function blinkTargetForStep(s) {
-  if (s.action === 'replace') return { label: s.fromLabel, value: s.fromValue }
-  if (s.action === 'upgrade') return { label: s.label, value: s.fromValue }
-  return null
-}
-
-// 카드 안에 짧게 보여줄 변경 내용입니다. 에코/코스트/교체 버튼은 카드 헤더에 이미 있어서 여기선 뺍니다.
-// "- 이전 값" / "→ 이후 값" 두 줄로 보여줍니다. add는 이전 값이 없어서 한 줄만 씁니다.
-function describeStepParts(s) {
-  if (s.action === 'add') return { single: `${s.label} ${s.toValue} 추가` }
-  if (s.action === 'replace') return { from: `${s.fromLabel} ${s.fromValue}`, to: `${s.label} ${s.toValue} 교체` }
-  return { from: `${s.label} ${s.fromValue}`, to: `${s.toValue} 교체` }
-}
-
 function formatChance(s) {
   const attempts = Number.isFinite(s.attempts) ? `약 ${Math.ceil(s.attempts).toLocaleString()}개` : '-'
-  return `뜰 확률 ${s.probability.toFixed(2)}% · 기대 시도 ${attempts}`
+  // 0.01% 미만은 toFixed(2)로 자르면 0.0052%가 "0.01%"로 보여서, 계획 요약처럼 유효 숫자 2자리로 보여 줍니다.
+  const chance = s.probability >= 0.01 ? s.probability.toFixed(2) : String(Number(s.probability.toPrecision(2)))
+  return `뜰 확률 ${chance}% · 기대 시도 ${attempts}`
 }
 
-function describeAlt(alt) {
-  if (alt.action === 'upgrade') return `${alt.label} ${alt.fromValue} → ${alt.toValue}로 다시 띄우기`
-  return `${alt.label} ${alt.toValue}로 채우기`
-}
+
+/** 계획의 확률 표시: 0.01% 미만은 유효 숫자 2자리로(0.0034%처럼) 보여 줍니다. */
+const formatPlanChance = (p) => (p >= 0.01 ? `${p.toFixed(2)}%` : `${Number(p.toPrecision(2))}%`)
+
+const fmtStat = (isWhole, v) => (isWhole ? Math.floor(v).toLocaleString() : `${v.toFixed(1)}%`)
+const fmtGain = (isWhole, v) => (isWhole ? `+${Math.round(v).toLocaleString()}` : `+${v.toFixed(1)}%`)
 
 /**
- * 이 변경을 실제로 적용하면 그 카테고리의 합산이 얼마가 될지 미리 계산합니다(적용은 안 함, 표시
- * 전용). gainIsFlat이면 gain을 그대로 더하고(플랫은 기준값 곱셈 없이 직접 더해짐), 아니면
- * 퍼센트로 취급해 isWholeStat 카테고리는 기준값(base)에 곱해서 더합니다.
+ * 목표 스탯 계산기 결과(여러 목표를 한 번에 채우는 계획) — 왼쪽/오른쪽 두 칸.
+ * 왼쪽(스크롤해도 따라옴): 방법 비교, 계획 고르기(빠른·안정적인), 고른 계획의 요약과 목표별 "지금 → 다 바꾸면", 강화하러 가기.
+ * 오른쪽: 고른 계획의 에코별 교체 카드(빼는 옵션 → 붙어야 할 옵션, 유지할 옵션, 오르는 양, 확률).
  */
-function projectGain(result, gain, isWholeStat, gainIsFlat) {
-  if (!result) return null
-  if (gainIsFlat) return result.currentTotal + gain
-  return isWholeStat ? result.currentTotal + (gain / 100) * result.base : result.currentTotal + gain
+function JointResult({ results, echoes, onStartMission }) {
+  const { meta = [], goals = [], plan } = results
+  const [pick, setPick] = useState('fast') // 계획이 둘일 때 고른 쪽
+  if (meta.length === 0) return <p className="optimizer__estimate">목표를 하나 이상 0보다 크게 입력해주세요.</p>
+  if (goals.length === 0) return <p className="optimizer__estimate">넣은 목표를 이미 모두 달성했어요!</p>
+  // 증가량(% 단위)을 스탯 단위로: 공격력·HP·방어력은 기준값 × %
+  const toStat = (g, pct) => (g.isWhole ? (pct / 100) * g.base : pct)
+  const afterOf = (p) => goals.map((g, i) => g.current + toStat(g, p.steps.reduce((sum, st) => sum + st.gains[i], 0)))
+
+  const sig = (p) => p?.steps.map((st) => `${st.echoIndex}:${st.changes.map((c) => c.label + c.to).join(',')}`).join('|')
+  const strategies = plan?.strategies ?? {}
+  const bestKey = ['minmax', 'flat', 'mixed']
+    .filter((k) => strategies[k]?.fast)
+    .reduce((bk, k) => (!bk || strategies[k].fast.attempts < strategies[bk].fast.attempts - 0.5 ? k : bk), null)
+  const same = plan?.fast && sig(plan.fast) === sig(plan.safe)
+  const current = !plan?.fast ? null : same || pick === 'fast' || !plan.safe ? plan.fast : plan.safe
+  const after = current ? afterOf(current) : []
+  const running = goals.map((g) => g.current)
+
+  return (
+    <div className="optimizer__results optimizer__joint">
+      {/* 왼쪽: 한눈에 보는 요약 */}
+      <aside className="optimizer__joint-side">
+        <p className="optimizer__result-title">목표 {goals.map((g) => g.category).join(' · ')}</p>
+        <table className="optimizer__compare">
+          <thead>
+            <tr>
+              <th>방법</th>
+              <th>교체</th>
+              <th>총 평균 시도</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              ['minmax', '민맥싱만'],
+              ['flat', '깡만'],
+              ['mixed', '섞어서'],
+            ]
+              .filter(([k]) => strategies[k])
+              .map(([k, label]) => {
+                const f = strategies[k].fast
+                return (
+                  <tr key={k} className={k === bestKey ? 'optimizer__compare-best' : ''}>
+                    <td>{label}</td>
+                    {f ? (
+                      <>
+                        <td>{f.steps.length}번</td>
+                        <td>약 {Math.round(f.attempts).toLocaleString()}개</td>
+                      </>
+                    ) : (
+                      <td colSpan={2} className="optimizer__compare-no">
+                        못 채워요
+                      </td>
+                    )}
+                  </tr>
+                )
+              })}
+          </tbody>
+        </table>
+
+        {!current ? (
+          <p className="optimizer__estimate">에코마다 한 번씩 바꿔도 목표를 다 못 채워요. 목표를 낮추거나, 0을 넣어 포기할 옵션을 정해 보세요.</p>
+        ) : (
+          <>
+            {same ? (
+              <div className="optimizer__plan-head">
+                <span className="optimizer__plan-badge">추천 계획</span>
+                <span className="optimizer__plan-desc">가장 빠르면서 가장 안정적인 계획이에요</span>
+              </div>
+            ) : (
+              <div className="optimizer__plan-pick" role="tablist" aria-label="계획">
+                {[
+                  ['fast', '빠른 계획', '시도 합이 가장 적어요'],
+                  ['safe', '안정적인 계획', '교체마다 잘 떠요'],
+                ].map(([k, title, desc]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    role="tab"
+                    aria-selected={pick === k}
+                    className={`optimizer__plan-pick-btn optimizer__plan-pick-btn--${k} ${pick === k ? 'optimizer__plan-pick-btn--on' : ''}`}
+                    onClick={() => setPick(k)}
+                  >
+                    <b>{title}</b>
+                    <small>{desc}</small>
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="optimizer__plan-stats">
+              <span>
+                <small>교체</small>
+                <b>{current.steps.length}번</b>
+              </span>
+              <span>
+                <small>총 평균 시도</small>
+                <b>약 {Math.round(current.attempts).toLocaleString()}개</b>
+              </span>
+              <span>
+                <small>가장 어려운 교체</small>
+                <b>{formatPlanChance(current.minProbability)}</b>
+              </span>
+            </div>
+            <ul className="optimizer__goal-after">
+              {goals.map((g, i) => (
+                <li key={g.category}>
+                  <span>{g.category}</span>
+                  <b>
+                    {fmtStat(g.isWhole, g.current)} → <strong>{fmtStat(g.isWhole, after[i])}</strong>
+                  </b>
+                  <small>목표 {fmtStat(g.isWhole, g.target)}</small>
+                </li>
+              ))}
+            </ul>
+            {onStartMission && (
+              <button type="button" className="btn btn--primary optimizer__mission-btn" onClick={() => onStartMission(current.steps)}>
+                이 계획으로 강화하러 가기
+              </button>
+            )}
+          </>
+        )}
+      </aside>
+
+      {/* 오른쪽: 고른 계획의 에코별 교체 */}
+      <div className="optimizer__joint-main">
+        {current && (
+          <ul className="optimizer__steps">
+            {current.steps.map((st, si) => {
+              const removed = st.changes.filter((c) => c.kind !== 'add').map((c) => (c.kind === 'upgrade' ? `${c.label} ${c.from}` : `${c.fromLabel} ${c.fromValue}`))
+              const added = st.changes.map((c) => `${c.label} ${c.to}`)
+              const lines = goals
+                .map((g, i) => {
+                  if (st.gains[i] <= 1e-9) return null
+                  const before = running[i]
+                  running[i] = before + toStat(g, st.gains[i])
+                  return { g, before, after: running[i], gain: toStat(g, st.gains[i]) }
+                })
+                .filter(Boolean)
+              return (
+                <li key={si} className="optimizer__step-card">
+                  <div className="optimizer__step-head-row">
+                    <span className="optimizer__step-header">
+                      에코 {st.echoIndex + 1}
+                      {getEchoCost(echoes[st.echoIndex]) && <span className="stats-page__chip-cost">COST {getEchoCost(echoes[st.echoIndex])}</span>}
+                    </span>
+                    <span className="optimizer__step-chance">{formatChance(st)}</span>
+                  </div>
+                  <p className="optimizer__swap">
+                    {removed.map((r) => (
+                      <span key={r} className="optimizer__swap-from">
+                        {r}
+                      </span>
+                    ))}
+                    {removed.length > 0 && <span className="optimizer__swap-arrow">→</span>}
+                    {added.map((x) => (
+                      <span key={x} className="optimizer__swap-to">
+                        {x}
+                      </span>
+                    ))}
+                  </p>
+                  {st.keep.length > 0 && (
+                    <p className="optimizer__keep">유지: {st.keep.map((k) => `${k.label} ${k.label.endsWith('%') ? `${k.value}%` : k.value} 이상`).join(' · ')}</p>
+                  )}
+                  {lines.map((l) => (
+                    <p key={l.g.category} className="optimizer__swap-stat">
+                      {l.g.category} {fmtStat(l.g.isWhole, l.before)} → <strong>{fmtStat(l.g.isWhole, l.after)}</strong>
+                      <em>({fmtGain(l.g.isWhole, l.gain)})</em>
+                    </p>
+                  ))}
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </div>
+    </div>
+  )
 }
 
+// 목표 스탯 입력값: 빌드 체크(입력) → 최적화 화면(결과)으로 넘어가도 남도록 캐릭터별로 세션 저장소에 둡니다.
+const targetsKey = (characterId) => `optimizer-targets:${characterId ?? '-'}`
+function loadTargets(characterId) {
+  try {
+    return JSON.parse(sessionStorage.getItem(targetsKey(characterId)) ?? '{}') ?? {}
+  } catch {
+    return {}
+  }
+}
+function saveTargets(characterId, targets) {
+  try {
+    sessionStorage.setItem(targetsKey(characterId), JSON.stringify(targets))
+  } catch {
+    // 저장소를 못 쓰면 결과 화면에서 목표가 비어 보일 뿐입니다.
+  }
+}
+
+// mode: 'input'(빌드 체크: 목표 입력 + 계산하기) / 'result'(최적화 화면: 저장된 목표로 바로 계산한 결과만)
 function OptimizerPanel({
+  mode = 'input',
+  character,
+  onStartMission,
+  characterId,
+  onSubmit,
+  wide = false,
   echoes,
   validLabels,
   raw,
@@ -386,133 +583,75 @@ function OptimizerPanel({
   onFocusEcho,
   onUpdateSubStats,
 }) {
-  const [targets, setTargets] = useState({})
+  const [targets, setTargets] = useState(() => loadTargets(characterId))
+  const lastContextRef = useRef(null) // 마지막 계산에 쓴 에코(넘친 몫 표시)·유효 옵션(포기 반영) — 강화 목표로 넘길 때 씀
   const [ran, setRan] = useState(false)
   const [results, setResults] = useState({})
-  const [checkedKey, setCheckedKey] = useState(null) // 방금 [확인]을 누른 카드 — 그동안만 파란 테두리
-  const checkedTimeoutRef = useRef(null)
-
-  useEffect(() => () => {
-    if (checkedTimeoutRef.current) clearTimeout(checkedTimeoutRef.current)
-  }, [])
-
-  // [확인]을 누르면 그 에코로 포커스 이동 + 깜빡임을 실행하고, 같은 시간 동안만 카드에 파란
-  // 테두리를 켭니다(기본은 테두리 없음). 깜빡임이 끝나는 시점(1200ms)에 맞춰 같이 꺼집니다.
-  const handleCheck = (key, echoIndex, blinkTarget) => {
-    onFocusEcho?.(echoIndex, blinkTarget)
-    setCheckedKey(key)
-    if (checkedTimeoutRef.current) clearTimeout(checkedTimeoutRef.current)
-    checkedTimeoutRef.current = setTimeout(() => setCheckedKey(null), 1200)
-  }
-
-  // [교체] 버튼을 눌렀을 때만 실제로 값을 바꿉니다 — 카드 자체나 헤더를 눌러선 적용되지 않습니다.
-  const applyStep = (s) => {
-    const echo = echoes[s.echoIndex]
-    if (!echo) return
-    let statId
-    if (s.action === 'add') {
-      // "스탯 선택"만 해두고 값을 안 고른 자리, 또는 완전히 빈 자리가 있으면 새로 만들지 않고 그걸 채웁니다.
-      const reusable =
-        echo.subStats.find((sub) => sub.label === s.label && !sub.valueText) ??
-        echo.subStats.find((sub) => !sub.label)
-      if (reusable) {
-        statId = reusable.id
-        onUpdateSubStats(
-          echo.id,
-          echo.subStats.map((sub) => (sub.id === reusable.id ? { ...sub, label: s.label, valueText: s.toValue } : sub)),
-        )
-      } else {
-        if (echo.subStats.length >= 5) return
-        statId = `stat-${Date.now()}`
-        onUpdateSubStats(echo.id, [...echo.subStats, { id: statId, label: s.label, valueText: s.toValue }])
-      }
-    } else if (s.action === 'replace') {
-      const target = echo.subStats.find((sub) => sub.label === s.fromLabel && sub.valueText === s.fromValue)
-      if (!target) return
-      statId = target.id
-      onUpdateSubStats(
-        echo.id,
-        echo.subStats.map((sub) => (sub.id === target.id ? { ...sub, label: s.label, valueText: s.toValue } : sub)),
-      )
-    } else if (s.action === 'upgrade') {
-      const target = echo.subStats.find((sub) => sub.label === s.label && sub.valueText === s.fromValue)
-      if (!target) return
-      statId = target.id
-      onUpdateSubStats(echo.id, echo.subStats.map((sub) => (sub.id === target.id ? { ...sub, valueText: s.toValue } : sub)))
-    }
-    onFocusEcho?.(s.echoIndex, { label: s.label, value: s.toValue })
-  }
-
-  const applyReallocation = (reloc) => {
-    const echo = echoes[reloc.echoIndex]
-    if (!echo) return
-    const target = echo.subStats.find((sub) => sub.label === reloc.fromLabel && sub.valueText === reloc.fromValue)
-    if (!target) return
-    onUpdateSubStats(
-      echo.id,
-      echo.subStats.map((sub) => (sub.id === target.id ? { ...sub, label: reloc.toLabel, valueText: reloc.toValue } : sub)),
+  // 목표에 0을 넣은 스탯은 "포기": 유효 옵션이어도 무효로 봅니다(그 자리를 다른 옵션으로 바꿀 수 있음).
+  // 목표를 이미 넘긴 스탯은 넘친 만큼의 옵션을 무효(바꿔도 되는 자리)로 봅니다. 예: 공명 효율 140 목표인데 지금 150이면 10만큼.
+  const planContext = () => {
+    const abandoned = OPTIMIZER_TARGET_ORDER.filter((cat) => String(targets[cat] ?? '').trim() === '0')
+    const dropLabels = new Set(
+      abandoned.flatMap((cat) => [OPTIMIZER_CATEGORIES[cat]?.percentLabel, OPTIMIZER_CATEGORIES[cat]?.flatLabel].filter(Boolean)),
     )
-    onFocusEcho?.(reloc.echoIndex, { label: reloc.toLabel, value: reloc.toValue })
-  }
-
-  const handleCalculate = () => {
-    const out = {}
+    const effectiveValid = validLabels.filter((l) => !dropLabels.has(l))
+    const freeIds = new Set()
     for (const cat of OPTIMIZER_TARGET_ORDER) {
       const t = parseFloat(targets[cat])
       if (!t || t <= 0) continue
       const calc = computeCategoryTotal(cat, raw[cat], baseStats, weaponData)
-      const gapValue = t - calc.total
-      const r = runOptimizerFromGap({
-        category: cat,
-        gapValue,
-        base: BASE_ONLY_CATEGORIES.has(cat) ? calc.base : null,
-        echoes,
-        validLabels,
-      })
-      out[cat] = { ...r, currentTotal: calc.total, base: calc.base, margin: calc.total - t }
-    }
-    // 어떤 목표를 이미 여유 있게 달성했는데 다른 목표는 아직 부족하다면, 옵션을 옮길 수도 있다고 안내.
-    // 가능하면 "어느 에코의 어떤 옵션을 빼서 어디로 옮기면 되는지"까지 구체적으로 짚어줍니다.
-    const shortEntries = Object.entries(out).filter(([, r]) => !r.achieved)
-    const anyShort = shortEntries.length > 0
-    for (const [cat, r] of Object.entries(out)) {
-      r.showReallocateHint = r.achieved && anyShort && r.margin > 0
-      if (!r.showReallocateHint) continue
-
+      let margin = calc.total - t
+      if (!(margin > 0)) continue
       const info = OPTIMIZER_CATEGORIES[cat]
-      if (!info) continue
-      // 기준값 곱셈형 카테고리(HP·공격력·방어력)의 여유분은 "그 스탯의 절대값" 단위라서, 재배치
-      // 후보를 찾으려면 서브스탯과 같은 % 단위로 환산해야 합니다.
-      const marginBudget = BASE_ONLY_CATEGORIES.has(cat)
-        ? (r.base > 0 ? (r.margin / r.base) * 100 : 0)
-        : r.margin
-      const candidate = findReallocationCandidate(info.percentLabel, marginBudget, echoes)
-      if (!candidate) continue
-
-      // 부족분(neededPercentTotal)이 가장 큰 목표를 우선으로 옮겨줍니다.
-      const targetCat = shortEntries
-        .map(([c, tr]) => ({ c, need: tr.neededPercentTotal ?? 0 }))
-        .sort((a, b) => b.need - a.need)[0]?.c
-      const targetInfo = targetCat ? OPTIMIZER_CATEGORIES[targetCat] : null
-      if (!targetInfo) continue
-      const targetOptions = SUB_STAT_OPTIONS[targetInfo.percentLabel] ?? []
-      const targetMaxTier = targetOptions.length ? targetOptions[targetOptions.length - 1] : null
-      if (targetMaxTier == null) continue
-
-      r.reallocation = {
-        echoIndex: candidate.echoIndex,
-        fromCategory: cat,
-        fromLabel: info.percentLabel,
-        fromValue: candidate.valueText,
-        toCategory: targetCat,
-        toLabel: targetInfo.percentLabel,
-        toValue: `${targetMaxTier}%`,
-        altFlatLabel: targetInfo.flatLabel ?? null,
+      const isBase = BASE_ONLY_CATEGORIES.has(cat)
+      // 이 스탯을 주는 서브 옵션을 작은 것부터, 빼도 목표 아래로 안 내려가는 만큼 무효로 표시합니다.
+      const subs = echoes
+        .flatMap((e) => e.subStats.map((s) => ({ s, e })))
+        .filter(({ s }) => s.valueText && (s.label === info?.percentLabel || s.label === info?.flatLabel))
+        .map(({ s }) => {
+          const v = parseFloat(s.valueText)
+          const amount = s.label === info.flatLabel ? v : isBase ? (v / 100) * calc.base : v
+          return { id: s.id, amount }
+        })
+        .sort((a, b) => a.amount - b.amount)
+      for (const sub of subs) {
+        if (sub.amount > margin) break
+        margin -= sub.amount
+        freeIds.add(sub.id)
       }
     }
-    setResults(out)
+    const planEchoes = echoes.map((e) => ({ ...e, subStats: e.subStats.map((s) => (freeIds.has(s.id) ? { ...s, free: true } : s)) }))
+    return { echoes: planEchoes, validLabels: effectiveValid }
+  }
+
+  const handleCalculate = () => {
+    const ctx = planContext()
+    lastContextRef.current = ctx
+    // 목표마다 현재값·목표값을 정리하고, 아직 못 채운 목표만 한 번에 푸는 계획을 만듭니다.
+    const meta = []
+    for (const cat of OPTIMIZER_TARGET_ORDER) {
+      const t = parseFloat(targets[cat])
+      if (!t || t <= 0) continue
+      const calc = computeCategoryTotal(cat, raw[cat], baseStats, weaponData)
+      const isWhole = BASE_ONLY_CATEGORIES.has(cat)
+      const gap = t - calc.total
+      meta.push({
+        category: cat,
+        info: OPTIMIZER_CATEGORIES[cat],
+        current: calc.total,
+        target: t,
+        base: isWhole ? calc.base : null,
+        isWhole,
+        achieved: gap <= 0,
+        // 계산은 % 단위로: 공격력·HP·방어력은 기준값 대비 %, 나머지는 그대로
+        need: gap <= 0 ? 0 : isWhole ? (calc.base > 0 ? (gap / calc.base) * 100 : Infinity) : gap,
+      })
+    }
+    const goals = meta.filter((m) => !m.achieved && Number.isFinite(m.need))
+    const plan = goals.length ? planJoint({ goals, echoes: ctx.echoes, validLabels: ctx.validLabels }) : null
+    setResults({ meta, goals, plan })
     setRan(true)
-    onResultsChange?.(out)
+    onResultsChange?.({})
   }
 
   // 서브스탯을 직접 고치면(에코 편집 패널에서) 이미 계산해본 적이 있을 때만 자동으로 다시 계산해서,
@@ -523,8 +662,19 @@ function OptimizerPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [echoes])
 
+  // 결과 화면: 들어오자마자 저장된 목표로 계산합니다.
+  useEffect(() => {
+    if (mode === 'result') handleCalculate()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode])
+
+  const submit = () => {
+    saveTargets(characterId, targets)
+    onSubmit?.()
+  }
+
   return (
-    <div className="optimizer">
+    <div className={`optimizer ${wide ? 'optimizer--wide' : ''} optimizer--${mode}`}>
       <div className="optimizer__title-row">
         <h4 className="stats-page__col-title mobile-section__heading">목표 스탯 계산기 - 베타</h4>
         {/* 터치 기기는 마우스 오버가 없어서, 눌러서 포커스를 줘도 열리게 합니다. */}
@@ -544,159 +694,43 @@ function OptimizerPanel({
       <p className="uploader__hint optimizer__hint">
         계산 결과는 어디까지나 참고용이며, 실제 게임 내 확률과 다를 수 있습니다.
       </p>
+      {mode === 'input' && (
+        <p className="uploader__hint optimizer__hint">
+          0을 넣으면 그 옵션은 무효로 처리합니다.
+          <br />
+          목표보다 높은 스탯은 넘친 만큼의 옵션을 다른 옵션으로 변경 가능한 자리로 봐요.
+        </p>
+      )}
 
+      {mode === 'input' && (
+      <>
       <div className="optimizer__grid">
         {OPTIMIZER_TARGET_ORDER.map((cat) => (
           <label key={cat} className="optimizer__field">
             {cat}
             <input
               type="number"
-              placeholder="0"
+              placeholder="-"
               value={targets[cat] ?? ''}
               onChange={(e) => setTargets((prev) => ({ ...prev, [cat]: e.target.value }))}
             />
           </label>
         ))}
       </div>
-      <button className="btn btn--primary optimizer__calc-btn" onClick={handleCalculate}>계산하기</button>
+      <button className="btn btn--primary optimizer__calc-btn" onClick={submit}>계산하기</button>
+      </>
+      )}
 
-      {ran && (
-        <div className="optimizer__results">
-          {OPTIMIZER_TARGET_ORDER.filter((cat) => results[cat]).map((cat) => {
-            const r = results[cat]
-            const isWholeStat = BASE_ONLY_CATEGORIES.has(cat)
-            const fmtVal = (n) => (isWholeStat ? formatWholeStat(n) : formatPercent1(n))
-            const unitStr = isWholeStat ? '' : '%'
-            return (
-              <div className="optimizer__result" key={cat}>
-                <p className="optimizer__result-title">{cat}</p>
-                <p>
-                  현재 약 <strong>{fmtVal(r.currentTotal)}{unitStr}</strong> ·{' '}
-                  {r.achieved ? (
-                    '점수를 달성했어요!'
-                  ) : (
-                    <>남은 <strong>{fmtVal(-r.margin)}{unitStr}</strong></>
-                  )}
-                </p>
-                {r.achieved ? (
-                  r.showReallocateHint &&
-                  r.reallocation && (
-                    <div className={`optimizer__step-card ${checkedKey === `realloc-${cat}` ? 'optimizer__step-card--checked' : ''}`}>
-                      <div className="optimizer__step-head-row">
-                        <button
-                          className="optimizer__step-header"
-                          onClick={() => onFocusEcho?.(r.reallocation.echoIndex)}
-                        >
-                          에코 {r.reallocation.echoIndex + 1}
-                          {getEchoCost(echoes[r.reallocation.echoIndex]) && (
-                            <span className="stats-page__chip-cost">COST {getEchoCost(echoes[r.reallocation.echoIndex])}</span>
-                          )}
-                        </button>
-                        <button
-                          className="optimizer__check-btn"
-                          onClick={() => handleCheck(`realloc-${cat}`, r.reallocation.echoIndex, { label: r.reallocation.fromLabel, value: r.reallocation.fromValue })}
-                        >
-                          확인
-                        </button>
-                        <button className="optimizer__apply-btn" onClick={() => applyReallocation(r.reallocation)}>
-                          교체
-                        </button>
-                      </div>
-                      <p className="optimizer__step-desc">
-                        - {r.reallocation.fromLabel} {r.reallocation.fromValue}
-                        <br />
-                        → {r.reallocation.toLabel} {r.reallocation.toValue} 교체
-                      </p>
-                      {(() => {
-                        const targetResult = results[r.reallocation.toCategory]
-                        const targetIsWhole = BASE_ONLY_CATEGORIES.has(r.reallocation.toCategory)
-                        const targetGain = parseFloat(r.reallocation.toValue)
-                        const projected = projectGain(targetResult, targetGain, targetIsWhole)
-                        const targetFmt = (n) => (targetIsWhole ? formatWholeStat(n) : formatPercent1(n))
-                        const targetUnit = targetIsWhole ? '' : '%'
-                        return projected != null ? (
-                          <p className="optimizer__estimate">
-                            - 현재 기준으로 {r.reallocation.toCategory}이(가){' '}
-                            <strong>{targetFmt(projected)}{targetUnit}</strong> 가 됩니다.
-                          </p>
-                        ) : null
-                      })()}
-                      {r.reallocation.altFlatLabel && (
-                        <p className="optimizer__estimate optimizer__alt">
-                          또는 플랫 {r.reallocation.altFlatLabel}로 바꿔도 도움이 돼요.
-                        </p>
-                      )}
-                    </div>
-                  )
-                ) : (
-                  <>
-                    {r.steps?.length === 0 ? (
-                      <p className="optimizer__estimate">추천할 자리가 없어요 (자리 부족 또는 이미 최고 단계).</p>
-                    ) : (
-                      <ul className="optimizer__steps">
-                        {r.steps?.map((s, i) => {
-                          const projected = projectGain(r, s.gain, isWholeStat, s.gainIsFlat)
-                          const stepKey = `step-${cat}-${i}`
-                          return (
-                            <li key={i} className={`optimizer__step-card ${checkedKey === stepKey ? 'optimizer__step-card--checked' : ''}`}>
-                              <div className="optimizer__step-head-row">
-                                <button className="optimizer__step-header" onClick={() => onFocusEcho?.(s.echoIndex, blinkTargetForStep(s))}>
-                                  에코 {s.echoIndex + 1}
-                                  {getEchoCost(echoes[s.echoIndex]) && (
-                                    <span className="stats-page__chip-cost">COST {getEchoCost(echoes[s.echoIndex])}</span>
-                                  )}
-                                </button>
-                                <button
-                                  className="optimizer__check-btn"
-                                  onClick={() => handleCheck(stepKey, s.echoIndex, blinkTargetForStep(s))}
-                                >
-                                  확인
-                                </button>
-                                <button className="optimizer__apply-btn" onClick={() => applyStep(s)}>
-                                  교체
-                                </button>
-                              </div>
-                              {(() => {
-                                const parts = describeStepParts(s)
-                                return (
-                                  <p className="optimizer__step-desc">
-                                    {parts.single ? (
-                                      <>+ {parts.single}</>
-                                    ) : (
-                                      <>
-                                        - {parts.from}
-                                        <br />
-                                        → {parts.to}
-                                      </>
-                                    )}
-                                  </p>
-                                )
-                              })()}
-                              {projected != null && (
-                                <p className="optimizer__estimate">
-                                  - 현재 기준으로 {cat}이(가) <strong>{fmtVal(projected)}{unitStr}</strong> 가 됩니다.
-                                </p>
-                              )}
-                              <p className="optimizer__estimate">- {formatChance(s)}</p>
-                              {s.alt && (
-                                <p className="optimizer__estimate optimizer__alt">
-                                  또는 {describeAlt(s.alt)} ({formatChance(s.alt)})
-                                </p>
-                              )}
-                            </li>
-                          )
-                        })}
-                      </ul>
-                    )}
-                  </>
-                )}
-              </div>
-            )
-          })}
-          {Object.keys(results).length === 0 && (
-            <p className="optimizer__estimate">목표를 하나 이상 0보다 크게 입력해주세요.</p>
-          )}
-        </div>
+      {mode === 'result' && ran && (
+        <JointResult
+          results={results}
+          echoes={echoes}
+          character={character}
+          onStartMission={onStartMission ? (steps) => {
+            startMission({ character, category: results.goals.map((g) => g.category).join(' · '), steps, ...(lastContextRef.current ?? { echoes, validLabels }), joint: true })
+            onStartMission()
+          } : null}
+        />
       )}
     </div>
   )
@@ -722,6 +756,11 @@ export default function StatsPage({
   onAddEcho,
   onGoToCharacters,
   onReset,
+  // 목표 스탯 계산기를 따로 연 화면(최적화하기 → 돌아가기)
+  optimizeMode = false,
+  onStartMission,
+  onOpenOptimizer,
+  onBackFromOptimizer,
 }) {
   const [resetOpen, setResetOpen] = useState(false)
   const [retakeOpen, setRetakeOpen] = useState(false)
@@ -843,9 +882,6 @@ export default function StatsPage({
       if (s.action === 'replace') suggestedStatsForSelected.push({ label: s.fromLabel, value: s.fromValue })
       else if (s.action === 'upgrade') suggestedStatsForSelected.push({ label: s.label, value: s.fromValue })
     })
-    if (r?.reallocation && r.reallocation.echoIndex === selectedEchoIdx) {
-      suggestedStatsForSelected.push({ label: r.reallocation.fromLabel, value: r.reallocation.fromValue })
-    }
   })
 
   const totalCost = echoes.reduce((sum, echo) => sum + (Number(getEchoCost(echo)) || 0), 0)
@@ -870,6 +906,37 @@ export default function StatsPage({
     critDmg: computeCategoryTotal('크리티컬 피해', aggregate['크리티컬 피해'], baseStats, weaponData)?.total ?? 0,
   }
   const mainEchoDamageBonus = getMainEchoDamageBonus(character?.id, mainEchoId, combatStats)
+
+  // 최적화하기 화면: 목표 스탯 계산기만 넓게 보여 주고, 빠른 계획 / 안정적인 계획을 나란히 둡니다.
+  if (optimizeMode) {
+    return (
+      <section className="stats-page optimize-page">
+        <header className="optimize-page__head">
+          <div>
+            <span className="uploader__eyebrow">목표 스탯 계산기 - 베타</span>
+            <h2>{character?.name} 최적화</h2>
+          </div>
+          <button className="capture-page__back capture-page__back--nav" onClick={onBackFromOptimizer}>
+            ← 돌아가기
+          </button>
+        </header>
+        <OptimizerPanel
+          mode="result"
+          characterId={character?.id}
+          character={character}
+          onStartMission={onStartMission}
+          wide
+          echoes={echoes}
+          validLabels={validLabels}
+          raw={aggregate}
+          baseStats={baseStats}
+          weaponData={weaponData}
+          onResultsChange={setOptimizerResults}
+          onUpdateSubStats={onUpdateSubStats}
+        />
+      </section>
+    )
+  }
 
   return (
     <section className="stats-page">
@@ -1285,14 +1352,16 @@ export default function StatsPage({
         </header>
         <aside className="stats-page__optimizer-col">
           <MobileSection title="목표 스탯 계산기 - 베타">
+          {/* 목표를 넣고 계산하기를 누르면 결과는 넓은 최적화 화면에서 봅니다(돌아가기로 다시 이 화면). */}
           <OptimizerPanel
+            mode="input"
+            characterId={character?.id}
+            onSubmit={onOpenOptimizer}
             echoes={echoes}
             validLabels={validLabels}
             raw={aggregate}
             baseStats={baseStats}
             weaponData={weaponData}
-            onResultsChange={setOptimizerResults}
-            onFocusEcho={focusEcho}
             onUpdateSubStats={onUpdateSubStats}
           />
           </MobileSection>

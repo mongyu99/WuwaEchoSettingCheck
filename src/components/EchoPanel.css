@@ -228,3 +228,8 @@ input.echo-panel__sub-row--incomplete {
   cursor: default;
   outline: none;
 }
+
+/* 고정 스탯 이름(공격력·HP)은 위 줄 옵션 이름처럼 왼쪽 정렬 */
+.echo-panel__main-row input.echo-panel__fixed-label {
+  text-align: left;
+}

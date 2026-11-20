@@ -7,6 +7,7 @@ import PatchNotesPage from './pages/PatchNotesPage'
 import EventCalendarPage from './pages/EventCalendarPage'
 import LiveEchoCheckPage from './pages/LiveEchoCheckPage'
 import EchoBagPage from './pages/EchoBagPage'
+import CharacterRecommendPage from './pages/CharacterRecommendPage'
 import EventNotePage from './pages/EventNotePage'
 import CharacterSelectPage from './pages/CharacterSelectPage'
 import CapturePage from './pages/CapturePage'
@@ -305,6 +306,11 @@ export default function App() {
     setPage('stats')
   }
 
+  // 캐릭터 추천의 교체 팝업에서 고른 에코로 그 캐릭터의 저장된 에코를 바꿉니다(무기·세트 등 다른 설정은 그대로).
+  const handleReplaceEchoes = (target, echoes) => {
+    setCharacterData((prev) => ({ ...prev, [target.id]: { ...normalizeRecord(prev[target.id] ?? {}), echoes } }))
+  }
+
   const handleCompleteEdit = () => {
     updateRecordForCurrent((rec) => ({ ...rec, echoes: draftEchoes.filter(hasMainOption).map(({ crops, ...echo }) => echo) }))
     setPage('stats')
@@ -317,6 +323,12 @@ export default function App() {
   const goToEventNote = () => setPage('eventnote')
   const goToLiveCheck = () => setPage('live')
   const goToEchoBag = () => setPage('bag')
+  // 캐릭터 추천으로 이동. 가방 정리에서 캐릭터를 골라 둔 채로 넘어오면 그 캐릭터를 바로 보여 줍니다.
+  const [recommendCharacterId, setRecommendCharacterId] = useState(null)
+  const goToRecommend = (characterId = null) => {
+    setRecommendCharacterId(typeof characterId === 'string' ? characterId : null)
+    setPage('recommend')
+  }
 
   /** 초기화: 이 캐릭터의 캡처된 에코만 지우고, 다시 캡처할 수 있도록 캡처 화면으로 이동합니다. */
   const handleResetCurrent = () => {
@@ -355,8 +367,13 @@ export default function App() {
           />
         )
       case 'stats':
+      case 'optimize':
         return (
           <StatsPage
+            optimizeMode={page === 'optimize'}
+            onOpenOptimizer={() => setPage('optimize')}
+            onBackFromOptimizer={() => setPage('stats')}
+            onStartMission={() => setPage('live')}
             echoes={echoes}
             character={character}
             weapon={record.weapon}
@@ -383,16 +400,26 @@ export default function App() {
       case 'patchnotes':
         return <PatchNotesPage />
       case 'live':
-        return <LiveEchoCheckPage onApplyEcho={handleApplyLiveEcho} characterEchoes={characterEchoes} />
+        return <LiveEchoCheckPage onApplyEcho={handleApplyLiveEcho} characterEchoes={characterEchoes} characterData={characterData} />
+      case 'recommend':
+        return (
+          <CharacterRecommendPage
+            initialCharacterId={recommendCharacterId}
+            onGoToEchoBag={goToEchoBag}
+            onReplaceEchoes={handleReplaceEchoes}
+            characterEchoes={characterEchoes}
+            characterData={characterData}
+          />
+        )
       case 'bag':
-        return <EchoBagPage />
+        return <EchoBagPage onGoToRecommend={goToRecommend} />
       case 'eventnote':
         return <EventNotePage />
       case 'events':
         return <EventCalendarPage />
       case 'home':
       default:
-        return <HomePage />
+        return <HomePage onGoToEchoBag={goToEchoBag} onGoToCharacters={goToCharacters} onGoToLiveCheck={goToLiveCheck} />
     }
   }
 
@@ -407,6 +434,7 @@ export default function App() {
         onGoToEventNote={goToEventNote}
         onGoToLiveCheck={goToLiveCheck}
         onGoToEchoBag={goToEchoBag}
+        onGoToRecommend={goToRecommend}
         theme={theme}
         onToggleTheme={toggleTheme}
         characterData={stripPreviewUrls(characterData)}

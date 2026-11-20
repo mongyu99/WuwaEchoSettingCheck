@@ -1,0 +1,617 @@
+.char-rec__layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  margin-top: 16px;
+}
+
+.char-rec__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+/* 캐릭터 목록: 작은 얼굴 + 이름, 스크롤 */
+.char-rec__chars {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  max-height: 70vh;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.char-rec__char {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 6px 4px;
+  border: 1px solid var(--ww-panel-border);
+  border-radius: 6px;
+  background: var(--ww-panel);
+  color: var(--ww-ink);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.char-rec__char:hover {
+  border-color: var(--ww-gold-soft);
+}
+
+.char-rec__char--on {
+  border-color: var(--ww-gold);
+  background: var(--ww-gold-soft);
+}
+
+.char-rec__char img,
+.char-rec__char-blank {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--ww-row);
+}
+
+.char-rec__char span {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.char-rec__result {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.char-rec__summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.char-rec__summary div {
+  display: flex;
+  flex-direction: column;
+}
+
+.char-rec__summary small {
+  color: var(--ww-muted);
+}
+
+.char-rec__grade {
+  width: 48px;
+  height: 48px;
+}
+
+.char-rec__warn {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: rgba(220, 160, 60, 0.15);
+  color: var(--ww-ink);
+  font-size: 13px;
+}
+
+.char-rec__picks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.char-rec__pick {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--ww-panel-border);
+  border-radius: 6px;
+  background: var(--ww-panel);
+}
+
+.char-rec__pick--main {
+  border-color: var(--ww-gold);
+}
+
+.char-rec__thumb {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--ww-row);
+}
+
+.char-rec__info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.char-rec__tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ww-muted);
+}
+
+.char-rec__tags b {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--ww-gold-soft);
+  color: var(--ww-gold);
+  font-size: 11px;
+}
+
+.char-rec__tags em {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--ww-ink);
+}
+
+.char-rec__subs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 12px;
+  color: var(--ww-muted);
+}
+
+/* 이 캐릭터에게 유효한 옵션은 밝게 */
+.char-rec__sub--valid {
+  color: var(--accent-wave);
+  font-weight: 700;
+}
+
+.char-rec__score {
+  flex-shrink: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+@media (max-width: 860px) {
+  .char-rec__layout {
+    grid-template-columns: 1fr;
+  }
+  .char-rec__chars {
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    max-height: 240px;
+  }
+}
+
+.char-rec__pick--empty {
+  border-style: dashed;
+  color: var(--ww-muted);
+}
+
+/* 결과 위: 지금 쓰는 세트 기준 + 필터 버튼 */
+.char-rec__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.char-rec__set-note {
+  font-size: 13px;
+  color: var(--ww-muted);
+}
+
+
+
+/* 요약 줄 끝 세트 아이콘 */
+.char-rec__set-icon {
+  width: 18px;
+  height: 18px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* 에코 점수: 등급 아이콘 위, 점수 아래 */
+.char-rec__score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.char-rec__score img {
+  width: 34px;
+  height: 34px;
+}
+
+/* 적용하면 바뀌는 스탯 표 */
+.char-rec__stats h3 {
+  margin: 8px 0 4px;
+  font-size: 15px;
+}
+
+.char-rec__stats table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.char-rec__stats th,
+.char-rec__stats td {
+  padding: 6px 10px;
+  text-align: right;
+  border-bottom: 1px solid var(--ww-panel-border);
+}
+
+.char-rec__stats th:first-child,
+.char-rec__stats td:first-child {
+  text-align: left;
+}
+
+.char-rec__stats th {
+  color: var(--ww-muted);
+  font-weight: 500;
+}
+
+.char-rec__up {
+  color: #3fbf7f;
+  font-weight: 700;
+}
+
+.char-rec__down {
+  color: #e06060;
+  font-weight: 700;
+}
+
+/* 추천 에코(왼쪽) + 바뀌는 스탯(오른쪽). 좁은 화면은 위아래로. */
+.char-rec__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 16px;
+  align-items: start;
+}
+
+.char-rec__body .char-rec__stats {
+  position: sticky;
+  top: calc(var(--top-nav-height) + 16px);
+  padding: 4px 14px 10px;
+  border: 1px solid var(--ww-panel-border);
+  border-radius: 6px;
+  background: var(--ww-panel);
+}
+
+@media (max-width: 1200px) {
+  .char-rec__body {
+    grid-template-columns: 1fr;
+  }
+  .char-rec__body .char-rec__stats {
+    position: static;
+  }
+}
+
+.char-rec__summary .char-rec__replace-btn {
+  margin-left: auto;
+}
+
+/* 스탯 표 ⓘ: 누르면 고정 수치 줄까지 */
+.char-rec__info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  padding: 0;
+  border: 1px solid var(--ww-muted);
+  border-radius: 50%;
+  background: none;
+  color: var(--ww-muted);
+  font: italic 700 11px/1 serif;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.char-rec__info-btn--on {
+  border-color: var(--ww-gold);
+  background: var(--ww-gold-soft);
+  color: var(--ww-gold);
+}
+
+/* 교체 팝업: 체크 | 기존 | → | 변경 */
+.char-rec__replace {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.char-rec__replace-head,
+.char-rec__replace-row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 20px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.char-rec__replace-head {
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ww-muted);
+}
+
+.char-rec__replace-row {
+  padding: 12px 14px;
+  border: 1px solid var(--ww-panel-border);
+  border-radius: 8px;
+  background: var(--ww-row);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.char-rec__replace-row--on {
+  border-color: var(--ww-gold);
+  background: var(--ww-gold-soft);
+}
+
+.char-rec__replace-row--off {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.char-rec__replace-arrow {
+  color: var(--ww-muted);
+  text-align: center;
+}
+
+.char-rec__replace-row--on .char-rec__replace-arrow {
+  color: var(--ww-gold);
+  font-weight: 700;
+}
+
+.char-rec__replace-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.char-rec__rc-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.char-rec__rc-head em {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--ww-muted);
+}
+
+.char-rec__rc-head strong {
+  flex: 1;
+  font-size: 14px;
+}
+
+.char-rec__rc-head b {
+  font-size: 13px;
+}
+
+.char-rec__rc-subs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.char-rec__rc-subs span {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ww-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.char-rec__rc-subs i {
+  font-style: normal;
+  font-weight: 700;
+}
+
+.char-rec__rc-subs .char-rec__rc-sub--valid {
+  color: var(--accent-wave);
+}
+
+.char-rec__rc-empty {
+  font-size: 12px;
+  color: var(--ww-muted);
+}
+
+.char-rec__replace-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* 교체 팝업: 왼쪽 슬롯 목록 + 오른쪽 실제 스탯 */
+.char-rec__replace-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 16px;
+  align-items: start;
+}
+
+.char-rec__replace-stats {
+  position: sticky;
+  top: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--ww-panel-border);
+  border-radius: 8px;
+  background: var(--ww-row);
+}
+
+.char-rec__replace-stats h4 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.char-rec__replace-stats small {
+  display: block;
+  margin: 2px 0 8px;
+  font-size: 11px;
+  color: var(--ww-muted);
+}
+
+.char-rec__replace-stats table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.char-rec__replace-stats td {
+  padding: 5px 0;
+  border-bottom: 1px solid var(--ww-panel-border);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.char-rec__replace-stats td:first-child {
+  text-align: left;
+  color: var(--ww-muted);
+}
+
+.char-rec__replace-stats td:last-child {
+  width: 64px;
+}
+
+.char-rec__same {
+  color: var(--ww-muted);
+}
+
+@media (max-width: 900px) {
+  .char-rec__replace-wrap {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 스탯 칸 높이를 왼쪽 에코 5개 목록과 맞춥니다(위아래 끝을 나란히). 표 줄 간격이 늘어나서 채웁니다. */
+.char-rec__body {
+  align-items: stretch;
+}
+
+.char-rec__body .char-rec__stats {
+  position: static;
+  display: flex;
+  flex-direction: column;
+}
+
+.char-rec__body .char-rec__stats table {
+  flex: 1;
+}
+
+/* 캐릭터 목록 칸을 없애고(선택 팝업으로) 결과를 전체 폭으로 */
+.char-rec__layout--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.char-rec__toolbar .char-picker__btn {
+  margin-right: auto;
+}
+
+/* 코스트 배치 전환: 4-3-3-1-1 ↔ 4-4-1-1-1 */
+.char-rec__layout-toggle {
+  display: inline-flex;
+  margin-right: auto;
+  border: 1px solid var(--ww-panel-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.char-rec__layout-toggle button {
+  padding: 6px 14px;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.char-rec__layout-toggle .char-rec__layout-toggle--on {
+  background: var(--ww-gold-soft);
+  color: var(--ww-ink);
+  font-weight: 700;
+}
+
+.char-rec__toolbar .char-picker__btn {
+  margin-right: 8px;
+}
+
+/* ===== 교체 팝업 다듬기 ===== */
+/* 체크한 줄: 금색 배경을 옅게, 테두리로 표시 */
+.char-rec__replace-row--on {
+  background: rgba(216, 179, 90, 0.08);
+}
+
+/* 오른쪽 실제 스탯: 스탯 | 지금 | 바꾸면 | 차이 */
+.char-rec__replace-wrap {
+  grid-template-columns: minmax(0, 1fr) 320px;
+}
+
+.char-rec__replace-stats {
+  padding: 14px 16px;
+}
+
+.char-rec__replace-stats th {
+  padding: 0 0 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ww-muted);
+  text-align: right;
+  border-bottom: 1px solid var(--ww-panel-border);
+}
+
+.char-rec__replace-stats th:first-child {
+  text-align: left;
+}
+
+.char-rec__replace-stats .char-rec__rs-num {
+  padding-left: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.char-rec__replace-stats .char-rec__rs-num:not(:has(strong)) {
+  color: var(--ww-muted);
+}
+
+.char-rec__replace-stats td:last-child {
+  width: 60px;
+  padding-left: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 오른쪽 스탯 칸 윗선을 왼쪽 첫 줄(에코 카드)과 맞춥니다: 왼쪽은 "기존/변경" 제목 줄만큼 아래에서 시작. */
+.char-rec__replace-hint {
+  margin: 0 0 12px;
+}
+
+.char-rec__replace-stats {
+  margin-top: 26px;
+}
+
+@media (max-width: 900px) {
+  .char-rec__replace-stats {
+    margin-top: 0;
+  }
+}

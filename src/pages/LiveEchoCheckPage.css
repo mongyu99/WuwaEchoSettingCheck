@@ -1,6 +1,7 @@
 .live-check__layout {
   display: grid;
-  grid-template-columns: minmax(0, 2.4fr) minmax(240px, 1fr) minmax(300px, 1.2fr);
+  /* 화면 공유 창은 가방 정리와 같은 크기(전체의 약 1/3)로 맞춥니다. */
+  grid-template-columns: minmax(300px, 1fr) minmax(0, 1.6fr);
   gap: 16px;
   margin-top: 16px;
   align-items: start;
@@ -530,4 +531,298 @@
   .live-check__chip--on {
     animation: none;
   }
+}
+
+@media (max-width: 1300px) {
+  .live-check__layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+}
+
+@media (max-width: 900px) {
+  .live-check__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.live-check__picker {
+  margin-bottom: 12px;
+}
+
+/* ===== 2단 배치: 왼쪽(화면 공유 + 인식한 에코) / 오른쪽(추천·비교) ===== */
+.live-check__left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+@media (max-width: 1300px) {
+  .live-check__layout {
+    grid-template-columns: minmax(280px, 1fr) minmax(0, 1.4fr);
+  }
+  .live-check__screen {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .live-check__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.live-check__summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.live-check__summary-head h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.live-check__edit-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+.live-check__summary-set {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 4px;
+  font-size: 13px;
+}
+
+.live-check__summary-set img {
+  width: 22px;
+  height: 22px;
+}
+
+.live-check__summary-set em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.live-check__summary-main {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.live-check__summary-subs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.live-check__summary-subs li {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--ww-row);
+  font-size: 13px;
+}
+
+.live-check__editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 인식한 에코: 옵션별 최저~최고 수치와 단계 */
+.live-check__summary-subs li {
+  align-items: center;
+  gap: 8px;
+}
+
+.live-check__summary-subs li span {
+  flex: 1;
+}
+
+.live-check__summary-range {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* 인식 방식 탭: 실시간 인식 / 캡쳐 인식 */
+.live-check__modes {
+  display: inline-flex;
+  align-self: flex-start;
+  border: 1px solid var(--ww-panel-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.live-check__modes button {
+  padding: 7px 16px;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.live-check__modes .live-check__mode--on {
+  background: var(--ww-gold-soft);
+  color: var(--ww-ink);
+  font-weight: 700;
+}
+
+/* 캡쳐 인식: 눌러서 사진 고르기(또는 붙여 넣기) */
+.live-check__drop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  border: 1px dashed var(--ww-panel-border);
+  border-radius: 12px;
+  background: var(--ww-row);
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.live-check__drop:hover {
+  border-color: var(--ww-gold);
+}
+
+.live-check__drop img {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+}
+
+.live-check__drop input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.live-check__drop em {
+  position: absolute;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-style: normal;
+}
+
+.live-check__drop--busy img {
+  opacity: 0.5;
+}
+
+/* ===== 패널 머리줄(제목 + 실시간/캡쳐 전환) ===== */
+.live-check__panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.live-check__panel-head h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.live-check__panel-head .live-check__modes {
+  align-self: center;
+}
+
+.live-check__panel-head .live-check__modes button {
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+/* 오른쪽 칸이 화면 밖으로 넘치지 않게 */
+.live-check__layout > * {
+  min-width: 0;
+}
+
+/* 캡쳐 올리기 칸 */
+.live-check__drop {
+  min-height: 220px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.live-check__drop:hover {
+  background: var(--ww-gold-soft);
+}
+
+.live-check__drop--has {
+  min-height: 0;
+  border-style: solid;
+}
+
+.live-check__drop-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.live-check__drop-empty i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--ww-gold-soft);
+  color: var(--ww-gold);
+  font-style: normal;
+  font-size: 22px;
+}
+
+.live-check__drop-empty strong {
+  color: var(--ww-ink);
+  font-size: 14px;
+}
+
+.live-check__drop-empty small {
+  font-size: 12px;
+}
+
+.live-check__drop-hint {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* 인식한 에코 서브 옵션: 이름 | 범위·단계 | 수치 — 칸을 고정해서 줄마다 세로로 맞춥니다. */
+.live-check__summary-subs li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 64px;
+  align-items: center;
+  gap: 12px;
+}
+
+.live-check__summary-subs li span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.live-check__summary-range {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.live-check__summary-subs li b {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }

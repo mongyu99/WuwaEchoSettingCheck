@@ -3,8 +3,11 @@ import Modal from './Modal'
 import { LEGAL_NOTICES } from '../config/legalNotices'
 import './SiteFooter.css'
 
-// 문의용 구글폼 주소입니다. 비어 있으면 문의 링크를 숨깁니다.
-const CONTACT_URL = 'https://forms.gle/BtbnCm8TpnsTFDp7A';
+import { CONTACT_URL } from '../config/contact'
+// 제작자(몽유) 유튜브 주소입니다.
+const MAKER_YOUTUBE_URL = 'https://www.youtube.com/@MongYu99';
+// 셸라스님 유튜브 주소입니다. 비어 있으면 이름만 글자로 보여 줍니다.
+const SHELLAS_YOUTUBE_URL = 'https://www.youtube.com/@%EC%85%B8%EB%9D%BC%EC%8A%A4';
 
 export default function SiteFooter() {
   const [openKey, setOpenKey] = useState(null)
@@ -35,6 +38,27 @@ export default function SiteFooter() {
               문의
             </a>
           )}
+        </div>
+
+        {/* 크레딧: 오른쪽 끝에 크게 */}
+        <div className="site-footer__credit-box">
+          <span className="site-footer__heading">Credit</span>
+          <p className="site-footer__credit-text">
+            제작자 :{' '}
+            <a className="site-footer__credit" href={MAKER_YOUTUBE_URL} target="_blank" rel="noreferrer">
+              몽유 ↗
+            </a>
+          </p>
+          <p className="site-footer__credit-text">
+            초기 기획 및 영감에 도움을 주신{' '}
+            {SHELLAS_YOUTUBE_URL ? (
+              <a className="site-footer__credit" href={SHELLAS_YOUTUBE_URL} target="_blank" rel="noreferrer">
+                셸라스님 ↗
+              </a>
+            ) : (
+              <span className="site-footer__credit">셸라스님</span>
+            )}
+          </p>
         </div>
       </footer>
 

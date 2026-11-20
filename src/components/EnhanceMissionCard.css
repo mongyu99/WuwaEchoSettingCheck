@@ -1,0 +1,168 @@
+/* 에코 체크 — 강화 목표 카드 */
+.mission {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--ww-gold-soft);
+  border-left: 3px solid var(--ww-gold);
+  border-radius: 8px;
+  background: var(--ww-row);
+}
+
+.mission__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mission__head div {
+  display: flex;
+  flex-direction: column;
+}
+
+.mission__head small {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.mission__close {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--ww-panel-border);
+  border-radius: 50%;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.mission__hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.mission__goals {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mission__goal {
+  padding: 10px 12px;
+  border: 1px solid var(--ww-panel-border);
+  border-radius: 8px;
+  background: var(--ww-panel);
+}
+
+.mission__goal--ok {
+  border-color: #3fbf7f;
+}
+
+.mission__goal--fail {
+  border-color: rgba(224, 96, 96, 0.6);
+}
+
+.mission__goal--done {
+  opacity: 0.5;
+}
+
+.mission__goal-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.mission__goal-head small {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.mission__checks {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+}
+
+.mission__check i {
+  display: inline-block;
+  width: 16px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.mission__check em {
+  margin-left: 6px;
+  font-style: normal;
+  color: var(--text-muted);
+}
+
+.mission__check--ok {
+  color: #3fbf7f;
+}
+
+.mission__check--wait {
+  color: var(--text-muted);
+}
+
+.mission__check--fail {
+  color: #e06060;
+}
+
+.mission__save {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.mission__fail {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #e06060;
+}
+
+/* 머리 누르면 접기/펼치기 */
+.mission__toggle {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+  padding: 0 22px 0 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mission__toggle small {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.mission__chevron {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  font-style: normal;
+  color: var(--text-muted);
+  transform: rotate(-90deg);
+  transition: transform 0.2s ease;
+}
+
+.mission__chevron--open {
+  transform: rotate(0deg);
+}

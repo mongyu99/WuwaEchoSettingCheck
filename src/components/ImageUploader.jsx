@@ -90,7 +90,7 @@ export default function ImageUploader({ onExtractAll, isProcessing, progress }) 
           )}
         </div>
         <p className="uploader__hint">
-          최대 {MAX_IMAGES}장까지 업로드가 가능합니다.
+          캐릭터 -&gt; 에코 -&gt; 교체에서 에코를 순서대로 클릭해주세요.
         </p>
       </header>
 

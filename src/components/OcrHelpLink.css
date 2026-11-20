@@ -1,0 +1,93 @@
+.ocr-help-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border: 1px solid var(--ww-panel-border);
+  border-radius: 999px;
+  background: var(--ww-row);
+  color: var(--text-muted);
+  font-size: 12px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.ocr-help-link::before {
+  content: '?';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ww-gold-soft);
+  color: var(--ww-gold);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ocr-help-link:hover {
+  color: var(--ww-ink);
+  border-color: var(--ww-gold);
+}
+
+/* 페이지 머리(제목 영역) 오른쪽 위에 붙입니다. */
+.page-head--help {
+  position: relative;
+  padding-right: 180px;
+}
+
+.page-head--help > .ocr-help-link {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+@media (max-width: 640px) {
+  .page-head--help {
+    padding-right: 0;
+  }
+  .page-head--help > .ocr-help-link {
+    position: static;
+    margin-top: 8px;
+  }
+}
+
+.ocr-help-link {
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* 팝업 내용 */
+.ocr-help__tips {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.ocr-help__tips li::marker {
+  color: var(--ww-gold);
+  font-weight: 700;
+}
+
+.ocr-help__contact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--ww-panel-border);
+  font-weight: 700;
+}
+
+.ocr-help__contact-btn {
+  text-decoration: none;
+}

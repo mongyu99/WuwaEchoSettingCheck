@@ -3,8 +3,17 @@
 // 고른 돌파 단계의 값만 남깁니다. 따로 수치표를 입력할 필요가 없습니다.
 export const WEAPON_RANKS = [1, 2, 3, 4, 5]
 
-// 숫자(소수 가능) + 선택적 % 가 "/"로 5개 이어진 묶음입니다.
-const RANK_GROUP = /\d+(?:\.\d+)?%?(?:\/\d+(?:\.\d+)?%?){4}/g
+// 숫자(소수 가능) + 선택적 단위(% 또는 pt)가 "/"로 5개 이어진 묶음입니다.
+// "8pt/10pt/12pt/14pt/16pt"(럴러바이 협주 에너지)처럼 pt 단위도 돌파 값으로 바꿉니다.
+const RANK_GROUP = /\d+(?:\.\d+)?(?:%|pt)?(?:\/\d+(?:\.\d+)?(?:%|pt)?){4}/g
+
+/** "8/10/12/14/16pt"처럼 단위가 맨 끝에만 붙은 묶음도, 고른 값에 그 단위를 붙여 줍니다. */
+function pickRank(group, r) {
+  const parts = group.split('/')
+  const unit = parts[parts.length - 1].match(/(%|pt)$/)?.[1] ?? ''
+  const value = parts[r - 1]
+  return unit && !value.endsWith(unit) ? value + unit : value
+}
 
 const clampRank = (rank) => Math.min(5, Math.max(1, Number(rank) || 1))
 
@@ -16,7 +25,7 @@ export function rankGroups(description) {
 /** 설명의 5단계 묶음을 고른 돌파 단계의 값으로 바꿉니다. 예: 3돌파면 "12%/15%/18%/21%/24%" → "18%" */
 export function weaponDescriptionAt(weapon, rank) {
   const r = clampRank(rank)
-  return (weapon?.description ?? '').replace(RANK_GROUP, (group) => group.split('/')[r - 1])
+  return (weapon?.description ?? '').replace(RANK_GROUP, (group) => pickRank(group, r))
 }
 
 /**

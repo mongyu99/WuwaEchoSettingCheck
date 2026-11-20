@@ -1,0 +1,117 @@
+/* 캐릭터 고르기 버튼 */
+.char-picker__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 4px 12px 4px 4px;
+  border: 1px solid var(--ww-panel-border);
+  border-radius: 999px;
+  background: var(--ww-row);
+  color: var(--ww-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.char-picker__btn:hover {
+  border-color: var(--ww-gold-soft);
+}
+
+.char-picker__btn--on {
+  border-color: var(--ww-gold);
+}
+
+.char-picker__btn img,
+.char-picker__btn .char-picker__blank {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.char-picker__btn span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.char-picker__btn i {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.char-picker__blank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--ww-panel);
+  color: var(--text-muted);
+}
+
+/* 선택 팝업 */
+.char-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.char-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.char-picker__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 4px 8px;
+  border: 1px solid var(--ww-panel-border);
+  border-radius: 10px;
+  background: var(--ww-row);
+  color: var(--ww-ink);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.char-picker__item:hover {
+  border-color: var(--ww-gold-soft);
+  transform: translateY(-2px);
+}
+
+.char-picker__item--on {
+  border-color: var(--ww-gold);
+  background: var(--ww-gold-soft);
+}
+
+.char-picker__item img,
+.char-picker__item .char-picker__blank {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  font-size: 20px;
+}
+
+.char-picker__item span:last-child {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.char-picker__item--clear {
+  color: var(--text-muted);
+}

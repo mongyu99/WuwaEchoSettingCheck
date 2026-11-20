@@ -1,5 +1,7 @@
 // 에코 가방 정리: 인식한 에코를 중복 없이 모으고, 에코마다 가장 잘 맞는 캐릭터와 점수를 매깁니다.
-import { recommend } from './echoRecommend'
+import { mainFits, recommend, usesSet } from './echoRecommend'
+import { getValidOptions } from '../config/characterValidOptions'
+import { scoreValidStats } from './echoScore'
 import { costOfMain } from './echoRecognition'
 
 /**
@@ -14,10 +16,12 @@ export function echoKey({ setId, main, subStats }) {
 /** 인식 결과 하나를 가방 항목으로 만듭니다. 서브 옵션이 없으면 에코 화면이 아니라서 null입니다. */
 export function toBagItem(recognized, now = Date.now()) {
   if (!recognized?.subStats?.length) return null
-  const { setId = null, main = null, subStats, thumbnail = null } = recognized
+  const { setId = null, main = null, subStats, thumbnail = null, echoId = null } = recognized
   return {
     key: echoKey({ setId, main, subStats }),
     setId,
+    // 메인 에코 목록에 있는 에코면 그 id(캐릭터 추천의 메인 에코 자리용). 일반 에코는 null.
+    echoId,
     main,
     cost: costOfMain(main),
     subStats: subStats.map(({ label, valueText }) => ({ label, valueText })),
@@ -41,6 +45,29 @@ export function evaluateBagItem(item) {
     // 추천 캐릭터 기준 유효 옵션 줄(이름·수치·점수)입니다.
     validRows: best?.rows ?? [],
   }
+}
+
+/**
+ * 캐릭터 맞춤: 고른 캐릭터에게 맞는 에코(그 캐릭터가 쓰는 세트 + 쓸모 있는 메인 옵션)만 남기고,
+ * 그 캐릭터의 유효 옵션 점수로 다시 매겨 높은 순으로 줄 세웁니다. 코스트별 1등에는 costRank를 붙입니다.
+ */
+export function rankForCharacter(items, character) {
+  const valid = getValidOptions(character.id)
+  const ranked = items
+    .filter((item) => usesSet(character.id, item.setId) && mainFits(character, item.main?.label))
+    .map((item) => {
+      const { rows, total, validCount } = scoreValidStats(item.subStats, valid)
+      return { ...item, bestCharacter: character, score: total, validCount, validRows: rows, costRank: null }
+    })
+    .sort((a, b) => b.score - a.score)
+  const seenCost = new Set()
+  for (const item of ranked) {
+    if (item.cost && !seenCost.has(item.cost)) {
+      seenCost.add(item.cost)
+      item.costRank = item.cost
+    }
+  }
+  return ranked
 }
 
 /** 점수가 높은 순으로 정렬합니다. */

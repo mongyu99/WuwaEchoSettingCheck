@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import ConfirmDialog from '../components/ConfirmDialog'
 import Modal from '../components/Modal'
-import { screenCaptureSupported } from '../components/ScreenCapture'
+import { findGameArea, screenCaptureSupported } from '../components/ScreenCapture'
 import '../components/EchoPanel.css'
 import { getValidOptions } from '../config/characterValidOptions'
 import { ECHO_SETS, getEchoSet } from '../config/echoSets'
@@ -10,15 +10,25 @@ import { createOcrSession, getEchoCost } from '../utils/ocr'
 import { recommend } from '../utils/echoRecommend'
 import { saveOcrSample } from '../utils/ocrSample'
 import { jelly } from '../utils/jelly'
-import { costOfMain, grabGameArea, recognizeEchoPanel } from '../utils/echoRecognition'
+import { costOfMain, findGameRect, grabRect, recognizeEchoPanel } from '../utils/echoRecognition'
 import { SUB_STAT_NAMES, SUB_STAT_OPTIONS, formatSubStatValue } from '../config/subStatOptions'
 import { scoreValidStats } from '../utils/echoScore'
 import { exactRollProbability, optionSetProbability, successProbability, targetRollProbability, tierProbability } from '../utils/probability'
 import { panelSignature, signatureChanged } from '../utils/screenWatch'
 import '../components/ScreenCapture.css'
 import './LiveEchoCheckPage.css'
+import LiveCharacterCompare from '../components/LiveCharacterCompare'
+import EnhanceMissionCard from '../components/EnhanceMissionCard'
+import { loadMission, saveMission } from '../utils/enhanceMission'
+import OcrHelpLink from '../components/OcrHelpLink'
+import { CHARACTERS } from '../config/characters'
+import CharacterPicker from '../components/CharacterPicker'
 
-const CHECK_INTERVAL_MS = 500
+// 에코 가방처럼 가볍게 자주 봅니다: 매번 전체 화면을 복사하지 않고(게임 위치는 2초마다만 찾음)
+// 작은 비교용 그림만 영상에서 바로 뽑고, 화면이 멈췄을 때만 전체를 잘라 글자를 읽습니다.
+const CHECK_INTERVAL_MS = 150
+const RECT_REFRESH_MS = 2000
+const CAPTURE_FPS = 15
 const MAX_TOTAL_COST = 12
 function buildEcho(main, subStats, chosenCost) {
   const cost = chosenCost || costOfMain(main)
@@ -152,7 +162,7 @@ function TargetOdds({ targets, setTargets, stats }) {
 const EMPTY_MANUAL_STATS = [0, 1, 2, 3, 4].map((i) => ({ id: `manual-${i}`, label: '', valueText: '' }))
 
 /** 공유 화면을 0.5초마다 확인해서, 지금 보고 있는 에코의 서브 스탯에 잘 맞는 캐릭터를 추천합니다. 모든 처리는 브라우저 안에서 합니다. */
-export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
+export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes, characterData = {} }) {
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const [sharing, setSharing] = useState(false)
@@ -188,7 +198,97 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
     setManualMain(valueText ? { cost, label: shownMain.label, valueText } : null)
   }
   const [savedNotice, setSavedNotice] = useState(null)
+  const [editOpen, setEditOpen] = useState(false) // 인식한 옵션 고치기 팝업
+  // 왼쪽 캐릭터 줄에서 고른 캐릭터: 고르면 오른쪽 칸이 "추천 캐릭터" 대신 그 캐릭터 기준 비교로 바뀝니다.
+  // 목표 스탯 계산기에서 넘어온 강화 목표(있으면 그 캐릭터를 바로 골라 둡니다)
+  const [mission, setMission] = useState(() => loadMission())
+  const [pinnedId, setPinnedId] = useState(() => loadMission()?.characterId ?? null)
+  const pinned = CHARACTERS.find((c) => c.id === pinnedId) ?? null
   const [debugViews, setDebugViews] = useState([]) // 마지막 확인에서 읽은 영역: [{ title, image, text }]
+  // 보통 가방(오른쪽 상세)에서 에코를 보고 → 강화 화면(왼쪽)으로 들어갑니다. 강화 화면에는 세트가 안 보이고,
+  // 강화 중엔 메인 수치가 작아 코스트도 못 읽어서, 바로 전 오른쪽에서 읽은 세트·코스트·메인 이름을 이어서 씁니다.
+  const lastRightRef = useRef(null) // { setId, cost, mainLabel }
+  const applyRecognized = ({ subStats: found, main: foundMain, setId: foundSetId, panel }) => {
+    // 이번에 못 읽었으면(옵션 0개) 바로 전 결과를 그대로 둡니다(지우지 않음).
+    if (found.length === 0) return
+    setSubStats(found)
+    if (panel === 'right') {
+      lastRightRef.current = { setId: foundSetId, cost: costOfMain(foundMain), mainLabel: foundMain?.label ?? null }
+      setDetectedSetId(foundSetId)
+      setDetectedMain(foundMain)
+      return
+    }
+    // 강화 화면: 메인 이름이 바로 전 에코와 같으면(또는 못 읽었으면) 같은 에코로 보고 세트·코스트를 이어 받습니다.
+    // 세트·코스트를 이번에 못 알아내면 지우지 않고 지금 값을 그대로 둡니다.
+    const last = lastRightRef.current
+    const sameEcho = last && (!foundMain || foundMain.label === last.mainLabel)
+    if (sameEcho && last.setId) setDetectedSetId(last.setId)
+    if (!foundMain) return // 메인을 못 읽었으면 메인·코스트는 그대로
+    const cost = costOfMain(foundMain) ?? (sameEcho ? last.cost : null)
+    setDetectedMain((prev) => {
+      const keepCost = cost ?? (prev?.label === foundMain.label ? costOfMain(prev) : null)
+      return keepCost ? { ...foundMain, cost: keepCost } : foundMain
+    })
+  }
+  // 인식 방식: 실시간 인식(화면 공유, PC만) / 캡쳐 인식(스크린샷 올리기). 화면 공유가 안 되는 기기(모바일)는 캡쳐만.
+  const [mode, setMode] = useState(screenCaptureSupported ? 'live' : 'capture')
+  const [captureUrl, setCaptureUrl] = useState(null) // 올린 스크린샷 미리보기
+  const [captureBusy, setCaptureBusy] = useState(false)
+
+  /** 스크린샷 한 장을 읽어 실시간 인식과 같은 자리(인식한 에코·추천·비교)에 채웁니다. */
+  const recognizeImageFile = async (file) => {
+    if (!file?.type?.startsWith('image/')) return
+    setError(null)
+    setCaptureBusy(true)
+    const url = URL.createObjectURL(file)
+    setCaptureUrl((old) => {
+      if (old) URL.revokeObjectURL(old)
+      return url
+    })
+    const session = createOcrSession()
+    try {
+      const img = new Image()
+      await new Promise((resolve, reject) => {
+        img.onload = resolve
+        img.onerror = reject
+        img.src = url
+      })
+      // 위아래 검은 여백(16:9가 아닌 화면 등)을 잘라 게임 화면만 남깁니다.
+      const frame = document.createElement('canvas')
+      frame.width = img.naturalWidth
+      frame.height = img.naturalHeight
+      const frameCtx = frame.getContext('2d', { willReadFrequently: true })
+      frameCtx.drawImage(img, 0, 0)
+      const { x, y, w, h } = findGameArea(frameCtx, frame.width, frame.height)
+      const area = document.createElement('canvas')
+      area.width = w
+      area.height = h
+      area.getContext('2d').drawImage(frame, x, y, w, h, 0, 0, w, h)
+      const recognized = await recognizeEchoPanel(area, session)
+      saveOcrSample(area, recognized, 'capture')
+      setDebugViews(recognized.views)
+      applyRecognized(recognized)
+      if (recognized.subStats.length === 0) setError('에코 옵션을 찾지 못했어요. 에코 상세 화면이나 강화 화면을 캡쳐해 주세요.')
+    } catch (err) {
+      console.error(err)
+      setError('사진을 읽지 못했어요.')
+    } finally {
+      setCaptureBusy(false)
+      session.terminate()
+    }
+  }
+
+  // 캡쳐 인식 중에는 Ctrl+V로 붙여 넣어도 바로 읽습니다.
+  useEffect(() => {
+    if (mode !== 'capture') return undefined
+    const onPaste = (e) => {
+      const file = [...(e.clipboardData?.files ?? [])].find((f) => f.type.startsWith('image/'))
+      if (file) recognizeImageFile(file)
+    }
+    window.addEventListener('paste', onPaste)
+    return () => window.removeEventListener('paste', onPaste)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode])
   const saveAndStay = ({ character, echo }, slot) => {
     onApplyEcho(character, echo, slot, true)
     setPicker(null)
@@ -208,7 +308,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
   const start = async () => {
     setError(null)
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 5 }, audio: false })
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: CAPTURE_FPS }, audio: false })
       streamRef.current = stream
       stream.getVideoTracks()[0].addEventListener('ended', stop)
       setSubStats(null)
@@ -226,6 +326,8 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
     let cancelled = false
     let lastSignature = null // 마지막으로 글자 인식을 돌린 화면
     let previousSignature = null // 바로 전 확인의 화면
+    let rect = null // 공유 화면 안 게임 화면 위치
+    let rectAt = 0
     const session = createOcrSession()
 
     const check = async () => {
@@ -234,23 +336,26 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
       if (busy || !video?.videoWidth) return
       busy = true
       try {
-        const area = grabGameArea(video)
-        const signature = panelSignature(area, area.width, area.height)
+        const now = performance.now()
+        if (!rect || now - rectAt > RECT_REFRESH_MS) {
+          rect = findGameRect(video)
+          rectAt = now
+        }
+        const signature = panelSignature(video, rect.w, rect.h, rect.x, rect.y)
         // 화면이 움직이는 동안(에코 전환, 강화 연출 등)은 기다렸다가, 멈춘 뒤에 한 번만 인식합니다.
         const moving = signatureChanged(previousSignature, signature)
         previousSignature = signature
         if (moving || !signatureChanged(lastSignature, signature)) return
         lastSignature = signature
 
+        const area = grabRect(video, rect)
         const recognized = await recognizeEchoPanel(area, session)
         saveOcrSample(area, recognized, 'live')
-        const { subStats: found, main: foundMain, setId: foundSetId, views } = recognized
+        const { views } = recognized
         if (!cancelled) setDebugViews(views)
         if (cancelled) return
         // 스탯이 안 읽히면 에코 화면이 아닌 것으로 보고 빈 상태로 돌립니다.
-        setSubStats(found.length > 0 ? found : null)
-        setDetectedSetId(foundSetId)
-        setDetectedMain(foundMain)
+        applyRecognized(recognized)
       } catch (err) {
         console.error(err)
       } finally {
@@ -279,21 +384,80 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
   }, [recognizedKey]) // eslint-disable-line react-hooks/exhaustive-deps
   const setName = getEchoSet(setId)?.name
 
+  // 패널 머리줄: 제목 + (PC면) 실시간/캡쳐 전환
+  const modeTabs = (
+    <div className="live-check__panel-head">
+      <h3>{mode === 'capture' ? '캡쳐 인식' : '실시간 인식'}</h3>
+      {screenCaptureSupported && (
+        <div className="live-check__modes" role="tablist" aria-label="인식 방식">
+          {[
+            ['live', '실시간'],
+            ['capture', '캡쳐'],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={mode === key}
+              className={mode === key ? 'live-check__mode--on' : ''}
+              onClick={() => {
+                if (key !== 'live') stop()
+                setMode(key)
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <section className="live-check">
-      <header>
-        <span className="uploader__eyebrow">실시간 에코 체크 - 베타</span>
-        <h2>강화한 에코, 누가 써야할까요?</h2>
+      <header className="page-head--help">
+        <span className="uploader__eyebrow">에코 체크</span>
+        <h2>이 에코, 누가 쓰면 좋을까요?</h2>
         <p className="uploader__hint">
-          실시간으로 에코 정보를 받아 추천 캐릭터를 안내해드립니다.
+          선택한 에코가 누구와 어울리는지, 바꿨을때 달라지는 스탯을 보여드려요.
         </p>
+        <OcrHelpLink />
       </header>
 
       <div className="live-check__layout">
-        {!screenCaptureSupported ? (
-          <p className="uploader__hint">화면 공유를 지원하는 PC 브라우저에서만 사용 가능합니다.</p>
+        <div className="live-check__left">
+        {mode === 'capture' ? (
+          <div className="live-check__screen">
+            {modeTabs}
+            <label className={`live-check__drop ${captureBusy ? 'live-check__drop--busy' : ''} ${captureUrl ? 'live-check__drop--has' : ''}`}>
+              {captureUrl ? (
+                <img src={captureUrl} alt="올린 스크린샷" />
+              ) : (
+                <span className="live-check__drop-empty">
+                  <i aria-hidden="true">＋</i>
+                  <strong>스크린샷 올리기</strong>
+                  <small>에코 상세 화면 또는 강화 화면</small>
+                </span>
+              )}
+              {captureBusy && <em>읽는 중...</em>}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  recognizeImageFile(e.target.files?.[0])
+                  e.target.value = ''
+                }}
+              />
+            </label>
+            <p className="uploader__hint live-check__drop-hint">
+              {captureUrl ? '다른 사진을 올리려면 사진을 눌러 주세요. ' : ''}
+              {screenCaptureSupported ? 'Ctrl+V로 붙여 넣어도 돼요.' : ''}
+            </p>
+            {error && <p className="screen-capture__error">{error}</p>}
+          </div>
         ) : (
           <div className="live-check__screen">
+            {modeTabs}
             <div className="screen-capture__preview">
               <video ref={videoRef} autoPlay muted playsInline hidden={!sharing} />
               {sharing ? <span className="screen-capture__live">● 공유 중</span> : <div className="screen-capture__idle" />}
@@ -324,7 +488,57 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
           </div>
         )}
 
-          <div className="live-check__result" ref={optionBoxRef}>
+          {/* 인식한 에코 요약. 고칠 때만 [수정]으로 편집 팝업을 엽니다. */}
+          <div className="live-check__result live-check__summary">
+            <div className="live-check__summary-head">
+              <h3>인식한 에코</h3>
+              <button type="button" className="btn btn--ghost live-check__edit-btn" onClick={() => setEditOpen(true)}>
+                수정
+              </button>
+            </div>
+            {!shownStats && !shownMain ? (
+              <p className="uploader__hint">{mode === 'capture' ? '스크린샷을 올리면 여기에 나와요.' : '게임에서 에코를 띄우면 여기에 나와요.'}</p>
+            ) : (
+              <>
+                <p className="live-check__summary-set">
+                  {getEchoSet(setId)?.icon && <img src={getEchoSet(setId).icon} alt="" />}
+                  <span>{setName ?? '세트 모름'}</span>
+                  <em>{currentCost ? `${currentCost}코` : '코스트 모름'}</em>
+                </p>
+                {shownMain && (
+                  <p className="live-check__summary-main">
+                    {shownMain.label} {shownMain.valueText}
+                  </p>
+                )}
+                <ul className="live-check__summary-subs">
+                  {(shownStats ?? []).map((st) => (
+                    <li key={st.label}>
+                      <span>{st.label}</span>
+                      {/* 이 옵션이 나올 수 있는 최저~최고 수치와 지금 몇 단계인지 */}
+                      {(() => {
+                        const tiers = SUB_STAT_OPTIONS[st.label] ?? []
+                        const tier = tiers.indexOf(parseFloat(st.valueText)) + 1
+                        const unit = st.label.endsWith('%') ? '%' : ''
+                        return tiers.length ? (
+                          <small className="live-check__summary-range">
+                            {tiers[0]}
+                            {unit}~{tiers[tiers.length - 1]}
+                            {unit}
+                            {tier > 0 && ` · ${tier}/${tiers.length}단계`}
+                          </small>
+                        ) : null
+                      })()}
+                      <b>{st.valueText}</b>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        </div>
+
+          <Modal wide open={editOpen} title="인식한 에코 수정" onClose={() => setEditOpen(false)}>
+          <div className="live-check__editor" ref={optionBoxRef}>
             {shownStats && (
               <div className="live-check__echo">
                 <strong>{setName ?? '세트를 읽지 못했어요'}</strong>
@@ -423,8 +637,44 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
 
             <TargetOdds targets={targets} setTargets={setTargets} stats={shownStats} />
           </div>
+          </Modal>
 
           <div className="live-check__result" ref={rankBoxRef}>
+            {mission && (
+              <EnhanceMissionCard
+                mission={mission}
+                character={CHARACTERS.find((c) => c.id === mission.characterId)}
+                echo={shownStats && currentCost ? buildEcho(shownMain, shownStats, currentCost) : shownStats ? { cost: null, subStats: shownStats } : null}
+                onSave={(i) => {
+                  const goal = mission.goals[i]
+                  const target = CHARACTERS.find((c) => c.id === mission.characterId)
+                  onApplyEcho(target, buildEcho(shownMain, shownStats, currentCost), goal.echoIndex, true)
+                  const next = { ...mission, goals: mission.goals.map((g, j) => (j === i ? { ...g, done: true } : g)) }
+                  setMission(next)
+                  saveMission(next)
+                  setSavedNotice(`${target.name} 에코 ${goal.echoIndex + 1}에 저장했어요.`)
+                }}
+                onClose={() => {
+                  setMission(null)
+                  saveMission(null)
+                }}
+              />
+            )}
+            {/* 캐릭터를 고르면 이 칸이 그 캐릭터 기준 비교로 바뀝니다(해제하면 추천 캐릭터 목록). */}
+            <div className="live-check__picker">
+              <CharacterPicker value={pinned} onChange={(c) => setPinnedId(c?.id ?? null)} placeholder="캐릭터 골라서 비교" clearLabel="추천 목록으로" />
+            </div>
+            {pinned ? (
+              <LiveCharacterCompare
+                character={pinned}
+                echo={shownStats && currentCost ? buildEcho(shownMain, shownStats, currentCost) : null}
+                hasEcho={!!shownStats}
+                characterEchoes={characterEchoes}
+                characterData={characterData}
+                onApply={(character, echo, slot) => onApplyEcho(character, echo, slot, true)}
+              />
+            ) : (
+            <>
             <h3>추천 캐릭터</h3>
             {savedNotice && <p className="live-check__saved">{savedNotice}</p>}
             {results.length === 0 && <p className="uploader__hint">에코를 인식하거나 옵션을 고르면 추천해 드려요.</p>}
@@ -461,6 +711,8 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes }) {
                 </li>
               ))}
             </ol>
+            </>
+            )}
           </div>
       </div>
 

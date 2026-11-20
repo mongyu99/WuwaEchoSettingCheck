@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import VersionBanner from '../components/VersionBanner'
+import VersionTimer from '../components/VersionTimer'
 import PickupCarousel from '../components/PickupCarousel'
 import EventSchedule from '../components/EventSchedule'
 import BroadcastNews from '../components/BroadcastNews'
@@ -16,11 +18,29 @@ const OFFICIAL_LINKS = [
 ]
 
 // 인게임 단말기 화면처럼: 왼쪽은 메인 배너·타이머·이벤트, 오른쪽은 공식 소식 아이콘 타일과 픽업 일정.
-export default function HomePage() {
+// 처음 온 사람이 바로 누를 수 있게 상단에 두는 주요 기능 바로가기입니다.
+const SHORTCUTS = [
+  { key: 'bag', title: '에코 가방 스캔', desc: '가방을 넘기면서 에코를 한꺼번에 인식', handler: 'onGoToEchoBag' },
+  { key: 'score', title: '에코 점수 체크', desc: '캐릭터 고르고 에코 스샷으로 점수 확인', handler: 'onGoToCharacters' },
+  { key: 'live', title: '실시간 체크', desc: '게임 화면 공유로 에코 볼 때마다 바로 체크', handler: 'onGoToLiveCheck' },
+]
+
+export default function HomePage(props) {
+  const [currentBanner, setCurrentBanner] = useState(null)
+
   return (
     <div className="home-page">
+      <nav className="home-page__shortcuts" aria-label="주요 기능 바로가기">
+        {SHORTCUTS.map((s) => (
+          <button key={s.key} type="button" className="home-page__shortcut" onClick={props[s.handler]}>
+            <span className="home-page__shortcut-title">{s.title}</span>
+            <span className="home-page__shortcut-desc">{s.desc}</span>
+          </button>
+        ))}
+      </nav>
+
       <div className="home-page__main">
-        <VersionBanner />
+        <VersionBanner onCurrentChange={setCurrentBanner} />
 
         <section className="home-page__panel">
           <h4 className="home-page__panel-title">이벤트 일정</h4>
@@ -63,6 +83,8 @@ export default function HomePage() {
         </section>
 
         <BroadcastNews />
+
+        {currentBanner && <VersionTimer startsAt={currentBanner.startsAt} endsAt={currentBanner.endsAt} />}
       </aside>
     </div>
   )

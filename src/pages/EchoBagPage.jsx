@@ -5,6 +5,9 @@ import { SUB_STAT_NAMES } from '../config/subStatOptions'
 import { ECHO_SETS, getEchoSet } from '../config/echoSets'
 import { MAIN_STAT_VALUES } from '../config/echoMainStats'
 import Modal from '../components/Modal'
+import BagPipPanel, { pipSupported, usePipWindow } from '../components/BagPipPanel'
+import CharacterPicker from '../components/CharacterPicker'
+import OcrHelpLink from '../components/OcrHelpLink'
 import { useCountUp } from '../utils/useCountUp'
 import { flyTo } from '../utils/flyTo'
 import { useFlipList } from '../utils/useFlipList'
@@ -12,10 +15,11 @@ import { jelly } from '../utils/jelly'
 import { assetPath } from '../config/assetPath'
 import { gradeOf } from '../utils/echoScore'
 import { createOcrPool } from '../utils/ocr'
-import { grabGameArea, recognizeEchoPanel } from '../utils/echoRecognition'
+import { findGameRect, grabRect, recognizeEchoPanel } from '../utils/echoRecognition'
 import { MIN_CHANGED_CELLS, bagPanelSignature, bagSignatureDiff } from '../utils/screenWatch'
 import { BAG_DEBUG_BOXES, drawDebugSnapshot } from '../utils/bagDebug'
-import { evaluateBagItem, filterAndSort, toBagItem, withSet } from '../utils/echoBag'
+import { evaluateBagItem, filterAndSort, rankForCharacter, toBagItem, withSet } from '../utils/echoBag'
+import { CHARACTERS } from '../config/characters'
 import { saveOcrSample } from '../utils/ocrSample'
 import { clearBag, deleteBagItem, loadBag, saveBagItem } from '../utils/bagStore'
 import '../components/ScreenCapture.css'
@@ -23,7 +27,12 @@ import './LiveEchoCheckPage.css'
 import './EchoBagPage.css'
 
 // 가방은 에코를 빠르게 넘기므로 실시간 체크(0.5초)보다 자주 봅니다. 화면 비교는 64x128 픽셀이라 가볍습니다.
-const CHECK_INTERVAL_MS = 250
+// 빠르게 넘겨도 놓치지 않게 0.1초마다 봅니다. 매번 전체 화면을 복사하던 걸 빼고(게임 위치는 2초마다만 다시 찾음)
+// 작은 비교용 그림만 영상에서 바로 뽑아서 가볍습니다. 전체 화면은 큐에 넣을 때만 잘라 냅니다.
+const CHECK_INTERVAL_MS = 100
+const RECT_REFRESH_MS = 2000
+// 초당 30프레임·매 프레임 확인으로 올렸더니 오히려 27개 중 17개만 잡혀서(24개 → 17개) 15프레임·0.1초로 둡니다.
+const CAPTURE_FPS = 15
 
 /** 가방 에코 한 줄. 마우스를 올리면 상세가 살짝 보이고, 누르면 펼친 채로 고정됩니다. */
 const PAGE_SIZE = 200 // 목록에 한 번에 그리는 에코 수("더 보기"로 늘립니다)
@@ -83,6 +92,7 @@ function BagRow({ item, index, open, incoming, exiting, onToggle, highlight, onR
         </span>
         {/* 점수는 등급(티어) 아이콘으로 보여 줍니다. 등급표는 에코 5개 합계 기준이라 에코 하나 점수 × 5로 봅니다. */}
         <span className="echo-bag__tier" title={`${grade.label} · ${item.score.toFixed(1)}점`}>
+          {item.costRank && <b className="echo-bag__cost-rank">{item.costRank}코 1위</b>}
           <img key={grade.icon} className="echo-bag__tier-icon" src={assetPath(`grades/${grade.icon}.png`)} alt={grade.label} />
           <small>{score.toFixed(1)}</small>
         </span>
@@ -126,7 +136,7 @@ function BagRow({ item, index, open, incoming, exiting, onToggle, highlight, onR
 const MAX_QUEUE = 10
 
 /** 에코 가방 정리: 화면 공유로 가방의 에코를 하나씩 읽어 모으고, 에코마다 맞는 캐릭터와 점수를 매깁니다. */
-export default function EchoBagPage() {
+export default function EchoBagPage({ onGoToRecommend }) {
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const [sharing, setSharing] = useState(false)
@@ -134,6 +144,10 @@ export default function EchoBagPage() {
   const [items, setItems] = useState([]) // 평가까지 끝난 에코들
   const [loaded, setLoaded] = useState(false) // 저장된 기록을 다 불러왔는지(그 전엔 "없어요" 대신 불러오는 중으로 보여줍니다)
   const [stats, setStats] = useState({ duplicate: 0, pending: 0 })
+  // 저장·중복 건너뜀 때마다 n을 올려서, 화면 공유 위 표시를 처음부터 다시 반짝이게 합니다(key로 다시 그림).
+  const [flash, setFlash] = useState({ n: 0, kind: 'saved' })
+  const pip = usePipWindow()
+  const showFlash = (kind) => setFlash((f) => ({ n: f.n + 1, kind }))
   // 개발자 도구: 어디를 읽는지(박스)와 0.25초마다의 판단을 보여 줍니다.
   const [debug, setDebug] = useState(false)
   const debugRef = useRef(false)
@@ -170,7 +184,7 @@ export default function EchoBagPage() {
   const start = async () => {
     setError(null)
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 5 }, audio: false })
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: CAPTURE_FPS }, audio: false })
       streamRef.current = stream
       stream.getVideoTracks()[0].addEventListener('ended', stop)
       setSharing(true)
@@ -186,6 +200,8 @@ export default function EchoBagPage() {
     let cancelled = false
     let lastSignature = null // 마지막으로 큐에 넣은 화면
     let previousSignature = null // 바로 전 확인의 화면
+    let rect = null // 공유 화면 안 게임 화면 위치
+    let rectAt = 0
     const queue = []
     let working = false
     // 서브·메인 두 영역을 동시에 읽도록 작업자를 2개 둡니다.
@@ -213,12 +229,25 @@ export default function EchoBagPage() {
             continue
           }
           if (keysRef.current.has(item.key)) {
+            // 이름 인식 전에 저장된 에코면, 이번에 읽은 메인 에코 이름만 채워 둡니다(캐릭터 추천의 메인 에코 자리용).
+            if (item.echoId) {
+              setItems((list) =>
+                list.map((old) => {
+                  if (old.key !== item.key || old.echoId) return old
+                  const { bestCharacter, score, validCount, validRows, ...stored } = { ...old, echoId: item.echoId }
+                  saveBagItem(stored).catch((e) => console.error('가방 정리 기록 저장 실패', e))
+                  return { ...old, echoId: item.echoId }
+                }),
+              )
+            }
             log('dup', `중복이라 건너뜀: ${item.subStats.map((x) => x.label + ' ' + x.valueText).join(', ')}`)
             setStats((s) => ({ ...s, duplicate: s.duplicate + 1 }))
+            showFlash('dup')
             continue
           }
           log('save', `저장: 세트 ${getEchoSet(item.setId)?.name ?? '모름'} · 옵션 ${item.subStats.length}개`)
           keysRef.current.add(item.key)
+          showFlash('saved')
           setItems((list) => [...list, evaluateBagItem(item)])
           if (item.thumbnail) {
             setFlyingKey(item.key)
@@ -237,8 +266,12 @@ export default function EchoBagPage() {
     const check = () => {
       const video = videoRef.current
       if (!video?.videoWidth) return
-      const area = grabGameArea(video)
-      const signature = bagPanelSignature(area, area.width, area.height)
+      const now = performance.now()
+      if (!rect || now - rectAt > RECT_REFRESH_MS) {
+        rect = findGameRect(video)
+        rectAt = now
+      }
+      const signature = bagPanelSignature(video, rect.w, rect.h, rect.x, rect.y)
       const movingCells = bagSignatureDiff(previousSignature, signature)
       const sinceLastCells = bagSignatureDiff(lastSignature, signature)
       const moving = movingCells >= MIN_CHANGED_CELLS
@@ -247,6 +280,7 @@ export default function EchoBagPage() {
       if (moving) return // 화면이 바뀌는 중: 멈출 때까지 기다립니다.
       if (sinceLastCells < MIN_CHANGED_CELLS) return // 마지막으로 읽은 화면과 같음
       lastSignature = signature
+      const area = grabRect(video, rect)
       log('queue', `새 화면 → 인식 대기열(마지막 화면과 ${Number.isFinite(sinceLastCells) ? sinceLastCells : '∞'}칸 다름)`)
       if (debugRef.current) setDebugShot(drawDebugSnapshot(area))
       queue.push(area)
@@ -269,6 +303,9 @@ export default function EchoBagPage() {
   const [costs, setCosts] = useState([]) // 코스트(하나라도)
   const [sets, setSets] = useState([]) // 세트(하나라도)
   const [sortKey, setSortKey] = useState('recent')
+  // 캐릭터 맞춤: 고르면 그 캐릭터에게 맞는 에코만, 그 캐릭터 점수 높은 순으로 보여 줍니다(정렬 선택은 무시).
+  const [targetId, setTargetId] = useState('')
+  const target = useMemo(() => CHARACTERS.find((c) => c.id === targetId) ?? null, [targetId])
   const [filterOpen, setFilterOpen] = useState(false)
   const toggleIn = (setter) => (value) => setter((list) => (list.includes(value) ? list.filter((v) => v !== value) : [...list, value]))
   const filterCount = required.length + mains.length + costs.length + sets.length
@@ -279,13 +316,16 @@ export default function EchoBagPage() {
     setSets([])
   }
   const sorted = useMemo(
-    () => filterAndSort(items, { required, mains, costs, sets, sortKey }),
-    [items, required, mains, costs, sets, sortKey],
+    () => {
+      const base = filterAndSort(items, { required, mains, costs, sets, sortKey })
+      return target ? rankForCharacter(base, target) : base
+    },
+    [items, required, mains, costs, sets, sortKey, target],
   )
   // 수천 개를 한 번에 그리면 느려서, 정렬·필터 결과 중 앞에서부터 PAGE_SIZE개씩만 그립니다.
   // 조건이 바뀌면 다시 처음 PAGE_SIZE개부터 보여줍니다.
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
-  useEffect(() => setVisibleCount(PAGE_SIZE), [required, mains, costs, sets, sortKey])
+  useEffect(() => setVisibleCount(PAGE_SIZE), [required, mains, costs, sets, sortKey, targetId])
   const shown = useMemo(() => sorted.slice(0, visibleCount), [sorted, visibleCount])
 
   // 세트 지정 팝업: 세트를 못 읽은(또는 잘못 읽은) 에코의 세트를 직접 고릅니다.
@@ -352,11 +392,15 @@ export default function EchoBagPage() {
 
   return (
     <section className="live-check echo-bag">
-      <header>
-        <span className="uploader__eyebrow">에코 가방 정리 - 베타</span>
+      <header className="page-head--help">
+        <OcrHelpLink />
+        <span className="uploader__eyebrow">에코 가방</span>
         <h2>가방의 에코, 한 번에 정리해요</h2>
         <p className="uploader__hint">
-          화면을 공유한 뒤 게임 가방에서 에코를 하나씩 눌러 주세요. 화면이 멈출 때마다 에코를 읽어 모읍니다.
+          화면을 공유한 뒤, 강화가 전부 완료된 에코를 선택해주세요.
+        </p>
+        <p className="uploader__hint">
+          너무 빨리 넘기면 놓칠 수 있어요. 0.3초 정도를 권장합니다.
         </p>
       </header>
 
@@ -368,6 +412,15 @@ export default function EchoBagPage() {
             <div className="screen-capture__preview" ref={previewRef}>
               <video ref={videoRef} autoPlay muted playsInline hidden={!sharing} />
               {sharing ? <span className="screen-capture__live">● 공유 중</span> : <div className="screen-capture__idle" />}
+              {sharing && flash.n > 0 && (
+                <span
+                  key={flash.n}
+                  className={`echo-bag__saved-flash ${flash.kind === 'dup' ? 'echo-bag__saved-flash--dup' : ''}`}
+                  aria-live="polite"
+                >
+                  {flash.kind === 'dup' ? '이미 있는 에코 · 건너뜀' : '✓ 저장됨'}
+                </span>
+              )}
             </div>
             {sharing ? (
               <button type="button" className="btn btn--ghost" onClick={stop}>
@@ -378,6 +431,13 @@ export default function EchoBagPage() {
                 화면 공유 시작
               </button>
             )}
+            {/* 게임 위에 작은 창으로 저장 상태를 띄웁니다(크롬·엣지). 아래 기존 표시는 그대로 둡니다. */}
+            {pipSupported && (
+              <button type="button" className="btn btn--ghost" onClick={pip.pipWindow ? pip.close : pip.open}>
+                {pip.pipWindow ? '작은 창 닫기' : '게임 위에 작은 창 띄우기'}
+              </button>
+            )}
+            <BagPipPanel pipWindow={pip.pipWindow} flash={flash} items={items} stats={stats} sharing={sharing} />
             {error && <p className="screen-capture__error">{error}</p>}
             <dl className="echo-bag__counts">
               <div>
@@ -436,11 +496,25 @@ export default function EchoBagPage() {
 
         <div className="live-check__result echo-bag__result">
           <div className="echo-bag__toolbar">
-            <h3>{filterCount > 0 ? `조건에 맞는 에코 ${sorted.length.toLocaleString()}개` : '인식한 에코'}</h3>
+            <h3>
+              {target
+                ? `${target.name}에게 맞는 에코 ${sorted.length.toLocaleString()}개`
+                : filterCount > 0
+                  ? `조건에 맞는 에코 ${sorted.length.toLocaleString()}개`
+                  : '인식한 에코'}
+              {/* 마우스를 올리거나(터치는 눌러서) 안내를 봅니다. */}
+              <span className="echo-bag__info" tabIndex={0} role="button" aria-label="인식 안내">
+                i
+                <span className="echo-bag__info-tip" role="tooltip">
+                  +25강화가 완료되지 않은 에코는 정상적으로 인식이 안될 수 있어요.
+                </span>
+              </span>
+            </h3>
+            <CharacterPicker value={target} onChange={(c) => setTargetId(c?.id ?? '')} placeholder="캐릭터 맞춤: 전체" clearLabel="전체 보기" />
             <button type="button" className={`echo-bag__filter-btn ${filterCount ? 'echo-bag__filter-btn--on' : ''}`} onClick={() => setFilterOpen(true)}>
               필터{filterCount > 0 && <b>{filterCount}</b>}
             </button>
-            <select className="live-check__select echo-bag__sort" aria-label="정렬" value={sortKey} onChange={(e) => setSortKey(e.target.value)}>
+            <select className="live-check__select echo-bag__sort" aria-label="정렬" value={sortKey} onChange={(e) => setSortKey(e.target.value)} disabled={!!target} title={target ? '캐릭터 맞춤 중에는 그 캐릭터 점수 순으로 정렬돼요' : undefined}>
               <option value="recent">최근 등록 순</option>
               <option value="score">점수 높은 순</option>
               {SUB_STAT_NAMES.map((name) => (
@@ -449,11 +523,19 @@ export default function EchoBagPage() {
                 </option>
               ))}
             </select>
+            {/* 모은 에코로 캐릭터마다 5개 조합을 짜 주는 캐릭터 추천으로 이동(캐릭터 맞춤 중이면 그 캐릭터로 바로) */}
+            {onGoToRecommend && (
+              <button type="button" className="btn btn--ghost echo-bag__to-recommend" onClick={() => onGoToRecommend(target?.id ?? null)}>
+                추천 세팅 →
+              </button>
+            )}
           </div>
           {!loaded ? (
             <p className="uploader__hint">불러오는 중...</p>
           ) : sorted.length === 0 ? (
-            <p className="uploader__hint">{items.length === 0 ? '아직 인식한 에코가 없어요.' : '필터 조건에 맞는 에코가 없어요.'}</p>
+            <p className="uploader__hint">
+              {items.length === 0 ? '아직 인식한 에코가 없어요.' : target ? `${target.name}에게 맞는 세트·메인 옵션의 에코가 없어요.` : '필터 조건에 맞는 에코가 없어요.'}
+            </p>
           ) : (
             <ul className="echo-bag__list" ref={listRef}>
               <li className="echo-bag__head" aria-hidden="true">
@@ -548,8 +630,8 @@ export default function EchoBagPage() {
 // 메인 옵션 이름 목록(코스트 상관없이 한 번씩).
 const MAIN_LABELS = [...new Set(Object.values(MAIN_STAT_VALUES).flatMap((byLabel) => Object.keys(byLabel)))]
 
-/** 필터 서랍의 한 묶음(제목 + 칩들). */
-function FilterGroup({ title, hint, options, selected, onToggle, format = (v) => v }) {
+/** 필터 서랍의 한 묶음(제목 + 칩들). 캐릭터 추천 페이지의 필터 서랍에서도 씁니다. */
+export function FilterGroup({ title, hint, options, selected, onToggle, format = (v) => v }) {
   return (
     <section className="echo-bag__filter-group">
       <h4>

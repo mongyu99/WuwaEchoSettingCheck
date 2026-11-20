@@ -1,0 +1,149 @@
+/* 게임 위에 떠 있는 가방 스캔 PiP 창. 작은 창이라 글자와 간격을 촘촘하게 둡니다. */
+.bag-pip {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 12px;
+  /* 배경은 복사해 온 사이트 body 배경(다크/라이트)을 그대로 씁니다. */
+  color: var(--ww-ink, #e8e8e8);
+  font-family: var(--font-body, sans-serif);
+  font-size: 13px;
+}
+
+.bag-pip__status {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 34px;
+}
+
+.bag-pip__live {
+  font-size: 12px;
+  color: var(--ww-muted, #999);
+}
+
+.bag-pip__live--on {
+  color: #e05252;
+}
+
+/* 저장/건너뜀 표시: 상태 줄 오른쪽에 떴다가 사라집니다. */
+.bag-pip__flash {
+  position: absolute;
+  right: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(20, 160, 90, 0.95);
+  color: #fff;
+  font-weight: 700;
+  opacity: 0;
+  animation: bag-pip-flash 0.9s ease-out;
+}
+
+.bag-pip__flash--dup {
+  background: rgba(90, 96, 110, 0.95);
+}
+
+@keyframes bag-pip-flash {
+  0% { opacity: 0; transform: scale(0.85); }
+  12% { opacity: 1; transform: scale(1); }
+  75% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.bag-pip__counts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 0;
+}
+
+.bag-pip__counts div {
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--ww-row, rgba(255, 255, 255, 0.05));
+}
+
+.bag-pip__counts dt {
+  font-size: 11px;
+  color: var(--ww-muted, #999);
+}
+
+.bag-pip__counts dd {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.bag-pip__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bag-pip__empty {
+  color: var(--ww-muted, #999);
+  font-size: 12px;
+}
+
+.bag-pip__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--ww-row, rgba(255, 255, 255, 0.05));
+}
+
+/* 맨 위(방금 저장된 것)는 살짝 강조 */
+.bag-pip__item:first-child {
+  outline: 1px solid var(--ww-gold-soft, rgba(220, 190, 120, 0.4));
+}
+
+.bag-pip__thumb {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.bag-pip__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.bag-pip__info strong,
+.bag-pip__info span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.bag-pip__info span {
+  font-size: 11px;
+  color: var(--ww-muted, #999);
+}
+
+.bag-pip__grade {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bag-pip__flash {
+    animation-name: bag-pip-flash-plain;
+  }
+  @keyframes bag-pip-flash-plain {
+    0%, 75% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+}
