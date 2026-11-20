@@ -9,8 +9,8 @@ import { MAIN_ECHOES } from '../config/mainEchoes'
 import { mainFits } from './echoRecommend'
 import { scoreValidStats } from './echoScore'
 
-// 4-4-1-1-1은 아직 추천하지 않습니다(필요해지면 [4, 4, 1, 1, 1]을 다시 넣으면 됩니다).
-export const LAYOUTS = [[4, 3, 3, 1, 1]]
+// 코스트 배치: 화면에서 4-3-3-1-1 / 4-4-1-1-1 중 골라서 짭니다(기본 4-3-3-1-1).
+export const LAYOUTS = { '43311': [4, 3, 3, 1, 1], '44111': [4, 4, 1, 1, 1] }
 // 자리마다 후보를 세트별·전체에서 점수 상위 몇 개만 남겨 조합합니다(수천 개를 다 조합하면 너무 많아서).
 const TOP_PER_GROUP = 4
 
@@ -86,7 +86,7 @@ function bestFill(slots, scored, combo, main, requireSets, prioritySet = null) {
  * - setsMet: 세트 조건을 못 맞춰 세트 무관으로 짠 경우 false
  */
 // setIds를 주면(세트 직접 고르기) 그 세트의 에코만 쓰고, 세트 개수 조건 없이 점수가 가장 높은 조합을 짭니다.
-export function buildForCharacter(character, items, { setIds = null } = {}) {
+export function buildForCharacter(character, items, { setIds = null, layoutKey = '43311' } = {}) {
   const valid = getValidOptions(character.id)
   const scored = items
     .filter((item) => item.cost && mainFits(character, item.main?.label))
@@ -119,7 +119,7 @@ export function buildForCharacter(character, items, { setIds = null } = {}) {
     const mainEchoId = candidates.find((id) => scored.some((s) => s.item.echoId === id)) ?? null
     const mainOptions = mainEchoId ? scored.filter((s) => s.item.echoId === mainEchoId) : [null]
 
-    for (const layout of LAYOUTS) {
+    for (const layout of [LAYOUTS[layoutKey] ?? LAYOUTS['43311']]) {
       for (const main of mainOptions) {
         const slots = [...layout]
         if (main) {

@@ -788,3 +788,9 @@
   font-size: 10px;
   white-space: nowrap;
 }
+
+/* 툴바 오른쪽 끝: 캐릭터 추천으로 이동 */
+.echo-bag__to-recommend {
+  white-space: nowrap;
+  padding: 6px 14px;
+}

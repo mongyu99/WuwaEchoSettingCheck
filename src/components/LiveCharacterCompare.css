@@ -1,0 +1,191 @@
+/* 실시간 에코 체크 — 왼쪽 캐릭터 줄 + 오른쪽 칸의 캐릭터 비교 */
+
+/* 오른쪽 칸: 고른 캐릭터 비교 */
+.live-compare {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.live-compare__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.live-compare__head img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.live-compare__head div {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.live-compare__head small {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.live-compare__close {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ww-panel-border);
+  border-radius: 50%;
+  background: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.live-compare__slots {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.live-compare__slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 2px;
+  border: 1px solid var(--ww-panel-border);
+  border-radius: 8px;
+  background: var(--ww-row);
+  color: var(--ww-ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.live-compare__slot:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.live-compare__slot small {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.live-compare__slot b {
+  font-size: 14px;
+}
+
+.live-compare__slot--on {
+  border-color: var(--ww-gold);
+  background: var(--ww-gold-soft);
+}
+
+.live-compare__slot-note {
+  margin: -4px 0 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.live-compare__score {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--ww-row);
+}
+
+.live-compare__score span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.live-compare__score b {
+  font-size: 17px;
+}
+
+.live-compare__score em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.live-compare__score--up em {
+  color: #3fbf7f;
+}
+
+.live-compare__score--down em {
+  color: #e06060;
+}
+
+.live-compare__stats {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.live-compare__stats td {
+  padding: 5px 0;
+  border-bottom: 1px solid var(--ww-panel-border);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.live-compare__stats td:first-child {
+  text-align: left;
+  color: var(--text-muted);
+}
+
+.live-compare__stats td:last-child {
+  width: 60px;
+}
+
+.live-compare__up {
+  color: #3fbf7f;
+  font-weight: 700;
+}
+
+.live-compare__down {
+  color: #e06060;
+  font-weight: 700;
+}
+
+.live-compare__apply {
+  width: 100%;
+}
+
+.live-compare__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* 좁은 칸에서 자리 5칸·표가 오른쪽으로 넘치지 않게 */
+.live-compare {
+  min-width: 0;
+}
+
+.live-compare__slots {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.live-compare__stats {
+  table-layout: fixed;
+}
+
+.live-compare__stats td:first-child {
+  width: 34%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.live-compare__stats td:last-child {
+  width: 64px;
+}
+
+.live-compare__same {
+  color: var(--text-muted);
+}

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { FilterGroup } from './EchoBagPage'
 import Modal from '../components/Modal'
+import CharacterPicker from '../components/CharacterPicker'
 import { applyCostToMainStats } from '../config/echoMainStats'
 import { getEchoCost } from '../utils/ocr'
 import { scoreValidStats } from '../utils/echoScore'
@@ -20,7 +21,7 @@ import { weaponBonusesAt } from '../utils/weaponRank'
 import { assetPath } from '../config/assetPath'
 import { gradeOf } from '../utils/echoScore'
 import { loadBag } from '../utils/bagStore'
-import { buildForCharacter } from '../utils/characterBuild'
+import { LAYOUTS, buildForCharacter } from '../utils/characterBuild'
 import './CharacterRecommendPage.css'
 
 /** 추천 칸(가방 에코)을 빌드 체크 에코 모양으로 봅니다(메인 옵션은 고정 수치 줄까지). */
@@ -39,14 +40,51 @@ const echoSignature = (echo) =>
     ...echo.subStats.map((s) => `${s.label}=${s.valueText}`).sort(),
   ].join('|')
 
+/** 캐릭터를 아직 안 골랐거나 맞는 에코가 없을 때도 화면 모양(요약 · 4-3-3-1-1 빈 자리 · 스탯 칸)은 그대로 보여 줍니다. */
+function EmptyBuild({ title, note, layout = [4, 3, 3, 1, 1] }) {
+  return (
+    <>
+      <div className="char-rec__summary">
+        <img className="char-rec__grade" src={assetPath('grades/none.png')} alt="" />
+        <div>
+          <strong>{title}</strong>
+          <small>{layout.join('-')} 코스트</small>
+        </div>
+      </div>
+      <p className="char-rec__warn">{note}</p>
+      <div className="char-rec__body">
+        <ol className="char-rec__picks">
+          {layout.map((cost, i) => (
+            <li key={i} className="char-rec__pick char-rec__pick--empty">
+              <span className="char-rec__thumb" />
+              <div className="char-rec__info">
+                <span className="char-rec__tags">
+                  <em>{cost}코</em>
+                </span>
+                <strong>비어 있음</strong>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <section className="char-rec__stats">
+          <h3>적용하면 바뀌는 스탯</h3>
+          <p className="uploader__hint">조합이 나오면 지금 에코와 비교해 보여 줘요.</p>
+        </section>
+      </div>
+    </>
+  )
+}
+
 /** 캐릭터 추천: 에코 가방 정리로 모은 에코 중에서 캐릭터마다 끼울 5개 조합을 골라 줍니다. */
-export default function CharacterRecommendPage({ onGoToEchoBag, onReplaceEchoes, characterEchoes = {}, characterData = {} }) {
+export default function CharacterRecommendPage({ initialCharacterId = null, onGoToEchoBag, onReplaceEchoes, characterEchoes = {}, characterData = {} }) {
   const [items, setItems] = useState([])
   const [loaded, setLoaded] = useState(false)
-  const [characterId, setCharacterId] = useState(null)
+  const [characterId, setCharacterId] = useState(initialCharacterId)
   // 세트 필터: 아무것도 안 고르면 캐릭터 추천 세트, 고르면 그 세트의 에코만 씁니다.
   const [filterOpen, setFilterOpen] = useState(false)
   const [pickedSets, setPickedSets] = useState([])
+  // 코스트 배치: 4-3-3-1-1(기본) ↔ 4-4-1-1-1
+  const [layoutKey, setLayoutKey] = useState('43311')
   const togglePickedSet = (id) => setPickedSets((list) => (list.includes(id) ? list.filter((v) => v !== id) : [...list, id]))
   const customSets = pickedSets.length > 0 ? pickedSets : null
 
@@ -60,8 +98,8 @@ export default function CharacterRecommendPage({ onGoToEchoBag, onReplaceEchoes,
   const characters = useMemo(() => CHARACTERS.filter((c) => !c.upcoming), [])
   const character = characters.find((c) => c.id === characterId) ?? null
   const build = useMemo(
-    () => (character ? buildForCharacter(character, items, { setIds: customSets }) : null),
-    [character, items, customSets],
+    () => (character ? buildForCharacter(character, items, { setIds: customSets, layoutKey }) : null),
+    [character, items, customSets, layoutKey],
   )
   // 가방에 있는 세트만 고를 수 있게 보여 줍니다.
   const bagSetIds = useMemo(() => Object.keys(ECHO_SETS).filter((id) => items.some((i) => i.setId === id)), [items])
@@ -206,7 +244,7 @@ export default function CharacterRecommendPage({ onGoToEchoBag, onReplaceEchoes,
         <span className="uploader__eyebrow">캐릭터 추천</span>
         <h2>내 가방 에코로 캐릭터 세팅 짜기</h2>
         <p className="uploader__hint">
-          에코 가방 정리로 모은 에코 중에서, 캐릭터의 메인 에코와 추천 세트를 맞추고 유효 옵션 점수가 가장 높은 5개(4-3-3-1-1)를 골라요.
+          에코 가방에 모은 에코 중에서, 캐릭터의 메인 에코와 추천 세트를 맞추고 유효 옵션 점수가 가장 높은 5개를 골라요.
         </p>
       </header>
 
@@ -214,34 +252,38 @@ export default function CharacterRecommendPage({ onGoToEchoBag, onReplaceEchoes,
         <p className="uploader__hint">불러오는 중...</p>
       ) : items.length === 0 ? (
         <div className="char-rec__empty">
-          <p className="uploader__hint">아직 가방에 모은 에코가 없어요. 에코 가방 정리에서 먼저 에코를 모아 주세요.</p>
+          <p className="uploader__hint">아직 가방에 모은 에코가 없어요. 에코 가방에서 먼저 에코를 모아 주세요.</p>
           {onGoToEchoBag && (
             <button type="button" className="btn btn--primary" onClick={onGoToEchoBag}>
-              에코 가방 정리로 가기
+              에코 가방으로 가기
             </button>
           )}
         </div>
       ) : (
-        <div className="char-rec__layout">
-          <ul className="char-rec__chars" aria-label="캐릭터">
-            {characters.map((c) => (
-              <li key={c.id}>
-                <button
-                  type="button"
-                  className={`char-rec__char ${c.id === characterId ? 'char-rec__char--on' : ''}`}
-                  onClick={() => setCharacterId(c.id)}
-                  title={c.name}
-                >
-                  {c.image ? <img src={c.image} alt="" /> : <span className="char-rec__char-blank" />}
-                  <span>{c.name}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-
+        <div className="char-rec__layout char-rec__layout--single">
           <div className="char-rec__result">
-            {character && (
-              <div className="char-rec__toolbar">
+            <div className="char-rec__toolbar">
+              {/* 캐릭터 고르기: 가방 정리·실시간 체크와 같은 선택 팝업 */}
+              <CharacterPicker value={character} onChange={(c) => setCharacterId(c?.id ?? null)} />
+              <div className="char-rec__layout-toggle" role="radiogroup" aria-label="코스트 배치">
+                {[
+                  ['43311', '4-3-3-1-1'],
+                  ['44111', '4-4-1-1-1'],
+                ].map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    role="radio"
+                    aria-checked={layoutKey === key}
+                    className={layoutKey === key ? 'char-rec__layout-toggle--on' : ''}
+                    onClick={() => setLayoutKey(key)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {character && (
+                <>
                 <span className="char-rec__set-note">
                   {customSets ? `고른 세트만 사용 (${customSets.length}개)` : '캐릭터 추천 세트 사용'}
                 </span>
@@ -252,12 +294,13 @@ export default function CharacterRecommendPage({ onGoToEchoBag, onReplaceEchoes,
                 >
                   필터{customSets && <b>{customSets.length}</b>}
                 </button>
-              </div>
-            )}
+                </>
+              )}
+            </div>
             {!character ? (
-              <p className="uploader__hint">왼쪽에서 캐릭터를 골라 주세요.</p>
+              <EmptyBuild layout={LAYOUTS[layoutKey]} title="캐릭터를 골라 주세요" note="위의 캐릭터 버튼을 누르면 가방 에코로 5개 조합을 짜 드려요." />
             ) : !build ? (
-              <p className="uploader__hint">{character.name}에게 맞는 메인 옵션의 에코가 가방에 없어요.</p>
+              <EmptyBuild layout={LAYOUTS[layoutKey]} title={`${character.name} · 0점`} note={`${character.name}에게 맞는 메인 옵션의 에코가 가방에 없어요.`} />
             ) : (
               <>
                 <div className="char-rec__summary">

@@ -252,6 +252,17 @@ export function createOcrSession() {
       const { data } = await worker.recognize(image)
       return { text: data.text, lines: (data.lines ?? []).map((l) => ({ text: l.text, bbox: l.bbox })) }
     },
+    /** 숫자·소수점·%만 읽습니다(수치 칸이 글자로 깨져 읽혔을 때 다시 읽는 용도). 끝나면 원래대로 돌려 둡니다. */
+    async recognizeDigits(image) {
+      const worker = await workerPromise
+      await worker.setParameters({ tessedit_char_whitelist: '0123456789.%' })
+      try {
+        const { data } = await worker.recognize(image)
+        return { text: data.text, lines: (data.lines ?? []).map((l) => ({ text: l.text, bbox: l.bbox })) }
+      } finally {
+        await worker.setParameters({ tessedit_char_whitelist: '' })
+      }
+    },
     async terminate() {
       const worker = await workerPromise
       await worker.terminate()

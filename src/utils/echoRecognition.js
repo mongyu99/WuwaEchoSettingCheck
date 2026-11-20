@@ -7,6 +7,9 @@ import { matchBagSetIcon } from './setIconMatch'
 import { blobToDataURL, cropNormalizedImage, normalizeImage, preprocessForOcr } from './image'
 import { matchSubStatIcons, rowOfLine } from './subStatIconMatch'
 import { matchMainEchoName } from './mainEchoName'
+import { SUB_STAT_NAMES } from '../config/subStatOptions'
+
+const SUB_STAT_BASE_NAMES = [...new Set(SUB_STAT_NAMES.map((n) => n.replace(/%$/, '')))]
 import { buildStatsFromLines, closestMatch, normalizeMainStats, parseStatLines, snapSubStatsToCatalog } from './ocr'
 
 // 가방 화면 상세 패널의 에코 그림 자리(1920x1080 기준, 오른쪽 끝 맞춤)입니다.
@@ -132,15 +135,43 @@ export function findSetId(lines) {
 
 /** 메인 옵션 첫 줄(% 수치)만 씁니다. 둘째 줄은 코스트로 고정된 플랫이라 비교할 필요가 없습니다. */
 export const readMainStat = (text) => {
-  const stat = normalizeMainStats(parseStatLines(text))[0]
-  return stat?.label && stat.valueText?.includes('%') ? { label: stat.label, valueText: stat.valueText } : null
+  const [stat, second] = normalizeMainStats(parseStatLines(text))
+  if (!stat?.label || !stat.valueText?.includes('%')) return null
+  // 둘째 줄(코스트로 고정된 공격력/HP)은 강화 중 코스트를 추정하는 데 씁니다.
+  return second?.valueText && !second.valueText.includes('%')
+    ? { label: stat.label, valueText: stat.valueText, second: { label: second.label, valueText: second.valueText } }
+    : { label: stat.label, valueText: stat.valueText }
 }
 
-/** 메인 옵션의 이름과 수치가 일치하는 코스트를 찾습니다. 강화 중이거나 잘못 읽었으면 찾지 못합니다. */
+// +25 기준 둘째 줄 고정값(코스트마다 다름)
+const FIXED_SECOND = { 4: { label: '공격력', value: 150 }, 3: { label: '공격력', value: 100 }, 1: { label: 'HP', value: 2280 } }
+
+/**
+ * 메인 옵션으로 코스트를 찾습니다. +25면 수치가 표와 딱 맞고,
+ * 강화 중(+25 전)이면 수치가 작아서 안 맞으므로 이렇게 추정합니다.
+ * 1) 그 옵션이 한 코스트에만 있으면(크리티컬·크리티컬 피해·치료 → 4코, 공명 효율·속성 피해 → 3코) 그 코스트
+ * 2) 둘째 줄이 HP면 1코
+ * 3) 둘째 줄이 공격력이면(4코/3코) 첫째·둘째 줄이 같은 비율로 커지므로, 둘째 줄 비율로 +25 값을 되짚어 표와 가까운 코스트
+ */
 export function costOfMain(main) {
   if (!main) return null
   if (main.cost) return main.cost
-  return Object.keys(MAIN_STAT_VALUES).find((cost) => MAIN_STAT_VALUES[cost][main.label] === main.valueText) ?? null
+  const exact = Object.keys(MAIN_STAT_VALUES).find((cost) => MAIN_STAT_VALUES[cost][main.label] === main.valueText)
+  if (exact) return exact
+  const candidates = Object.keys(MAIN_STAT_VALUES).filter((cost) => MAIN_STAT_VALUES[cost][main.label])
+  if (candidates.length === 1) return candidates[0]
+  const second = main.second
+  if (!second || candidates.length === 0) return null
+  const v1 = parseFloat(main.valueText)
+  const v2 = parseFloat(second.valueText)
+  const fitting = candidates.filter((cost) => FIXED_SECOND[cost].label === second.label)
+  if (fitting.length === 1) return fitting[0]
+  if (!v1 || !v2 || fitting.length === 0) return null
+  const errorOf = (cost) => {
+    const ratio = v2 / FIXED_SECOND[cost].value
+    return Math.abs(v1 / ratio - parseFloat(MAIN_STAT_VALUES[cost][main.label]))
+  }
+  return fitting.sort((a, b) => errorOf(a) - errorOf(b))[0]
 }
 
 /** 비디오의 현재 프레임에서 게임 화면 영역만 잘라 캔버스로 돌려줍니다. */
@@ -172,6 +203,43 @@ export function grabRect(video, { x, y, w, h }) {
  * 반환: { subStats, main, setId, views } — 에코 화면이 아니면 subStats가 빈 배열입니다.
  * views는 실제로 글자 인식이 본 그림과 읽은 글자(디버그용)입니다. withViews가 false면 만들지 않습니다.
  */
+/**
+ * 서브 옵션을 읽되, 옵션 이름은 읽혔는데 수치가 글자로 깨진 줄(예: "공격력 \"수")이 있으면
+ * 같은 그림을 숫자 전용으로 한 번 더 읽어, 같은 높이의 줄에서 나온 숫자로 수치를 채웁니다.
+ */
+function editDistance(a, b) {
+  const dp = Array.from({ length: a.length + 1 }, (_, i) => [i, ...new Array(b.length).fill(0)])
+  for (let j = 1; j <= b.length; j++) dp[0][j] = j
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++)
+      dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] : 1 + Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1])
+  return dp[a.length][b.length]
+}
+
+async function readSubStatsWithDigitRetry(lines, input, session) {
+  const { stats, kept } = buildStatsFromLines(lines)
+  // 잡음(다른 화면을 읽은 경우)을 옵션 줄로 착각하지 않게: 수치까지 제대로 읽힌 줄이 이미 있고,
+  // 이름이 옵션 이름과 거의 같은(한 글자 이내 차이) 줄만 다시 읽습니다. 예전엔 "Ps" 같은 잡음이 HP로 잡혀
+  // 강화 화면에서 오른쪽 패널을 읽은 걸로 착각하고 왼쪽 강화 패널을 아예 안 읽는 문제가 있었습니다.
+  if (!stats.some((s) => s.valueText) || !session.recognizeDigits) return readSubStats(lines)
+  const nearName = (label) => {
+    const read = label.replace(/[^가-힣A-Za-z]/g, '')
+    if (read.length < 2) return false
+    return SUB_STAT_BASE_NAMES.some((name) => editDistance(read, name.replace(/\s/g, '')) <= 1)
+  }
+  const missing = stats.map((s, i) => ({ s, i })).filter(({ s }) => s.label && !s.valueText && nearName(s.label))
+  if (missing.length === 0) return readSubStats(lines)
+  const digits = await session.recognizeDigits(input)
+  const patched = kept.map((line, i) => {
+    if (!missing.some((m) => m.i === i) || !line.bbox) return line
+    const midY = (line.bbox.y0 + line.bbox.y1) / 2
+    const hit = digits.lines.find((d) => d.bbox && d.bbox.y0 <= midY && midY <= d.bbox.y1)
+    const token = hit?.text.match(/\d+(?:\.\d+)?%?/g)?.at(-1)
+    return token ? { ...line, text: `${line.text.replace(/[^가-힣A-Za-z ]/g, '').trim()} ${token}` } : line
+  })
+  return readSubStats(patched)
+}
+
 export async function recognizeEchoPanel(area, session, { withViews = true, layout = 'character' } = {}) {
   if (layout === 'bag') return recognizeBagPanel(area, session, { withViews })
   const h = area.height
@@ -185,7 +253,14 @@ export async function recognizeEchoPanel(area, session, { withViews = true, layo
     return result
   }
 
-  let subStats = readSubStats((await read('오른쪽 서브 옵션', await cropNormalizedImage(dataUrl, FIXED_REGIONS.subStat))).lines)
+  // 서브 옵션은 수치가 깨진 줄이 있으면 숫자 전용으로 한 번 더 읽습니다(그래서 전처리한 그림을 따로 들고 있음).
+  const readSubs = async (title, image) => {
+    const input = await preprocessForOcr(image)
+    const result = await session.recognize(input)
+    if (withViews) views.push({ title, image: await blobToDataURL(input), text: result.text.trim() })
+    return readSubStatsWithDigitRetry(result.lines, input, session)
+  }
+  let subStats = await readSubs('오른쪽 서브 옵션', await cropNormalizedImage(dataUrl, FIXED_REGIONS.subStat))
   let setId = null
   let main = null
   if (subStats.length > 0) {
@@ -193,7 +268,7 @@ export async function recognizeEchoPanel(area, session, { withViews = true, layo
     setId = findSetId((await read('화음 이펙트', await cropNormalizedImage(dataUrl, LIVE_REGIONS.sonata), false)).lines)
   } else {
     // 강화 화면에는 세트 표시가 없습니다.
-    subStats = readSubStats((await read('왼쪽 서브 옵션', await cropFromLeft(area, h, LIVE_REGIONS.enhanceSubStat))).lines)
+    subStats = await readSubs('왼쪽 서브 옵션', await cropFromLeft(area, h, LIVE_REGIONS.enhanceSubStat))
     if (subStats.length > 0) {
       main = readMainStat((await read('왼쪽 메인 옵션', await cropFromLeft(area, h, LIVE_REGIONS.enhanceMainStat))).text)
     }

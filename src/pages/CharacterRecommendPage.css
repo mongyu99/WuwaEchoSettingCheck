@@ -519,3 +519,41 @@
 .char-rec__body .char-rec__stats table {
   flex: 1;
 }
+
+/* 캐릭터 목록 칸을 없애고(선택 팝업으로) 결과를 전체 폭으로 */
+.char-rec__layout--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.char-rec__toolbar .char-picker__btn {
+  margin-right: auto;
+}
+
+/* 코스트 배치 전환: 4-3-3-1-1 ↔ 4-4-1-1-1 */
+.char-rec__layout-toggle {
+  display: inline-flex;
+  margin-right: auto;
+  border: 1px solid var(--ww-panel-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.char-rec__layout-toggle button {
+  padding: 6px 14px;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.char-rec__layout-toggle .char-rec__layout-toggle--on {
+  background: var(--ww-gold-soft);
+  color: var(--ww-ink);
+  font-weight: 700;
+}
+
+.char-rec__toolbar .char-picker__btn {
+  margin-right: 8px;
+}

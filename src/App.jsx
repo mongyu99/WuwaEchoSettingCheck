@@ -323,7 +323,12 @@ export default function App() {
   const goToEventNote = () => setPage('eventnote')
   const goToLiveCheck = () => setPage('live')
   const goToEchoBag = () => setPage('bag')
-  const goToRecommend = () => setPage('recommend')
+  // 캐릭터 추천으로 이동. 가방 정리에서 캐릭터를 골라 둔 채로 넘어오면 그 캐릭터를 바로 보여 줍니다.
+  const [recommendCharacterId, setRecommendCharacterId] = useState(null)
+  const goToRecommend = (characterId = null) => {
+    setRecommendCharacterId(typeof characterId === 'string' ? characterId : null)
+    setPage('recommend')
+  }
 
   /** 초기화: 이 캐릭터의 캡처된 에코만 지우고, 다시 캡처할 수 있도록 캡처 화면으로 이동합니다. */
   const handleResetCurrent = () => {
@@ -394,10 +399,11 @@ export default function App() {
       case 'patchnotes':
         return <PatchNotesPage />
       case 'live':
-        return <LiveEchoCheckPage onApplyEcho={handleApplyLiveEcho} characterEchoes={characterEchoes} />
+        return <LiveEchoCheckPage onApplyEcho={handleApplyLiveEcho} characterEchoes={characterEchoes} characterData={characterData} />
       case 'recommend':
         return (
           <CharacterRecommendPage
+            initialCharacterId={recommendCharacterId}
             onGoToEchoBag={goToEchoBag}
             onReplaceEchoes={handleReplaceEchoes}
             characterEchoes={characterEchoes}
@@ -405,7 +411,7 @@ export default function App() {
           />
         )
       case 'bag':
-        return <EchoBagPage />
+        return <EchoBagPage onGoToRecommend={goToRecommend} />
       case 'eventnote':
         return <EventNotePage />
       case 'events':

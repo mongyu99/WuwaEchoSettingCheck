@@ -6,6 +6,7 @@ import { ECHO_SETS, getEchoSet } from '../config/echoSets'
 import { MAIN_STAT_VALUES } from '../config/echoMainStats'
 import Modal from '../components/Modal'
 import BagPipPanel, { pipSupported, usePipWindow } from '../components/BagPipPanel'
+import CharacterPicker from '../components/CharacterPicker'
 import { useCountUp } from '../utils/useCountUp'
 import { flyTo } from '../utils/flyTo'
 import { useFlipList } from '../utils/useFlipList'
@@ -134,7 +135,7 @@ function BagRow({ item, index, open, incoming, exiting, onToggle, highlight, onR
 const MAX_QUEUE = 10
 
 /** 에코 가방 정리: 화면 공유로 가방의 에코를 하나씩 읽어 모으고, 에코마다 맞는 캐릭터와 점수를 매깁니다. */
-export default function EchoBagPage() {
+export default function EchoBagPage({ onGoToRecommend }) {
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const [sharing, setSharing] = useState(false)
@@ -391,7 +392,7 @@ export default function EchoBagPage() {
   return (
     <section className="live-check echo-bag">
       <header>
-        <span className="uploader__eyebrow">에코 가방 정리 - 베타</span>
+        <span className="uploader__eyebrow">에코 가방 - 베타</span>
         <h2>가방의 에코, 한 번에 정리해요</h2>
         <p className="uploader__hint">
           화면을 공유한 뒤 게임 가방에서 에코를 하나씩 눌러 주세요. 화면이 멈출 때마다 에코를 읽어 모읍니다.
@@ -500,14 +501,7 @@ export default function EchoBagPage() {
                   ? `조건에 맞는 에코 ${sorted.length.toLocaleString()}개`
                   : '인식한 에코'}
             </h3>
-            <select className="live-check__select echo-bag__sort" aria-label="캐릭터 맞춤" value={targetId} onChange={(e) => setTargetId(e.target.value)}>
-              <option value="">캐릭터 맞춤: 전체</option>
-              {CHARACTERS.filter((c) => !c.upcoming).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            <CharacterPicker value={target} onChange={(c) => setTargetId(c?.id ?? '')} placeholder="캐릭터 맞춤: 전체" clearLabel="전체 보기" />
             <button type="button" className={`echo-bag__filter-btn ${filterCount ? 'echo-bag__filter-btn--on' : ''}`} onClick={() => setFilterOpen(true)}>
               필터{filterCount > 0 && <b>{filterCount}</b>}
             </button>
@@ -520,6 +514,12 @@ export default function EchoBagPage() {
                 </option>
               ))}
             </select>
+            {/* 모은 에코로 캐릭터마다 5개 조합을 짜 주는 캐릭터 추천으로 이동(캐릭터 맞춤 중이면 그 캐릭터로 바로) */}
+            {onGoToRecommend && (
+              <button type="button" className="btn btn--ghost echo-bag__to-recommend" onClick={() => onGoToRecommend(target?.id ?? null)}>
+                추천 세팅 →
+              </button>
+            )}
           </div>
           {!loaded ? (
             <p className="uploader__hint">불러오는 중...</p>
