@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import VersionBanner from '../components/VersionBanner'
+import VersionTimer from '../components/VersionTimer'
 import PickupCarousel from '../components/PickupCarousel'
 import EventSchedule from '../components/EventSchedule'
 import BroadcastNews from '../components/BroadcastNews'
@@ -24,6 +26,8 @@ const SHORTCUTS = [
 ]
 
 export default function HomePage(props) {
+  const [currentBanner, setCurrentBanner] = useState(null)
+
   return (
     <div className="home-page">
       <nav className="home-page__shortcuts" aria-label="주요 기능 바로가기">
@@ -36,7 +40,7 @@ export default function HomePage(props) {
       </nav>
 
       <div className="home-page__main">
-        <VersionBanner />
+        <VersionBanner onCurrentChange={setCurrentBanner} />
 
         <section className="home-page__panel">
           <h4 className="home-page__panel-title">이벤트 일정</h4>
@@ -79,6 +83,8 @@ export default function HomePage(props) {
         </section>
 
         <BroadcastNews />
+
+        {currentBanner && <VersionTimer startsAt={currentBanner.startsAt} endsAt={currentBanner.endsAt} />}
       </aside>
     </div>
   )

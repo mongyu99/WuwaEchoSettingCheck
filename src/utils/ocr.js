@@ -58,18 +58,45 @@ export function normalizeMainStats(mainStats) {
 }
 
 /**
+ * 이름이 깨져 못 읽은 줄(예: "크리티컬"이 "He A2|EIY"로 읽힘)을 수치로 추정합니다.
+ * % 옵션은 단계값이 옵션마다 거의 겹치지 않아서, 수치가 딱 맞는 옵션이 하나뿐이면 그 옵션입니다.
+ * 크리티컬 8.1%는 방어력% 8.1%와 겹치는데, 실제로 깨지는 건 거의 항상 "크리티컬" 글자라(샘플 기준) 크리티컬로 봅니다.
+ * 고정 수치(HP·공격력·방어력)는 서로 많이 겹쳐서 추정하지 않습니다.
+ */
+function guessLabelFromValue(valueText, used) {
+  if (!valueText.includes('%')) return ''
+  const value = parseFloat(valueText)
+  if (Number.isNaN(value)) return ''
+  const candidates = SUB_STAT_NAMES.filter(
+    (n) => n.endsWith('%') && !used.has(n) && SUB_STAT_OPTIONS[n].some((v) => Math.abs(v - value) < 0.05),
+  )
+  if (candidates.length === 1) return candidates[0]
+  if (candidates.includes('크리티컬%')) return '크리티컬%'
+  return ''
+}
+
+/**
  * 부옵션은 이제 자유 입력이 아니라 정해진 목록에서 클릭으로 고르는 방식입니다. OCR로 읽은
  * 라벨/값을 카탈로그(SUB_STAT_OPTIONS)에서 가장 가까운 조합으로 스냅합니다. 확신이 안 서면
  * (매칭 실패) 빈 값으로 두어 사용자가 드롭다운에서 직접 고르게 합니다.
  */
 export function snapSubStatsToCatalog(subStats) {
-  return subStats.map((s) => {
+  const matchLabel = (s) => {
     const isPercent = s.valueText.includes('%')
-    const base = s.label.replace(/%/g, '').trim()
+    let base = s.label.replace(/%/g, '').trim()
+    // 하트 아이콘 + "HP"가 "10", "@110"처럼 숫자로 읽히는 경우가 반복돼서(가방 샘플) HP로 봅니다.
+    if (/^[^가-힣A-Za-z]*[1lI|][0oO]$/.test(base.replace(/\s+/g, ''))) base = 'HP'
     const pool = SUB_STAT_NAMES.filter((n) => n.endsWith('%') === isPercent)
     const poolBase = pool.map((n) => n.replace(/%$/, ''))
     const matchedBase = closestMatch(base, poolBase)
-    const label = matchedBase ? pool[poolBase.indexOf(matchedBase)] : ''
+    return matchedBase ? pool[poolBase.indexOf(matchedBase)] : ''
+  }
+  const labels = subStats.map(matchLabel)
+  // 한 에코에 같은 서브 옵션은 두 번 나오지 않으므로, 이미 읽힌 옵션은 아래 추정 후보에서 뺍니다.
+  const used = new Set(labels.filter(Boolean))
+
+  return subStats.map((s, i) => {
+    const label = labels[i] || guessLabelFromValue(s.valueText, used)
 
     if (!label) {
       return { ...s, label: '', valueText: '' }

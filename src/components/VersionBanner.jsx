@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { fetchBanners } from '../utils/api'
 import { assetPath } from '../config/assetPath'
 import { FALLBACK_BANNERS } from '../config/versionBanner'
-import VersionTimer from './VersionTimer'
 import './VersionBanner.css'
 
 const SLIDE_INTERVAL_MS = 5000
@@ -23,7 +22,8 @@ function useAutoSlide(count) {
  * 관리자 페이지에서 기간을 정해 등록한 배너 중 지금 노출 중인 것만 받아 슬라이드하고,
  * 바로 아래 타이머에 지금 보이는 배너의 기간을 넘깁니다.
  */
-export default function VersionBanner() {
+// 지금 보이는 배너를 onCurrentChange로 알려 줍니다(홈 오른쪽 타이머가 그 배너의 기간을 씁니다).
+export default function VersionBanner({ onCurrentChange }) {
   const [banners, setBanners] = useState([])
   const [index, setIndex] = useAutoSlide(banners.length)
 
@@ -39,6 +39,10 @@ export default function VersionBanner() {
   }, [])
 
   const current = banners[index]
+
+  useEffect(() => {
+    onCurrentChange?.(current ?? null)
+  }, [current, onCurrentChange])
 
   return (
     <>
@@ -73,7 +77,6 @@ export default function VersionBanner() {
           )}
         </div>
       </div>
-      {current && <VersionTimer startsAt={current.startsAt} endsAt={current.endsAt} />}
     </>
   )
 }

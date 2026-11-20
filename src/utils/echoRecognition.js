@@ -5,6 +5,7 @@ import { BAG_REGIONS, FIXED_REGIONS, LIVE_REGIONS } from '../config/regions'
 import { MAIN_STAT_VALUES } from '../config/echoMainStats'
 import { matchBagSetIcon } from './setIconMatch'
 import { blobToDataURL, cropNormalizedImage, normalizeImage, preprocessForOcr } from './image'
+import { matchSubStatIcons, rowOfLine } from './subStatIconMatch'
 import { buildStatsFromLines, closestMatch, normalizeMainStats, parseStatLines, snapSubStatsToCatalog } from './ocr'
 
 // 가방 화면 상세 패널의 에코 그림 자리(1920x1080 기준, 오른쪽 끝 맞춤)입니다.
@@ -62,7 +63,7 @@ async function recognizeBagPanel(area, ocr, { withViews }) {
         { title: '가방 메인 옵션', image: crops.main.toDataURL('image/png'), text: main.text.trim() },
       ]
     : []
-  const subStats = readSubStats(sub.lines)
+  const subStats = readBagSubStats(sub.lines, matchSubStatIcons(area))
   if (subStats.length === 0) return { subStats, main: null, setId: null, views }
   return {
     subStats,
@@ -94,6 +95,21 @@ export const readSubStats = (lines) =>
       .slice(0, 5),
   ).filter((s) => s.label && s.valueText)
 
+/**
+ * 가방 화면 서브 옵션: 옵션 이름은 줄 왼쪽 아이콘으로 정하고(글자보다 안정적), 수치만 OCR 글자를 씁니다.
+ * 아이콘이 확실하지 않은 줄은 지금처럼 OCR 글자로 이름을 맞춥니다.
+ */
+export function readBagSubStats(lines, iconLabels) {
+  const { stats, kept } = buildStatsFromLines(lines)
+  const relabeled = stats.map((s, i) => {
+    const bbox = kept[i]?.bbox
+    const row = bbox ? rowOfLine(bbox, BAG_REGIONS.subStat.y, BAG_OCR_SCALE) : null
+    const iconLabel = row === null ? null : iconLabels[row]
+    return iconLabel && s.valueText ? { ...s, label: iconLabel } : s
+  })
+  return snapSubStatsToCatalog(relabeled.filter((s) => s.valueText).slice(0, 5)).filter((s) => s.label && s.valueText)
+}
+
 /** 화음 이펙트 영역의 줄들에서 세트 이름을 찾습니다. "(2/2)" 같은 표시와 기호는 빼고 세트 목록과 대조합니다. */
 export function findSetId(lines) {
   const names = Object.values(ECHO_SETS).map((set) => set.name)
@@ -119,16 +135,25 @@ export function costOfMain(main) {
 
 /** 비디오의 현재 프레임에서 게임 화면 영역만 잘라 캔버스로 돌려줍니다. */
 export function grabGameArea(video) {
+  return grabRect(video, findGameRect(video))
+}
+
+/** 공유 화면에서 게임 화면 위치(검은 여백 제외)를 찾습니다. 전체 화면을 픽셀로 읽어서 무거우므로 가끔만 부릅니다. */
+export function findGameRect(video) {
   const frame = document.createElement('canvas')
   frame.width = video.videoWidth
   frame.height = video.videoHeight
   const frameCtx = frame.getContext('2d', { willReadFrequently: true })
   frameCtx.drawImage(video, 0, 0)
-  const { x, y, w, h } = findGameArea(frameCtx, frame.width, frame.height)
+  return findGameArea(frameCtx, frame.width, frame.height)
+}
+
+/** 공유 화면에서 rect 영역만 새 캔버스로 잘라 냅니다(픽셀을 읽지 않아 가볍습니다). */
+export function grabRect(video, { x, y, w, h }) {
   const area = document.createElement('canvas')
   area.width = w
   area.height = h
-  area.getContext('2d').drawImage(frame, x, y, w, h, 0, 0, w, h)
+  area.getContext('2d').drawImage(video, x, y, w, h, 0, 0, w, h)
   return area
 }
 

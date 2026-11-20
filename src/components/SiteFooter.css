@@ -59,11 +59,39 @@
   text-decoration: none;
 }
 
-.site-footer__credit {
-  color: inherit;
-  text-decoration: underline;
+/* 크레딧: 오른쪽 끝 */
+.site-footer__credit-box {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  text-align: right;
 }
 
-.site-footer__credit:hover {
+.site-footer__credit-text {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.site-footer__credit {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a.site-footer__credit:hover {
   color: var(--accent-wave);
+}
+
+@media (max-width: 480px) {
+  .site-footer__credit-box {
+    margin-left: 0;
+    align-items: flex-start;
+    text-align: left;
+    width: 100%;
+  }
 }

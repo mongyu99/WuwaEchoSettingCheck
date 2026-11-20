@@ -33,7 +33,8 @@ const BAG_SIG_H = [16, 112] // 영역별 높이(합 128)
 const CELL_CHANGE = 24 // 이만큼 밝기가 바뀐 칸을 "바뀐 칸"으로 셉니다.
 export const MIN_CHANGED_CELLS = 6 // 바뀐 칸이 이 개수 이상이면 화면이 바뀐 것으로 봅니다(숫자 한 글자 정도).
 
-export function bagPanelSignature(source, w, h) {
+// ox, oy: source 안에서 게임 화면이 시작하는 위치(공유 화면 영상에서 바로 읽을 때 검은 여백만큼 밀어 줍니다).
+export function bagPanelSignature(source, w, h, ox = 0, oy = 0) {
   // 게임 화면은 높이 1080 기준으로 맞추고 오른쪽 끝을 기준으로 둡니다(넓은 화면 대응).
   const scale = h / 1080
   const canvas = document.createElement('canvas')
@@ -42,7 +43,7 @@ export function bagPanelSignature(source, w, h) {
   const ctx = canvas.getContext('2d', { willReadFrequently: true })
   let top = 0
   BAG_WATCH_REGIONS.forEach((r, i) => {
-    ctx.drawImage(source, w - (1920 - r.x) * scale, r.y * scale, r.width * scale, r.height * scale, 0, top, BAG_SIG_W, BAG_SIG_H[i])
+    ctx.drawImage(source, ox + w - (1920 - r.x) * scale, oy + r.y * scale, r.width * scale, r.height * scale, 0, top, BAG_SIG_W, BAG_SIG_H[i])
     top += BAG_SIG_H[i]
   })
   return toGray(ctx, canvas.width, canvas.height)

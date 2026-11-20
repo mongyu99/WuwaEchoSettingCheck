@@ -5,6 +5,7 @@ import { SUB_STAT_NAMES } from '../config/subStatOptions'
 import { ECHO_SETS, getEchoSet } from '../config/echoSets'
 import { MAIN_STAT_VALUES } from '../config/echoMainStats'
 import Modal from '../components/Modal'
+import BagPipPanel, { pipSupported, usePipWindow } from '../components/BagPipPanel'
 import { useCountUp } from '../utils/useCountUp'
 import { flyTo } from '../utils/flyTo'
 import { useFlipList } from '../utils/useFlipList'
@@ -12,7 +13,7 @@ import { jelly } from '../utils/jelly'
 import { assetPath } from '../config/assetPath'
 import { gradeOf } from '../utils/echoScore'
 import { createOcrPool } from '../utils/ocr'
-import { grabGameArea, recognizeEchoPanel } from '../utils/echoRecognition'
+import { findGameRect, grabRect, recognizeEchoPanel } from '../utils/echoRecognition'
 import { MIN_CHANGED_CELLS, bagPanelSignature, bagSignatureDiff } from '../utils/screenWatch'
 import { BAG_DEBUG_BOXES, drawDebugSnapshot } from '../utils/bagDebug'
 import { evaluateBagItem, filterAndSort, toBagItem, withSet } from '../utils/echoBag'
@@ -23,7 +24,12 @@ import './LiveEchoCheckPage.css'
 import './EchoBagPage.css'
 
 // 가방은 에코를 빠르게 넘기므로 실시간 체크(0.5초)보다 자주 봅니다. 화면 비교는 64x128 픽셀이라 가볍습니다.
-const CHECK_INTERVAL_MS = 250
+// 빠르게 넘겨도 놓치지 않게 0.1초마다 봅니다. 매번 전체 화면을 복사하던 걸 빼고(게임 위치는 2초마다만 다시 찾음)
+// 작은 비교용 그림만 영상에서 바로 뽑아서 가볍습니다. 전체 화면은 큐에 넣을 때만 잘라 냅니다.
+const CHECK_INTERVAL_MS = 100
+const RECT_REFRESH_MS = 2000
+// 초당 30프레임·매 프레임 확인으로 올렸더니 오히려 27개 중 17개만 잡혀서(24개 → 17개) 15프레임·0.1초로 둡니다.
+const CAPTURE_FPS = 15
 
 /** 가방 에코 한 줄. 마우스를 올리면 상세가 살짝 보이고, 누르면 펼친 채로 고정됩니다. */
 const PAGE_SIZE = 200 // 목록에 한 번에 그리는 에코 수("더 보기"로 늘립니다)
@@ -134,6 +140,10 @@ export default function EchoBagPage() {
   const [items, setItems] = useState([]) // 평가까지 끝난 에코들
   const [loaded, setLoaded] = useState(false) // 저장된 기록을 다 불러왔는지(그 전엔 "없어요" 대신 불러오는 중으로 보여줍니다)
   const [stats, setStats] = useState({ duplicate: 0, pending: 0 })
+  // 저장·중복 건너뜀 때마다 n을 올려서, 화면 공유 위 표시를 처음부터 다시 반짝이게 합니다(key로 다시 그림).
+  const [flash, setFlash] = useState({ n: 0, kind: 'saved' })
+  const pip = usePipWindow()
+  const showFlash = (kind) => setFlash((f) => ({ n: f.n + 1, kind }))
   // 개발자 도구: 어디를 읽는지(박스)와 0.25초마다의 판단을 보여 줍니다.
   const [debug, setDebug] = useState(false)
   const debugRef = useRef(false)
@@ -170,7 +180,7 @@ export default function EchoBagPage() {
   const start = async () => {
     setError(null)
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 5 }, audio: false })
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: CAPTURE_FPS }, audio: false })
       streamRef.current = stream
       stream.getVideoTracks()[0].addEventListener('ended', stop)
       setSharing(true)
@@ -186,6 +196,8 @@ export default function EchoBagPage() {
     let cancelled = false
     let lastSignature = null // 마지막으로 큐에 넣은 화면
     let previousSignature = null // 바로 전 확인의 화면
+    let rect = null // 공유 화면 안 게임 화면 위치
+    let rectAt = 0
     const queue = []
     let working = false
     // 서브·메인 두 영역을 동시에 읽도록 작업자를 2개 둡니다.
@@ -215,10 +227,12 @@ export default function EchoBagPage() {
           if (keysRef.current.has(item.key)) {
             log('dup', `중복이라 건너뜀: ${item.subStats.map((x) => x.label + ' ' + x.valueText).join(', ')}`)
             setStats((s) => ({ ...s, duplicate: s.duplicate + 1 }))
+            showFlash('dup')
             continue
           }
           log('save', `저장: 세트 ${getEchoSet(item.setId)?.name ?? '모름'} · 옵션 ${item.subStats.length}개`)
           keysRef.current.add(item.key)
+          showFlash('saved')
           setItems((list) => [...list, evaluateBagItem(item)])
           if (item.thumbnail) {
             setFlyingKey(item.key)
@@ -237,8 +251,12 @@ export default function EchoBagPage() {
     const check = () => {
       const video = videoRef.current
       if (!video?.videoWidth) return
-      const area = grabGameArea(video)
-      const signature = bagPanelSignature(area, area.width, area.height)
+      const now = performance.now()
+      if (!rect || now - rectAt > RECT_REFRESH_MS) {
+        rect = findGameRect(video)
+        rectAt = now
+      }
+      const signature = bagPanelSignature(video, rect.w, rect.h, rect.x, rect.y)
       const movingCells = bagSignatureDiff(previousSignature, signature)
       const sinceLastCells = bagSignatureDiff(lastSignature, signature)
       const moving = movingCells >= MIN_CHANGED_CELLS
@@ -247,6 +265,7 @@ export default function EchoBagPage() {
       if (moving) return // 화면이 바뀌는 중: 멈출 때까지 기다립니다.
       if (sinceLastCells < MIN_CHANGED_CELLS) return // 마지막으로 읽은 화면과 같음
       lastSignature = signature
+      const area = grabRect(video, rect)
       log('queue', `새 화면 → 인식 대기열(마지막 화면과 ${Number.isFinite(sinceLastCells) ? sinceLastCells : '∞'}칸 다름)`)
       if (debugRef.current) setDebugShot(drawDebugSnapshot(area))
       queue.push(area)
@@ -358,6 +377,9 @@ export default function EchoBagPage() {
         <p className="uploader__hint">
           화면을 공유한 뒤 게임 가방에서 에코를 하나씩 눌러 주세요. 화면이 멈출 때마다 에코를 읽어 모읍니다.
         </p>
+        <p className="uploader__hint">
+          너무 빨리 넘기면 놓칠 수 있어요. 에코마다 0.3초 정도 머물러 주시고, "✓ 저장됨" 표시를 보고 넘기면 확실해요.
+        </p>
       </header>
 
       <div className="echo-bag__layout">
@@ -368,6 +390,15 @@ export default function EchoBagPage() {
             <div className="screen-capture__preview" ref={previewRef}>
               <video ref={videoRef} autoPlay muted playsInline hidden={!sharing} />
               {sharing ? <span className="screen-capture__live">● 공유 중</span> : <div className="screen-capture__idle" />}
+              {sharing && flash.n > 0 && (
+                <span
+                  key={flash.n}
+                  className={`echo-bag__saved-flash ${flash.kind === 'dup' ? 'echo-bag__saved-flash--dup' : ''}`}
+                  aria-live="polite"
+                >
+                  {flash.kind === 'dup' ? '이미 있는 에코 · 건너뜀' : '✓ 저장됨'}
+                </span>
+              )}
             </div>
             {sharing ? (
               <button type="button" className="btn btn--ghost" onClick={stop}>
@@ -378,6 +409,13 @@ export default function EchoBagPage() {
                 화면 공유 시작
               </button>
             )}
+            {/* 게임 위에 작은 창으로 저장 상태를 띄웁니다(크롬·엣지). 아래 기존 표시는 그대로 둡니다. */}
+            {pipSupported && (
+              <button type="button" className="btn btn--ghost" onClick={pip.pipWindow ? pip.close : pip.open}>
+                {pip.pipWindow ? '작은 창 닫기' : '게임 위에 작은 창 띄우기'}
+              </button>
+            )}
+            <BagPipPanel pipWindow={pip.pipWindow} flash={flash} items={items} stats={stats} sharing={sharing} />
             {error && <p className="screen-capture__error">{error}</p>}
             <dl className="echo-bag__counts">
               <div>
