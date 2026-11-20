@@ -10,7 +10,7 @@ import { createOcrSession, getEchoCost } from '../utils/ocr'
 import { recommend } from '../utils/echoRecommend'
 import { saveOcrSample } from '../utils/ocrSample'
 import { jelly } from '../utils/jelly'
-import { costOfMain, grabGameArea, recognizeEchoPanel } from '../utils/echoRecognition'
+import { costOfMain, findGameRect, grabRect, recognizeEchoPanel } from '../utils/echoRecognition'
 import { SUB_STAT_NAMES, SUB_STAT_OPTIONS, formatSubStatValue } from '../config/subStatOptions'
 import { scoreValidStats } from '../utils/echoScore'
 import { exactRollProbability, optionSetProbability, successProbability, targetRollProbability, tierProbability } from '../utils/probability'
@@ -22,7 +22,11 @@ import OcrHelpLink from '../components/OcrHelpLink'
 import { CHARACTERS } from '../config/characters'
 import CharacterPicker from '../components/CharacterPicker'
 
-const CHECK_INTERVAL_MS = 500
+// 에코 가방처럼 가볍게 자주 봅니다: 매번 전체 화면을 복사하지 않고(게임 위치는 2초마다만 찾음)
+// 작은 비교용 그림만 영상에서 바로 뽑고, 화면이 멈췄을 때만 전체를 잘라 글자를 읽습니다.
+const CHECK_INTERVAL_MS = 150
+const RECT_REFRESH_MS = 2000
+const CAPTURE_FPS = 15
 const MAX_TOTAL_COST = 12
 function buildEcho(main, subStats, chosenCost) {
   const cost = chosenCost || costOfMain(main)
@@ -197,6 +201,31 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes, charac
   const [pinnedId, setPinnedId] = useState(null)
   const pinned = CHARACTERS.find((c) => c.id === pinnedId) ?? null
   const [debugViews, setDebugViews] = useState([]) // 마지막 확인에서 읽은 영역: [{ title, image, text }]
+  // 보통 가방(오른쪽 상세)에서 에코를 보고 → 강화 화면(왼쪽)으로 들어갑니다. 강화 화면에는 세트가 안 보이고,
+  // 강화 중엔 메인 수치가 작아 코스트도 못 읽어서, 바로 전 오른쪽에서 읽은 세트·코스트·메인 이름을 이어서 씁니다.
+  const lastRightRef = useRef(null) // { setId, cost, mainLabel }
+  const applyRecognized = ({ subStats: found, main: foundMain, setId: foundSetId, panel }) => {
+    // 이번에 못 읽었으면(옵션 0개) 바로 전 결과를 그대로 둡니다(지우지 않음).
+    if (found.length === 0) return
+    setSubStats(found)
+    if (panel === 'right') {
+      lastRightRef.current = { setId: foundSetId, cost: costOfMain(foundMain), mainLabel: foundMain?.label ?? null }
+      setDetectedSetId(foundSetId)
+      setDetectedMain(foundMain)
+      return
+    }
+    // 강화 화면: 메인 이름이 바로 전 에코와 같으면(또는 못 읽었으면) 같은 에코로 보고 세트·코스트를 이어 받습니다.
+    // 세트·코스트를 이번에 못 알아내면 지우지 않고 지금 값을 그대로 둡니다.
+    const last = lastRightRef.current
+    const sameEcho = last && (!foundMain || foundMain.label === last.mainLabel)
+    if (sameEcho && last.setId) setDetectedSetId(last.setId)
+    if (!foundMain) return // 메인을 못 읽었으면 메인·코스트는 그대로
+    const cost = costOfMain(foundMain) ?? (sameEcho ? last.cost : null)
+    setDetectedMain((prev) => {
+      const keepCost = cost ?? (prev?.label === foundMain.label ? costOfMain(prev) : null)
+      return keepCost ? { ...foundMain, cost: keepCost } : foundMain
+    })
+  }
   // 인식 방식: 실시간 인식(화면 공유, PC만) / 캡쳐 인식(스크린샷 올리기). 화면 공유가 안 되는 기기(모바일)는 캡쳐만.
   const [mode, setMode] = useState(screenCaptureSupported ? 'live' : 'capture')
   const [captureUrl, setCaptureUrl] = useState(null) // 올린 스크린샷 미리보기
@@ -234,9 +263,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes, charac
       const recognized = await recognizeEchoPanel(area, session)
       saveOcrSample(area, recognized, 'capture')
       setDebugViews(recognized.views)
-      setSubStats(recognized.subStats.length > 0 ? recognized.subStats : null)
-      setDetectedSetId(recognized.setId)
-      setDetectedMain(recognized.main)
+      applyRecognized(recognized)
       if (recognized.subStats.length === 0) setError('에코 옵션을 찾지 못했어요. 에코 상세 화면이나 강화 화면을 캡쳐해 주세요.')
     } catch (err) {
       console.error(err)
@@ -277,7 +304,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes, charac
   const start = async () => {
     setError(null)
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 5 }, audio: false })
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: CAPTURE_FPS }, audio: false })
       streamRef.current = stream
       stream.getVideoTracks()[0].addEventListener('ended', stop)
       setSubStats(null)
@@ -295,6 +322,8 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes, charac
     let cancelled = false
     let lastSignature = null // 마지막으로 글자 인식을 돌린 화면
     let previousSignature = null // 바로 전 확인의 화면
+    let rect = null // 공유 화면 안 게임 화면 위치
+    let rectAt = 0
     const session = createOcrSession()
 
     const check = async () => {
@@ -303,23 +332,26 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes, charac
       if (busy || !video?.videoWidth) return
       busy = true
       try {
-        const area = grabGameArea(video)
-        const signature = panelSignature(area, area.width, area.height)
+        const now = performance.now()
+        if (!rect || now - rectAt > RECT_REFRESH_MS) {
+          rect = findGameRect(video)
+          rectAt = now
+        }
+        const signature = panelSignature(video, rect.w, rect.h, rect.x, rect.y)
         // 화면이 움직이는 동안(에코 전환, 강화 연출 등)은 기다렸다가, 멈춘 뒤에 한 번만 인식합니다.
         const moving = signatureChanged(previousSignature, signature)
         previousSignature = signature
         if (moving || !signatureChanged(lastSignature, signature)) return
         lastSignature = signature
 
+        const area = grabRect(video, rect)
         const recognized = await recognizeEchoPanel(area, session)
         saveOcrSample(area, recognized, 'live')
-        const { subStats: found, main: foundMain, setId: foundSetId, views } = recognized
+        const { views } = recognized
         if (!cancelled) setDebugViews(views)
         if (cancelled) return
         // 스탯이 안 읽히면 에코 화면이 아닌 것으로 보고 빈 상태로 돌립니다.
-        setSubStats(found.length > 0 ? found : null)
-        setDetectedSetId(foundSetId)
-        setDetectedMain(foundMain)
+        applyRecognized(recognized)
       } catch (err) {
         console.error(err)
       } finally {

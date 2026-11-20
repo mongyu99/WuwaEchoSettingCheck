@@ -802,3 +802,27 @@
   margin: 0;
   font-size: 12px;
 }
+
+/* 인식한 에코 서브 옵션: 이름 | 범위·단계 | 수치 — 칸을 고정해서 줄마다 세로로 맞춥니다. */
+.live-check__summary-subs li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 64px;
+  align-items: center;
+  gap: 12px;
+}
+
+.live-check__summary-subs li span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.live-check__summary-range {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.live-check__summary-subs li b {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

@@ -134,9 +134,13 @@ export function findSetId(lines) {
 }
 
 /** 메인 옵션 첫 줄(% 수치)만 씁니다. 둘째 줄은 코스트로 고정된 플랫이라 비교할 필요가 없습니다. */
+const MAIN_LABELS = [...new Set(Object.values(MAIN_STAT_VALUES).flatMap((byLabel) => Object.keys(byLabel)))]
+
 export const readMainStat = (text) => {
-  const [stat, second] = normalizeMainStats(parseStatLines(text))
-  if (!stat?.label || !stat.valueText?.includes('%')) return null
+  const [rawStat, second] = normalizeMainStats(parseStatLines(text))
+  if (!rawStat?.label || !rawStat.valueText?.includes('%')) return null
+  const head = rawStat.label.split(/\d/)[0].replace(/[^가-힣A-Za-z ]/g, '').trim()
+  const stat = { ...rawStat, label: closestMatch(head, MAIN_LABELS) ?? rawStat.label }
   // 둘째 줄(코스트로 고정된 공격력/HP)은 강화 중 코스트를 추정하는 데 씁니다.
   return second?.valueText && !second.valueText.includes('%')
     ? { label: stat.label, valueText: stat.valueText, second: { label: second.label, valueText: second.valueText } }
@@ -263,15 +267,27 @@ export async function recognizeEchoPanel(area, session, { withViews = true, layo
   let subStats = await readSubs('오른쪽 서브 옵션', await cropNormalizedImage(dataUrl, FIXED_REGIONS.subStat))
   let setId = null
   let main = null
+  let panel = 'right'
   if (subStats.length > 0) {
     main = readMainStat((await read('오른쪽 메인 옵션', await cropNormalizedImage(dataUrl, FIXED_REGIONS.mainStat))).text)
     setId = findSetId((await read('화음 이펙트', await cropNormalizedImage(dataUrl, LIVE_REGIONS.sonata), false)).lines)
-  } else {
+  }
+  // 오른쪽에서 메인 옵션까지 못 읽었으면 오른쪽 상세 패널이 아닌 것(강화 화면 배경의 잡음)으로 보고 왼쪽 강화 패널을 읽습니다.
+  if (subStats.length > 0 && !main) {
+    const left = await readSubs('왼쪽 서브 옵션', await cropFromLeft(area, h, LIVE_REGIONS.enhanceSubStat))
+    if (left.length > 0) {
+      subStats = left
+      setId = null
+      panel = 'left'
+      main = readMainStat((await read('왼쪽 메인 옵션', await cropFromLeft(area, h, LIVE_REGIONS.enhanceMainStat))).text)
+    }
+  } else if (subStats.length === 0) {
     // 강화 화면에는 세트 표시가 없습니다.
     subStats = await readSubs('왼쪽 서브 옵션', await cropFromLeft(area, h, LIVE_REGIONS.enhanceSubStat))
+    panel = 'left'
     if (subStats.length > 0) {
       main = readMainStat((await read('왼쪽 메인 옵션', await cropFromLeft(area, h, LIVE_REGIONS.enhanceMainStat))).text)
     }
   }
-  return { subStats, main: subStats.length > 0 ? main : null, setId, views }
+  return { subStats, main: subStats.length > 0 ? main : null, setId, panel, views }
 }

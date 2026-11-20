@@ -2,15 +2,16 @@
 const SIGNATURE_SIZE = 32
 const CHANGE_THRESHOLD = 4
 
-export function panelSignature(source, w, h) {
+// ox, oy: source 안에서 게임 화면이 시작하는 위치(공유 화면 영상에서 바로 읽을 때 검은 여백만큼 밀어 줍니다).
+export function panelSignature(source, w, h, ox = 0, oy = 0) {
   const canvas = document.createElement('canvas')
   canvas.width = SIGNATURE_SIZE
   canvas.height = SIGNATURE_SIZE
   const ctx = canvas.getContext('2d', { willReadFrequently: true })
   // 왼쪽 절반은 강화 화면 패널, 오른쪽 절반은 에코 목록 화면 패널 자리입니다.
   const half = SIGNATURE_SIZE / 2
-  ctx.drawImage(source, w * 0.05, h * 0.2, w * 0.25, h * 0.3, 0, 0, half, SIGNATURE_SIZE)
-  ctx.drawImage(source, w * 0.75, h * 0.2, w * 0.25, h * 0.3, half, 0, half, SIGNATURE_SIZE)
+  ctx.drawImage(source, ox + w * 0.05, oy + h * 0.2, w * 0.25, h * 0.3, 0, 0, half, SIGNATURE_SIZE)
+  ctx.drawImage(source, ox + w * 0.75, oy + h * 0.2, w * 0.25, h * 0.3, half, 0, half, SIGNATURE_SIZE)
   return toGray(ctx, SIGNATURE_SIZE, SIGNATURE_SIZE)
 }
 

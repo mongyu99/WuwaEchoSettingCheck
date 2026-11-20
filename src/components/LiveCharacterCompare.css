@@ -189,3 +189,139 @@
 .live-compare__same {
   color: var(--text-muted);
 }
+
+/* 자리별: 새 에코가 이 자리보다 좋게 뜰 확률 */
+.live-compare__odds {
+  font-style: normal;
+  font-size: 10px;
+  color: #3fbf7f;
+}
+
+/* 자리 칸: 점수 오른쪽 등급 아이콘 */
+.live-compare__slot-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.live-compare__grade {
+  width: 20px;
+  height: 20px;
+}
+
+/* 촤르륵 올라가는 동안 숫자 폭이 흔들리지 않게 */
+.live-compare__score b,
+.live-compare__score em,
+.live-compare__slot b,
+.live-compare__stats td {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 스탯 표: 스탯 | 지금 | → | 바꾸면 | 차이 — 숫자 칸을 오른쪽 정렬로 세로 줄 맞춤 */
+.live-compare__stats {
+  table-layout: auto;
+}
+
+.live-compare__stats th {
+  padding: 0 0 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: right;
+  border-bottom: 1px solid var(--ww-panel-border);
+}
+
+.live-compare__stats th:first-child {
+  text-align: left;
+}
+
+.live-compare__stats td:first-child {
+  width: auto;
+}
+
+.live-compare__stats .live-compare__num {
+  width: 1%;
+  padding-left: 12px;
+  text-align: right;
+}
+
+.live-compare__stats .live-compare__arrow {
+  width: 1%;
+  padding: 5px 6px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.live-compare__stats td:last-child,
+.live-compare__stats th:last-child {
+  width: 1%;
+  padding-left: 16px;
+  text-align: right;
+}
+
+/* 제목 줄: 제목 · (비교 기준) · 오른쪽 위 i */
+.live-compare__title-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-compare__title-row .live-compare__slot-note {
+  margin: 0;
+  flex: 1;
+}
+
+.live-compare__info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--text-muted);
+  border-radius: 50%;
+  background: none;
+  color: var(--text-muted);
+  font: italic 700 12px/1 serif;
+  cursor: pointer;
+}
+
+.live-compare__info-btn--on,
+.live-compare__info-btn:hover {
+  border-color: var(--ww-gold);
+  color: var(--ww-gold);
+}
+
+.live-compare__info {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  width: min(360px, 90vw);
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 14px 16px;
+  border: 1px solid var(--ww-panel-border);
+  border-top: 1px solid var(--ww-gold-soft);
+  border-radius: 8px;
+  background: var(--bg-surface, #141b2a);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.live-compare__info h4 {
+  margin: 10px 0 2px;
+  font-size: 12px;
+  color: var(--ww-gold);
+}
+
+.live-compare__info h4:first-child {
+  margin-top: 0;
+}
+
+.live-compare__info p {
+  margin: 0;
+  color: var(--ww-ink);
+}

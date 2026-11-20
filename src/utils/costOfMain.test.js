@@ -19,3 +19,12 @@ describe('강화 중 메인 옵션으로 코스트 추정', () => {
     expect(costOfMain({ label: 'HP', valueText: '15%', second: { label: '공격력', valueText: '50' } })).toBe('3')
   })
 })
+
+describe('강화 화면 메인 줄', () => {
+  it('"공명 요율 21.7% ▶ 26.8%"처럼 앞 수치가 섞여도 이름을 바로잡는다', async () => {
+    const { readMainStat } = await import('./echoRecognition')
+    const m = readMainStat('공명 요율 21.7% Fr 26.8%\n공격력 84')
+    expect(m.label).toBe('공명 효율')
+    expect(m.valueText).toBe('26.8%')
+  })
+})

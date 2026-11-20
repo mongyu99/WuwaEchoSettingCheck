@@ -53,3 +53,41 @@
     margin-top: 8px;
   }
 }
+
+.ocr-help-link {
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* 팝업 내용 */
+.ocr-help__tips {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.ocr-help__tips li::marker {
+  color: var(--ww-gold);
+  font-weight: 700;
+}
+
+.ocr-help__contact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--ww-panel-border);
+  font-weight: 700;
+}
+
+.ocr-help__contact-btn {
+  text-decoration: none;
+}
