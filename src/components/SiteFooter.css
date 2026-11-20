@@ -58,3 +58,12 @@
 .site-footer a.site-footer__link {
   text-decoration: none;
 }
+
+.site-footer__credit {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.site-footer__credit:hover {
+  color: var(--accent-wave);
+}

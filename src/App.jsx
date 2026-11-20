@@ -392,7 +392,7 @@ export default function App() {
         return <EventCalendarPage />
       case 'home':
       default:
-        return <HomePage />
+        return <HomePage onGoToEchoBag={goToEchoBag} onGoToCharacters={goToCharacters} onGoToLiveCheck={goToLiveCheck} />
     }
   }
 
