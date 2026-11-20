@@ -45,3 +45,10 @@ describe('weaponRank', () => {
     expect(hasRankValues({ description: '공격력이 12% 증가된다.' })).toBe(false)
   })
 })
+
+describe('pt 단위 묶음', () => {
+  it('8pt/10pt/… 와 단위가 끝에만 붙은 8/10/…/16pt 도 돌파 값으로 바꾼다', () => {
+    expect(weaponDescriptionAt({ description: '에너지 8pt/10pt/12pt/14pt/16pt 회복' }, 3)).toBe('에너지 12pt 회복')
+    expect(weaponDescriptionAt({ description: '에너지 8/10/12/14/16pt 회복' }, 2)).toBe('에너지 10pt 회복')
+  })
+})

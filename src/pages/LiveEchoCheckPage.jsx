@@ -18,6 +18,7 @@ import { panelSignature, signatureChanged } from '../utils/screenWatch'
 import '../components/ScreenCapture.css'
 import './LiveEchoCheckPage.css'
 import LiveCharacterCompare from '../components/LiveCharacterCompare'
+import OcrHelpLink from '../components/OcrHelpLink'
 import { CHARACTERS } from '../config/characters'
 import CharacterPicker from '../components/CharacterPicker'
 
@@ -378,12 +379,13 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes, charac
 
   return (
     <section className="live-check">
-      <header>
+      <header className="page-head--help">
         <span className="uploader__eyebrow">에코 체크 - 베타</span>
-        <h2>강화한 에코, 누가 써야할까요?</h2>
+        <h2>이 에코, 누가 쓰면 좋을까요?</h2>
         <p className="uploader__hint">
-          실시간으로 에코 정보를 받아 추천 캐릭터를 안내해드립니다.
+          화면 공유나 스크린샷으로 에코를 읽고, 어울리는 캐릭터와 바꿨을 때 달라지는 스탯을 알려 드려요.
         </p>
+        <OcrHelpLink />
       </header>
 
       <div className="live-check__layout">

@@ -7,6 +7,7 @@ import { MAIN_STAT_VALUES } from '../config/echoMainStats'
 import Modal from '../components/Modal'
 import BagPipPanel, { pipSupported, usePipWindow } from '../components/BagPipPanel'
 import CharacterPicker from '../components/CharacterPicker'
+import OcrHelpLink from '../components/OcrHelpLink'
 import { useCountUp } from '../utils/useCountUp'
 import { flyTo } from '../utils/flyTo'
 import { useFlipList } from '../utils/useFlipList'
@@ -391,7 +392,8 @@ export default function EchoBagPage({ onGoToRecommend }) {
 
   return (
     <section className="live-check echo-bag">
-      <header>
+      <header className="page-head--help">
+        <OcrHelpLink />
         <span className="uploader__eyebrow">에코 가방 - 베타</span>
         <h2>가방의 에코, 한 번에 정리해요</h2>
         <p className="uploader__hint">
