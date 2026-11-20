@@ -13,6 +13,8 @@ const MENU = [
   ...(screenCaptureSupported ? [
         { page: 'live', label: '실시간 에코 체크 - 베타', handler: 'onGoToLiveCheck' },
         { page: 'bag', label: '에코 가방 정리 - 베타', handler: 'onGoToEchoBag' },
+        // 가방 정리로 모은 에코로 캐릭터마다 5개 조합을 짜 줍니다(가방 정리와 같은 PC 전용 묶음).
+        { page: 'recommend', label: '캐릭터 추천 - 베타', handler: 'onGoToRecommend' },
       ] : []),
   { page: 'events', label: '이벤트 캘린더', handler: 'onGoToEventCalendar' },
   { page: 'eventnote', label: '이벤트 노트', handler: 'onGoToEventNote' },

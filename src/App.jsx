@@ -7,6 +7,7 @@ import PatchNotesPage from './pages/PatchNotesPage'
 import EventCalendarPage from './pages/EventCalendarPage'
 import LiveEchoCheckPage from './pages/LiveEchoCheckPage'
 import EchoBagPage from './pages/EchoBagPage'
+import CharacterRecommendPage from './pages/CharacterRecommendPage'
 import EventNotePage from './pages/EventNotePage'
 import CharacterSelectPage from './pages/CharacterSelectPage'
 import CapturePage from './pages/CapturePage'
@@ -305,6 +306,11 @@ export default function App() {
     setPage('stats')
   }
 
+  // 캐릭터 추천의 교체 팝업에서 고른 에코로 그 캐릭터의 저장된 에코를 바꿉니다(무기·세트 등 다른 설정은 그대로).
+  const handleReplaceEchoes = (target, echoes) => {
+    setCharacterData((prev) => ({ ...prev, [target.id]: { ...normalizeRecord(prev[target.id] ?? {}), echoes } }))
+  }
+
   const handleCompleteEdit = () => {
     updateRecordForCurrent((rec) => ({ ...rec, echoes: draftEchoes.filter(hasMainOption).map(({ crops, ...echo }) => echo) }))
     setPage('stats')
@@ -317,6 +323,7 @@ export default function App() {
   const goToEventNote = () => setPage('eventnote')
   const goToLiveCheck = () => setPage('live')
   const goToEchoBag = () => setPage('bag')
+  const goToRecommend = () => setPage('recommend')
 
   /** 초기화: 이 캐릭터의 캡처된 에코만 지우고, 다시 캡처할 수 있도록 캡처 화면으로 이동합니다. */
   const handleResetCurrent = () => {
@@ -384,6 +391,15 @@ export default function App() {
         return <PatchNotesPage />
       case 'live':
         return <LiveEchoCheckPage onApplyEcho={handleApplyLiveEcho} characterEchoes={characterEchoes} />
+      case 'recommend':
+        return (
+          <CharacterRecommendPage
+            onGoToEchoBag={goToEchoBag}
+            onReplaceEchoes={handleReplaceEchoes}
+            characterEchoes={characterEchoes}
+            characterData={characterData}
+          />
+        )
       case 'bag':
         return <EchoBagPage />
       case 'eventnote':
@@ -407,6 +423,7 @@ export default function App() {
         onGoToEventNote={goToEventNote}
         onGoToLiveCheck={goToLiveCheck}
         onGoToEchoBag={goToEchoBag}
+        onGoToRecommend={goToRecommend}
         theme={theme}
         onToggleTheme={toggleTheme}
         characterData={stripPreviewUrls(characterData)}

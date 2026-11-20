@@ -6,6 +6,7 @@ import { MAIN_STAT_VALUES } from '../config/echoMainStats'
 import { matchBagSetIcon } from './setIconMatch'
 import { blobToDataURL, cropNormalizedImage, normalizeImage, preprocessForOcr } from './image'
 import { matchSubStatIcons, rowOfLine } from './subStatIconMatch'
+import { matchMainEchoName } from './mainEchoName'
 import { buildStatsFromLines, closestMatch, normalizeMainStats, parseStatLines, snapSubStatsToCatalog } from './ocr'
 
 // 가방 화면 상세 패널의 에코 그림 자리(1920x1080 기준, 오른쪽 끝 맞춤)입니다.
@@ -55,12 +56,20 @@ async function recognizeBagPanel(area, ocr, { withViews }) {
   const crops = {
     sub: cropRightForOcr(area, BAG_REGIONS.subStat),
     main: cropRightForOcr(area, BAG_REGIONS.mainStat),
+    // 에코 이름: 캐릭터 추천에서 메인 에코 자리를 고정하려고 메인 에코 목록과 맞춰 봅니다.
+    name: cropRightForOcr(area, BAG_REGIONS.name),
   }
-  const [sub, main, setId] = await Promise.all([ocr.recognize(crops.sub), ocr.recognize(crops.main), matchBagSetIcon(area)])
+  const [sub, main, setId, name] = await Promise.all([
+    ocr.recognize(crops.sub),
+    ocr.recognize(crops.main),
+    matchBagSetIcon(area),
+    ocr.recognize(crops.name),
+  ])
   const views = withViews
     ? [
         { title: '가방 서브 옵션', image: crops.sub.toDataURL('image/png'), text: sub.text.trim() },
         { title: '가방 메인 옵션', image: crops.main.toDataURL('image/png'), text: main.text.trim() },
+        { title: '가방 에코 이름', image: crops.name.toDataURL('image/png'), text: name.text.trim() },
       ]
     : []
   const subStats = readBagSubStats(sub.lines, matchSubStatIcons(area))
@@ -69,6 +78,7 @@ async function recognizeBagPanel(area, ocr, { withViews }) {
     subStats,
     main: readMainStat(main.text),
     setId,
+    echoId: matchMainEchoName(name.text),
     thumbnail: bagThumbnail(area),
     views,
   }

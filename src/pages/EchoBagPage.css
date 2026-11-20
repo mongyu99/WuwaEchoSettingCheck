@@ -778,3 +778,13 @@
 .echo-bag__saved-flash--dup {
   background: rgba(90, 96, 110, 0.92);
 }
+
+/* 캐릭터 맞춤: 코스트별 1등 표시 */
+.echo-bag__cost-rank {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--ww-gold-soft);
+  color: var(--ww-gold);
+  font-size: 10px;
+  white-space: nowrap;
+}

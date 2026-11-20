@@ -16,7 +16,8 @@ import { createOcrPool } from '../utils/ocr'
 import { findGameRect, grabRect, recognizeEchoPanel } from '../utils/echoRecognition'
 import { MIN_CHANGED_CELLS, bagPanelSignature, bagSignatureDiff } from '../utils/screenWatch'
 import { BAG_DEBUG_BOXES, drawDebugSnapshot } from '../utils/bagDebug'
-import { evaluateBagItem, filterAndSort, toBagItem, withSet } from '../utils/echoBag'
+import { evaluateBagItem, filterAndSort, rankForCharacter, toBagItem, withSet } from '../utils/echoBag'
+import { CHARACTERS } from '../config/characters'
 import { saveOcrSample } from '../utils/ocrSample'
 import { clearBag, deleteBagItem, loadBag, saveBagItem } from '../utils/bagStore'
 import '../components/ScreenCapture.css'
@@ -89,6 +90,7 @@ function BagRow({ item, index, open, incoming, exiting, onToggle, highlight, onR
         </span>
         {/* 점수는 등급(티어) 아이콘으로 보여 줍니다. 등급표는 에코 5개 합계 기준이라 에코 하나 점수 × 5로 봅니다. */}
         <span className="echo-bag__tier" title={`${grade.label} · ${item.score.toFixed(1)}점`}>
+          {item.costRank && <b className="echo-bag__cost-rank">{item.costRank}코 1위</b>}
           <img key={grade.icon} className="echo-bag__tier-icon" src={assetPath(`grades/${grade.icon}.png`)} alt={grade.label} />
           <small>{score.toFixed(1)}</small>
         </span>
@@ -225,6 +227,17 @@ export default function EchoBagPage() {
             continue
           }
           if (keysRef.current.has(item.key)) {
+            // 이름 인식 전에 저장된 에코면, 이번에 읽은 메인 에코 이름만 채워 둡니다(캐릭터 추천의 메인 에코 자리용).
+            if (item.echoId) {
+              setItems((list) =>
+                list.map((old) => {
+                  if (old.key !== item.key || old.echoId) return old
+                  const { bestCharacter, score, validCount, validRows, ...stored } = { ...old, echoId: item.echoId }
+                  saveBagItem(stored).catch((e) => console.error('가방 정리 기록 저장 실패', e))
+                  return { ...old, echoId: item.echoId }
+                }),
+              )
+            }
             log('dup', `중복이라 건너뜀: ${item.subStats.map((x) => x.label + ' ' + x.valueText).join(', ')}`)
             setStats((s) => ({ ...s, duplicate: s.duplicate + 1 }))
             showFlash('dup')
@@ -288,6 +301,9 @@ export default function EchoBagPage() {
   const [costs, setCosts] = useState([]) // 코스트(하나라도)
   const [sets, setSets] = useState([]) // 세트(하나라도)
   const [sortKey, setSortKey] = useState('recent')
+  // 캐릭터 맞춤: 고르면 그 캐릭터에게 맞는 에코만, 그 캐릭터 점수 높은 순으로 보여 줍니다(정렬 선택은 무시).
+  const [targetId, setTargetId] = useState('')
+  const target = useMemo(() => CHARACTERS.find((c) => c.id === targetId) ?? null, [targetId])
   const [filterOpen, setFilterOpen] = useState(false)
   const toggleIn = (setter) => (value) => setter((list) => (list.includes(value) ? list.filter((v) => v !== value) : [...list, value]))
   const filterCount = required.length + mains.length + costs.length + sets.length
@@ -298,13 +314,16 @@ export default function EchoBagPage() {
     setSets([])
   }
   const sorted = useMemo(
-    () => filterAndSort(items, { required, mains, costs, sets, sortKey }),
-    [items, required, mains, costs, sets, sortKey],
+    () => {
+      const base = filterAndSort(items, { required, mains, costs, sets, sortKey })
+      return target ? rankForCharacter(base, target) : base
+    },
+    [items, required, mains, costs, sets, sortKey, target],
   )
   // 수천 개를 한 번에 그리면 느려서, 정렬·필터 결과 중 앞에서부터 PAGE_SIZE개씩만 그립니다.
   // 조건이 바뀌면 다시 처음 PAGE_SIZE개부터 보여줍니다.
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
-  useEffect(() => setVisibleCount(PAGE_SIZE), [required, mains, costs, sets, sortKey])
+  useEffect(() => setVisibleCount(PAGE_SIZE), [required, mains, costs, sets, sortKey, targetId])
   const shown = useMemo(() => sorted.slice(0, visibleCount), [sorted, visibleCount])
 
   // 세트 지정 팝업: 세트를 못 읽은(또는 잘못 읽은) 에코의 세트를 직접 고릅니다.
@@ -474,11 +493,25 @@ export default function EchoBagPage() {
 
         <div className="live-check__result echo-bag__result">
           <div className="echo-bag__toolbar">
-            <h3>{filterCount > 0 ? `조건에 맞는 에코 ${sorted.length.toLocaleString()}개` : '인식한 에코'}</h3>
+            <h3>
+              {target
+                ? `${target.name}에게 맞는 에코 ${sorted.length.toLocaleString()}개`
+                : filterCount > 0
+                  ? `조건에 맞는 에코 ${sorted.length.toLocaleString()}개`
+                  : '인식한 에코'}
+            </h3>
+            <select className="live-check__select echo-bag__sort" aria-label="캐릭터 맞춤" value={targetId} onChange={(e) => setTargetId(e.target.value)}>
+              <option value="">캐릭터 맞춤: 전체</option>
+              {CHARACTERS.filter((c) => !c.upcoming).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
             <button type="button" className={`echo-bag__filter-btn ${filterCount ? 'echo-bag__filter-btn--on' : ''}`} onClick={() => setFilterOpen(true)}>
               필터{filterCount > 0 && <b>{filterCount}</b>}
             </button>
-            <select className="live-check__select echo-bag__sort" aria-label="정렬" value={sortKey} onChange={(e) => setSortKey(e.target.value)}>
+            <select className="live-check__select echo-bag__sort" aria-label="정렬" value={sortKey} onChange={(e) => setSortKey(e.target.value)} disabled={!!target} title={target ? '캐릭터 맞춤 중에는 그 캐릭터 점수 순으로 정렬돼요' : undefined}>
               <option value="recent">최근 등록 순</option>
               <option value="score">점수 높은 순</option>
               {SUB_STAT_NAMES.map((name) => (
@@ -491,7 +524,9 @@ export default function EchoBagPage() {
           {!loaded ? (
             <p className="uploader__hint">불러오는 중...</p>
           ) : sorted.length === 0 ? (
-            <p className="uploader__hint">{items.length === 0 ? '아직 인식한 에코가 없어요.' : '필터 조건에 맞는 에코가 없어요.'}</p>
+            <p className="uploader__hint">
+              {items.length === 0 ? '아직 인식한 에코가 없어요.' : target ? `${target.name}에게 맞는 세트·메인 옵션의 에코가 없어요.` : '필터 조건에 맞는 에코가 없어요.'}
+            </p>
           ) : (
             <ul className="echo-bag__list" ref={listRef}>
               <li className="echo-bag__head" aria-hidden="true">
@@ -586,8 +621,8 @@ export default function EchoBagPage() {
 // 메인 옵션 이름 목록(코스트 상관없이 한 번씩).
 const MAIN_LABELS = [...new Set(Object.values(MAIN_STAT_VALUES).flatMap((byLabel) => Object.keys(byLabel)))]
 
-/** 필터 서랍의 한 묶음(제목 + 칩들). */
-function FilterGroup({ title, hint, options, selected, onToggle, format = (v) => v }) {
+/** 필터 서랍의 한 묶음(제목 + 칩들). 캐릭터 추천 페이지의 필터 서랍에서도 씁니다. */
+export function FilterGroup({ title, hint, options, selected, onToggle, format = (v) => v }) {
   return (
     <section className="echo-bag__filter-group">
       <h4>
