@@ -11,7 +11,6 @@ import './LiveEchoCheckPage.css'
 import './EchoBagPage.css'
 import { CHARACTERS } from '../config/characters'
 import { ECHO_SETS, getEchoSet } from '../config/echoSets'
-import { getMainEcho } from '../config/mainEchoes'
 import { describeCombo, getCharacterEchoCombos } from '../config/characterEchoSets'
 import { getMainEchoIdForCombo } from '../config/echoSetMainEchoes'
 import { bagItemAsEcho, buildStatTotals, comboFromPicks, diffTotals, finalStats } from '../utils/statCompare'
@@ -148,8 +147,6 @@ export default function CharacterRecommendPage({ initialCharacterId = null, onGo
     />
   )
 
-  // 스탯 표: 기본은 % 줄만, ⓘ를 누르면 고정 수치 줄까지 펼칩니다.
-  const [showFlat, setShowFlat] = useState(false)
 
   // 교체 팝업: 슬롯마다 기존 에코 / 추천 에코를 나란히 보여 주고, 체크한 슬롯만 바꿉니다.
   // 기존 에코를 코스트 높은 순으로 줄 세워 추천(메인 → 4코 → 3코 → 1코)과 같은 순서로 맞춥니다.
@@ -241,10 +238,10 @@ export default function CharacterRecommendPage({ initialCharacterId = null, onGo
   return (
     <section className="char-rec">
       <header>
-        <span className="uploader__eyebrow">캐릭터 추천</span>
+        <span className="uploader__eyebrow">세팅 추천</span>
         <h2>내 가방 에코로 캐릭터 세팅 짜기</h2>
         <p className="uploader__hint">
-          에코 가방에 모은 에코 중에서, 캐릭터의 메인 에코와 추천 세트를 맞추고 유효 옵션 점수가 가장 높은 5개를 골라요.
+          에코 가방에 모은 에코 중에서, 캐릭터의 메인 에코와 추천 세트를 맞추고 유효 옵션 점수가 가장 높은 5개를 골라드려요.
         </p>
       </header>
 
@@ -354,7 +351,7 @@ export default function CharacterRecommendPage({ initialCharacterId = null, onGo
                           {getEchoSet(item.setId)?.name ?? '세트 모름'}
                         </span>
                         <strong>
-                          {(item.echoId && getMainEcho(item.echoId)?.name) || ''} {item.main?.label} {item.main?.valueText}
+                          {item.main?.label} {item.main?.valueText}
                         </strong>
                         <span className="char-rec__subs">
                           {item.subStats.map((s) => (
@@ -376,18 +373,7 @@ export default function CharacterRecommendPage({ initialCharacterId = null, onGo
 
                 {statRows && (
                   <section className="char-rec__stats">
-                    <h3>
-                      적용하면 바뀌는 스탯
-                      <button
-                        type="button"
-                        className={`char-rec__info-btn ${showFlat ? 'char-rec__info-btn--on' : ''}`}
-                        onClick={() => setShowFlat((v) => !v)}
-                        aria-pressed={showFlat}
-                        title="고정 수치(공격력·HP·방어력 +N)까지 보기"
-                      >
-                        i
-                      </button>
-                    </h3>
+                    <h3>적용하면 바뀌는 스탯</h3>
                     <p className="uploader__hint">
                       {'캐릭터 빌드 체크에 저장한 지금 에코와 비교해요.'}
                     </p>
@@ -401,15 +387,14 @@ export default function CharacterRecommendPage({ initialCharacterId = null, onGo
                         </tr>
                       </thead>
                       <tbody>
-                        {statRows.rows.filter((r) => r.unit || showFlat).map((r) => (
+                        {statRows.rows.map((r) => (
                           <tr key={r.label}>
                             <td>{r.label}</td>
                             {statRows.hasCurrent && <td>{r.unit ? `${r.before.toFixed(1)}%` : Math.round(r.before)}</td>}
                             <td>{r.unit ? `${r.after.toFixed(1)}%` : Math.round(r.after)}</td>
                             {statRows.hasCurrent && (
-                              <td className={r.diff > 0.05 ? 'char-rec__up' : r.diff < -0.05 ? 'char-rec__down' : ''}>
-                                {r.diff > 0 ? '+' : ''}
-                                {r.unit ? `${r.diff.toFixed(1)}%` : Math.round(r.diff)}
+                              <td className={r.diff > 0.05 ? 'char-rec__up' : r.diff < -0.05 ? 'char-rec__down' : 'char-rec__same'}>
+                                {Math.abs(r.diff) < 0.05 ? '-' : `${r.diff > 0 ? '+' : ''}${r.unit ? `${r.diff.toFixed(1)}%` : Math.round(r.diff)}`}
                               </td>
                             )}
                           </tr>
@@ -452,9 +437,11 @@ export default function CharacterRecommendPage({ initialCharacterId = null, onGo
 
       <Modal wide open={!!replaceRows} title={character ? `${character.name} 에코 교체` : '에코 교체'} onClose={() => setReplaceRows(null)}>
         {replaceRows && (
+          <>
+          {/* 안내는 두 칸 위에 두고, 왼쪽 목록과 오른쪽 스탯이 같은 높이에서 시작하게 합니다. */}
+          <p className="uploader__hint char-rec__replace-hint">체크한 자리만 바꿔요. 캐릭터 빌드 체크에 저장된 에코가 바뀌어요.</p>
           <div className="char-rec__replace-wrap">
           <div className="char-rec__replace">
-            <p className="uploader__hint">체크한 자리만 바꿔요. 캐릭터 빌드 체크에 저장된 에코가 바뀌어요.</p>
             <div className="char-rec__replace-head">
               <span />
               <span>기존</span>
@@ -496,11 +483,22 @@ export default function CharacterRecommendPage({ initialCharacterId = null, onGo
               <h4>바꾸면 실제 스탯</h4>
               <small>캐릭터 기본 스탯·무기 포함, 체크한 대로 바로 계산</small>
               <table>
+                <thead>
+                  <tr>
+                    <th>스탯</th>
+                    <th>지금</th>
+                    <th>바꾸면</th>
+                    <th>차이</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {replaceStats.map((r) => (
                     <tr key={r.label}>
                       <td>{r.label}</td>
-                      <td>{r.whole ? Math.floor(r.value).toLocaleString() : `${r.value.toFixed(1)}%`}</td>
+                      <td className="char-rec__rs-num">{r.whole ? Math.floor(r.value).toLocaleString() : `${r.value.toFixed(1)}%`}</td>
+                      <td className="char-rec__rs-num">
+                        <strong>{r.whole ? Math.floor(r.after).toLocaleString() : `${r.after.toFixed(1)}%`}</strong>
+                      </td>
                       <td className={r.diff > 0.05 ? 'char-rec__up' : r.diff < -0.05 ? 'char-rec__down' : 'char-rec__same'}>
                         {Math.abs(r.diff) < 0.05
                           ? '-'
@@ -513,6 +511,7 @@ export default function CharacterRecommendPage({ initialCharacterId = null, onGo
             </aside>
           )}
           </div>
+          </>
         )}
       </Modal>
     </section>

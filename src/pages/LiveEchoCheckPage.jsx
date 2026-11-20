@@ -18,6 +18,8 @@ import { panelSignature, signatureChanged } from '../utils/screenWatch'
 import '../components/ScreenCapture.css'
 import './LiveEchoCheckPage.css'
 import LiveCharacterCompare from '../components/LiveCharacterCompare'
+import EnhanceMissionCard from '../components/EnhanceMissionCard'
+import { loadMission, saveMission } from '../utils/enhanceMission'
 import OcrHelpLink from '../components/OcrHelpLink'
 import { CHARACTERS } from '../config/characters'
 import CharacterPicker from '../components/CharacterPicker'
@@ -198,7 +200,9 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes, charac
   const [savedNotice, setSavedNotice] = useState(null)
   const [editOpen, setEditOpen] = useState(false) // 인식한 옵션 고치기 팝업
   // 왼쪽 캐릭터 줄에서 고른 캐릭터: 고르면 오른쪽 칸이 "추천 캐릭터" 대신 그 캐릭터 기준 비교로 바뀝니다.
-  const [pinnedId, setPinnedId] = useState(null)
+  // 목표 스탯 계산기에서 넘어온 강화 목표(있으면 그 캐릭터를 바로 골라 둡니다)
+  const [mission, setMission] = useState(() => loadMission())
+  const [pinnedId, setPinnedId] = useState(() => loadMission()?.characterId ?? null)
   const pinned = CHARACTERS.find((c) => c.id === pinnedId) ?? null
   const [debugViews, setDebugViews] = useState([]) // 마지막 확인에서 읽은 영역: [{ title, image, text }]
   // 보통 가방(오른쪽 상세)에서 에코를 보고 → 강화 화면(왼쪽)으로 들어갑니다. 강화 화면에는 세트가 안 보이고,
@@ -415,7 +419,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes, charac
         <span className="uploader__eyebrow">에코 체크</span>
         <h2>이 에코, 누가 쓰면 좋을까요?</h2>
         <p className="uploader__hint">
-          화면 공유나 스크린샷으로 에코를 읽고, 어울리는 캐릭터와 바꿨을 때 달라지는 스탯을 알려 드려요.
+          선택한 에코가 누구와 어울리는지, 바꿨을때 달라지는 스탯을 보여드려요.
         </p>
         <OcrHelpLink />
       </header>
@@ -636,6 +640,26 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes, charac
           </Modal>
 
           <div className="live-check__result" ref={rankBoxRef}>
+            {mission && (
+              <EnhanceMissionCard
+                mission={mission}
+                character={CHARACTERS.find((c) => c.id === mission.characterId)}
+                echo={shownStats && currentCost ? buildEcho(shownMain, shownStats, currentCost) : shownStats ? { cost: null, subStats: shownStats } : null}
+                onSave={(i) => {
+                  const goal = mission.goals[i]
+                  const target = CHARACTERS.find((c) => c.id === mission.characterId)
+                  onApplyEcho(target, buildEcho(shownMain, shownStats, currentCost), goal.echoIndex, true)
+                  const next = { ...mission, goals: mission.goals.map((g, j) => (j === i ? { ...g, done: true } : g)) }
+                  setMission(next)
+                  saveMission(next)
+                  setSavedNotice(`${target.name} 에코 ${goal.echoIndex + 1}에 저장했어요.`)
+                }}
+                onClose={() => {
+                  setMission(null)
+                  saveMission(null)
+                }}
+              />
+            )}
             {/* 캐릭터를 고르면 이 칸이 그 캐릭터 기준 비교로 바뀝니다(해제하면 추천 캐릭터 목록). */}
             <div className="live-check__picker">
               <CharacterPicker value={pinned} onChange={(c) => setPinnedId(c?.id ?? null)} placeholder="캐릭터 골라서 비교" clearLabel="추천 목록으로" />

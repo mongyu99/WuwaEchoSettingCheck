@@ -52,3 +52,20 @@ describe('방법 비교', () => {
     expect(r.strategies.mixed.fast).not.toBeNull()
   })
 })
+
+describe('포기 · 넘친 몫', () => {
+  it('free 표시된 유효 옵션 자리는 무효처럼 바꿀 수 있다', () => {
+    const atkValid = ['크리티컬%', '공격력%', '공명 효율%']
+    const base = [['크리티컬%', '6.3%'], ['공명 효율%', '6.8%'], ['HP%', '6.4%'], ['방어력%', '8.1%'], ['HP', '320']]
+    const withFree = echo(base)
+    withFree.subStats[1].free = true // 공명 효율 넘친 몫
+    const noRoom = echo(base.map(([l, v]) => [l, v]))
+    noRoom.subStats = noRoom.subStats.map((s) => (['HP%', '방어력%', 'HP'].includes(s.label) ? { ...s, label: '크리티컬 피해%', valueText: '12.6%' } : s))
+    withFree.subStats = withFree.subStats.map((s) => (['HP%', '방어력%', 'HP'].includes(s.label) ? { ...s, label: '크리티컬 피해%', valueText: '12.6%' } : s))
+    const valid2 = [...atkValid, '크리티컬 피해%']
+    const a = planOptimizerFromGap({ category: '공격력', gapValue: 50, base: 1000, echoes: [noRoom], validLabels: valid2 })
+    const b = planOptimizerFromGap({ category: '공격력', gapValue: 50, base: 1000, echoes: [withFree], validLabels: valid2 })
+    expect(a.fast).toBeNull() // 바꿀 자리 없음
+    expect(b.fast).not.toBeNull() // 공명 효율(넘친 몫) 자리를 공격력%로
+  })
+})

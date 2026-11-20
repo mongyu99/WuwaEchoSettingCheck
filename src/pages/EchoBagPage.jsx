@@ -397,10 +397,10 @@ export default function EchoBagPage({ onGoToRecommend }) {
         <span className="uploader__eyebrow">에코 가방</span>
         <h2>가방의 에코, 한 번에 정리해요</h2>
         <p className="uploader__hint">
-          화면을 공유한 뒤 게임 가방에서 에코를 하나씩 눌러 주세요. 화면이 멈출 때마다 에코를 읽어 모읍니다.
+          화면을 공유한 뒤, 강화가 전부 완료된 에코를 선택해주세요.
         </p>
         <p className="uploader__hint">
-          너무 빨리 넘기면 놓칠 수 있어요. 에코마다 0.3초 정도 머물러 주시고, "✓ 저장됨" 표시를 보고 넘기면 확실해요.
+          너무 빨리 넘기면 놓칠 수 있어요. 0.3초 정도를 권장합니다.
         </p>
       </header>
 
@@ -502,6 +502,13 @@ export default function EchoBagPage({ onGoToRecommend }) {
                 : filterCount > 0
                   ? `조건에 맞는 에코 ${sorted.length.toLocaleString()}개`
                   : '인식한 에코'}
+              {/* 마우스를 올리거나(터치는 눌러서) 안내를 봅니다. */}
+              <span className="echo-bag__info" tabIndex={0} role="button" aria-label="인식 안내">
+                i
+                <span className="echo-bag__info-tip" role="tooltip">
+                  +25강화가 완료되지 않은 에코는 정상적으로 인식이 안될 수 있어요.
+                </span>
+              </span>
             </h3>
             <CharacterPicker value={target} onChange={(c) => setTargetId(c?.id ?? '')} placeholder="캐릭터 맞춤: 전체" clearLabel="전체 보기" />
             <button type="button" className={`echo-bag__filter-btn ${filterCount ? 'echo-bag__filter-btn--on' : ''}`} onClick={() => setFilterOpen(true)}>

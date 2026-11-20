@@ -373,6 +373,7 @@ export default function App() {
             optimizeMode={page === 'optimize'}
             onOpenOptimizer={() => setPage('optimize')}
             onBackFromOptimizer={() => setPage('stats')}
+            onStartMission={() => setPage('live')}
             echoes={echoes}
             character={character}
             weapon={record.weapon}

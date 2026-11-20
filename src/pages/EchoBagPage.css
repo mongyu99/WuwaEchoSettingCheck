@@ -794,3 +794,62 @@
   white-space: nowrap;
   padding: 6px 14px;
 }
+
+/* "인식한 에코" 오른쪽 i: 올리거나 누르면 안내 말풍선 */
+.echo-bag__info {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  border: 1px solid var(--text-muted);
+  border-radius: 50%;
+  color: var(--text-muted);
+  font: italic 700 11px/1 serif;
+  vertical-align: middle;
+  cursor: help;
+}
+
+.echo-bag__info:hover,
+.echo-bag__info:focus {
+  border-color: var(--ww-gold);
+  color: var(--ww-gold);
+  outline: none;
+}
+
+.echo-bag__info-tip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  z-index: 20;
+  width: max-content;
+  max-width: 260px;
+  padding: 8px 12px;
+  border: 1px solid var(--ww-panel-border);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  color: var(--ww-ink);
+  font: normal 400 12px/1.5 var(--font-body, sans-serif);
+  transform: translateX(-50%);
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.echo-bag__info:hover .echo-bag__info-tip,
+.echo-bag__info:focus .echo-bag__info-tip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* 말풍선이 왼쪽 칸 밖으로 잘리지 않게: 가운데가 아니라 i 왼쪽 끝에 맞춰 오른쪽으로 펼칩니다. */
+.echo-bag__info-tip {
+  left: -8px;
+  transform: none;
+  width: 260px;
+  max-width: 70vw;
+  white-space: normal;
+}

@@ -557,3 +557,61 @@
 .char-rec__toolbar .char-picker__btn {
   margin-right: 8px;
 }
+
+/* ===== 교체 팝업 다듬기 ===== */
+/* 체크한 줄: 금색 배경을 옅게, 테두리로 표시 */
+.char-rec__replace-row--on {
+  background: rgba(216, 179, 90, 0.08);
+}
+
+/* 오른쪽 실제 스탯: 스탯 | 지금 | 바꾸면 | 차이 */
+.char-rec__replace-wrap {
+  grid-template-columns: minmax(0, 1fr) 320px;
+}
+
+.char-rec__replace-stats {
+  padding: 14px 16px;
+}
+
+.char-rec__replace-stats th {
+  padding: 0 0 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ww-muted);
+  text-align: right;
+  border-bottom: 1px solid var(--ww-panel-border);
+}
+
+.char-rec__replace-stats th:first-child {
+  text-align: left;
+}
+
+.char-rec__replace-stats .char-rec__rs-num {
+  padding-left: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.char-rec__replace-stats .char-rec__rs-num:not(:has(strong)) {
+  color: var(--ww-muted);
+}
+
+.char-rec__replace-stats td:last-child {
+  width: 60px;
+  padding-left: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 오른쪽 스탯 칸 윗선을 왼쪽 첫 줄(에코 카드)과 맞춥니다: 왼쪽은 "기존/변경" 제목 줄만큼 아래에서 시작. */
+.char-rec__replace-hint {
+  margin: 0 0 12px;
+}
+
+.char-rec__replace-stats {
+  margin-top: 26px;
+}
+
+@media (max-width: 900px) {
+  .char-rec__replace-stats {
+    margin-top: 0;
+  }
+}

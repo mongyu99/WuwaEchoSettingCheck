@@ -6,13 +6,14 @@ import { applyCostToMainStats } from '../config/echoMainStats'
 
 /** 비교할 카테고리(가방·빌드 체크의 옵션 이름에서 %를 뗀 이름으로 맞춥니다). 속성 피해는 캐릭터 속성만. */
 function categories(element) {
+  // 순서는 캐릭터 빌드 체크의 합산 스탯 표와 같게 맞춥니다(HP → 공격력 → 방어력 → 공명 효율 → 크리티컬 → 크리티컬 피해 → 피해 보너스류).
   return [
-    ['크리티컬', ['크리티컬']],
-    ['크리티컬 피해', ['크리티컬 피해']],
-    ['공격력', ['공격력']],
     ['HP', ['HP']],
+    ['공격력', ['공격력']],
     ['방어력', ['방어력']],
     ['공명 효율', ['공명 효율']],
+    ['크리티컬', ['크리티컬']],
+    ['크리티컬 피해', ['크리티컬 피해']],
     [`${element} 피해 보너스`, [`${element} 피해 보너스`, '속성 피해 보너스']],
     ['일반 공격 피해', ['일반 공격 피해', '일반 공격 피해 보너스']],
     ['강공격 피해', ['강공격 피해', '강공격 피해 보너스']],
@@ -67,14 +68,17 @@ export function comboFromPicks(picks) {
   return Object.entries(counts).map(([setId, pieceCount]) => ({ setId, pieceCount }))
 }
 
-/** 두 합계를 비교해 바뀌는 줄만 돌려줍니다. [{ label, unit: '%'|'', before, after, diff }] */
+/**
+ * 두 합계를 줄마다 비교합니다. [{ label, unit: '%'|'', before, after, diff }]
+ * % 줄은 값이 0이어도 전부 보여 주고, 고정 수치 줄(공격력·HP·방어력 +N)은 어느 쪽이든 값이 있을 때만 넣습니다.
+ */
 export function diffTotals(before, after) {
   const rows = []
   for (const cat of Object.keys(after)) {
     for (const [key, unit] of [['percent', '%'], ['flat', '']]) {
       const b = before?.[cat]?.[key] ?? 0
       const a = after[cat][key]
-      if (Math.abs(a) < 0.05 && Math.abs(b) < 0.05) continue
+      if (!unit && Math.abs(a) < 0.05 && Math.abs(b) < 0.05) continue
       rows.push({ label: unit ? cat : `${cat} (고정)`, unit, before: b, after: a, diff: a - b })
     }
   }

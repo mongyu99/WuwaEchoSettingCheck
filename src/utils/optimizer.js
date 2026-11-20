@@ -35,27 +35,10 @@ function isSecondaryLabel(label, validLabels) {
  * "2순위"(예: %가 유효 옵션인 캐릭터의 플랫 스탯) 자리를 대신 교체 대상으로 씁니다.
  */
 function findReplaceableStat(echo, validLabels) {
-  const invalid = echo.subStats.find((s) => s.label && s.valueText && !validLabels.includes(s.label))
+  // free: 목표 수치를 넘친 몫이라 빼도 되는 옵션(빌드 체크에서 표시해서 넘김) → 무효 옵션과 똑같이 봅니다.
+  const invalid = echo.subStats.find((s) => s.label && s.valueText && (!validLabels.includes(s.label) || s.free))
   if (invalid) return invalid
   return echo.subStats.find((s) => s.label && s.valueText && isSecondaryLabel(s.label, validLabels))
-}
-
-/**
- * sourceLabel(% 서브스탯)을 가진 서브스탯 중, 빼도 marginBudget(퍼센트 포인트) 이내라서 목표를
- * 계속 달성한 상태로 남는 것들 중 가장 큰 값을 재배치 후보로 고릅니다(여유분을 최대한 활용).
- * 그런 서브스탯이 여러 에코에 있으면 값이 가장 큰 것 하나만 반환합니다.
- */
-export function findReallocationCandidate(sourceLabel, marginBudget, echoes) {
-  let best = null
-  echoes.forEach((echo, echoIndex) => {
-    echo.subStats.forEach((s) => {
-      if (s.label !== sourceLabel) return
-      const value = parseFloat(s.valueText)
-      if (Number.isNaN(value) || value > marginBudget) return
-      if (!best || value > best.value) best = { echoIndex, value, valueText: s.valueText }
-    })
-  })
-  return best
 }
 
 /**
@@ -87,7 +70,7 @@ function pickSufficientTier(options, remaining) {
  * 바꾸는 자리라 셈에서 제외합니다.
  */
 function requiredStatCount(echo, validLabels, excluded) {
-  return echo.subStats.filter((s) => s !== excluded && s.label && s.valueText && validLabels.includes(s.label))
+  return echo.subStats.filter((s) => s !== excluded && s.label && s.valueText && validLabels.includes(s.label) && !s.free)
     .length
 }
 
@@ -215,6 +198,16 @@ export function runOptimizerFromGap({ category, gapValue, base, echoes, validLab
  * gainPercent는 % 단위로 맞춘 증가량(플랫은 기준값으로 환산)입니다.
  * 증가량이 같거나 더 크면서 시도 횟수도 같거나 적은 후보가 있으면 뺍니다(어차피 고를 일이 없음).
  */
+/**
+ * 새 에코가 지켜야 할 기존 유효 옵션: 지금 수치 이상으로 다시 붙어야 합니다(그래야 다른 스탯이 안 떨어짐).
+ * 목표를 넘친 몫(free)이거나 이번에 바꾸는 자리(excluded)는 뺍니다.
+ */
+function keepTargets(echo, validLabels, excluded) {
+  return echo.subStats
+    .filter((s) => !excluded.includes(s) && s.label && s.valueText && validLabels.includes(s.label) && !s.free)
+    .map((s) => ({ label: s.label, value: parseFloat(s.valueText) }))
+}
+
 function allCandidates({ echo, validLabels, info, options, flatOptions, base }) {
   const list = []
   const percentStat = echo.subStats.find((s) => s.label === info.percentLabel && s.valueText)
@@ -226,35 +219,33 @@ function allCandidates({ echo, validLabels, info, options, flatOptions, base }) 
   if (slot) {
     const slotFields =
       slot.action === 'replace' ? { action: 'replace', fromLabel: slot.from.label, fromValue: slot.from.valueText } : { action: 'add' }
-    const required = requiredStatCount(echo, validLabels, slot.from)
+    const keep = keepTargets(echo, validLabels, [slot.from])
     if (!percentStat) {
       for (const tier of options) {
         list.push({ ...slotFields, label: info.percentLabel, toValue: `${tier}%`, gain: tier, gainIsFlat: false, gainPercent: tier,
-          probability: echoSuccessProbability(required, info.percentLabel, tier) })
+          probability: echoMultiTargetProbability(0, [...keep, { label: info.percentLabel, value: tier }]) })
       }
     }
     if (info.flatLabel && !hasFlat && base > 0) {
       for (const tier of flatOptions) {
         list.push({ ...slotFields, label: info.flatLabel, toValue: `${tier}`, gain: tier, gainIsFlat: true, gainPercent: (tier / base) * 100,
-          probability: echoSuccessProbability(required, info.flatLabel, tier) })
+          probability: echoMultiTargetProbability(0, [...keep, { label: info.flatLabel, value: tier }]) })
       }
     }
   }
   const currentValue = percentStat ? parseFloat(percentStat.valueText) : NaN
   if (!Number.isNaN(currentValue)) {
-    const required = requiredStatCount(echo, validLabels, percentStat)
+    const keep = keepTargets(echo, validLabels, [percentStat])
     for (const tier of options.filter((v) => v > currentValue)) {
       list.push({ action: 'upgrade', label: info.percentLabel, fromValue: percentStat.valueText, toValue: `${tier}%`,
         gain: tier - currentValue, gainIsFlat: false, gainPercent: tier - currentValue,
-        probability: echoSuccessProbability(required, info.percentLabel, tier) })
+        probability: echoMultiTargetProbability(0, [...keep, { label: info.percentLabel, value: tier }]) })
     }
   }
   // 한 에코에서 두 군데를 같이: 공격력%를 더 높은 단계로 다시 띄우면서, 빈/무효 자리에 깡공격력도 같이 붙는 에코.
   // (민맥싱만으로는 증가량이 작고, 깡만으로는 높은 단계가 잘 안 떠서, 둘을 한 번에 노리는 게 나을 때가 많습니다.)
   if (slot && percentStat && info.flatLabel && !hasFlat && base > 0) {
-    const required = echo.subStats.filter(
-      (s) => s !== percentStat && s !== slot.from && s.label && s.valueText && validLabels.includes(s.label),
-    ).length
+    const keep = keepTargets(echo, validLabels, [percentStat, slot.from])
     for (const tier of options.filter((v) => v > currentValue)) {
       for (const flat of flatOptions) {
         list.push({
@@ -270,7 +261,8 @@ function allCandidates({ echo, validLabels, info, options, flatOptions, base }) 
           gain: tier - currentValue + (flat / base) * 100,
           gainIsFlat: false,
           gainPercent: tier - currentValue + (flat / base) * 100,
-          probability: echoMultiTargetProbability(required, [
+          probability: echoMultiTargetProbability(0, [
+            ...keep,
             { label: info.percentLabel, value: tier },
             { label: info.flatLabel, value: flat },
           ]),
