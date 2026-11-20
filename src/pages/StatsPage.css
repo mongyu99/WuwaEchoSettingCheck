@@ -1508,3 +1508,330 @@
 .picker-tabs__btn:active {
   transform: scale(0.92);
 }
+
+/* 목표 스탯 계산기: 빠른 계획 / 안정적인 계획 */
+.optimizer__plan {
+  margin-top: 10px;
+}
+
+.optimizer__plan + .optimizer__plan {
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-hairline);
+}
+
+.optimizer__plan-title {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.optimizer__plan-title small {
+  color: var(--text-muted);
+}
+
+.optimizer__plan-same {
+  margin-top: 8px;
+}
+
+/* 최적화하기 화면 */
+.optimize-page__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.optimize-page__head h2 {
+  margin: 4px 0 0;
+}
+
+.optimize-page__entry {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 넓은 화면에서는 빠른 계획 | 안정적인 계획을 나란히 */
+@media (min-width: 900px) {
+  .optimizer--wide .optimizer__plans {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .optimizer--wide .optimizer__plan + .optimizer__plan {
+    padding-top: 0;
+    border-top: 0;
+  }
+}
+
+/* ===== 최적화하기 화면 다듬기 ===== */
+.optimize-page__head {
+  align-items: center;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+/* 넓은 화면: 왼쪽 목표 입력(고정) | 오른쪽 결과 */
+@media (min-width: 900px) {
+  .optimizer--wide {
+    display: grid;
+    grid-template-columns: 320px minmax(0, 1fr);
+    column-gap: 24px;
+    align-items: start;
+  }
+
+  .optimizer--wide > :not(.optimizer__results) {
+    grid-column: 1;
+  }
+
+  .optimizer--wide > .optimizer__results {
+    grid-column: 2;
+    grid-row: 1 / span 6;
+    margin-top: 0;
+  }
+
+  .optimizer--wide .optimizer__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.optimizer--wide > .optimizer__title-row,
+.optimizer--wide > .optimizer__hint,
+.optimizer--wide > .optimizer__grid,
+.optimizer--wide > .optimizer__calc-btn {
+  position: relative;
+}
+
+.optimizer--wide .optimizer__grid {
+  padding: 14px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 10px;
+  background: var(--bg-surface);
+}
+
+.optimizer--wide .optimizer__result {
+  padding: 16px 18px;
+  border-radius: 10px;
+}
+
+/* 계획 카드 */
+.optimizer__plan {
+  padding: 12px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 10px;
+  background: var(--bg-surface-raised, rgba(255, 255, 255, 0.03));
+}
+
+.optimizer__plan--fast {
+  border-top: 3px solid var(--accent-wave);
+}
+
+.optimizer__plan--safe {
+  border-top: 3px solid var(--ww-gold, #d8b35a);
+}
+
+.optimizer--wide .optimizer__plans .optimizer__plan--full {
+  grid-column: 1 / -1;
+}
+
+.optimizer__plan-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.optimizer__plan-badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--accent-wave);
+  color: #0b1220;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.optimizer__plan--safe .optimizer__plan-badge {
+  background: var(--ww-gold, #d8b35a);
+}
+
+.optimizer__plan-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.optimizer__plan-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.optimizer__plan-stats span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.optimizer__plan-stats small {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.optimizer__plan-stats b {
+  font-size: 14px;
+}
+
+/* 계획 카드끼리: 예전 점선 구분 대신 카드 간격(위 색 띠는 유지) */
+.optimizer__plans {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.optimizer__plans .optimizer__plan,
+.optimizer__plans .optimizer__plan + .optimizer__plan {
+  margin-top: 0;
+  padding-top: 12px;
+  border-top-width: 3px;
+  border-top-style: solid;
+}
+
+@media (min-width: 900px) {
+  .optimizer--wide .optimizer__plans {
+    display: grid;
+  }
+}
+
+/* 계획 요약 4칸(교체·시도·확률·적용 후 스탯) */
+.optimizer__plan-stats {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.optimizer__plan-stats .optimizer__plan-result b {
+  color: var(--accent-wave);
+}
+
+@media (max-width: 700px) {
+  .optimizer__plan-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* 단계 카드: 머리(에코 + 적용 버튼) / 무엇을 → 무엇으로 / 스탯 변화 / 확률 */
+.optimizer__step-card .optimizer__step-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.optimizer__step-card .optimizer__step-header {
+  cursor: default;
+}
+
+.optimizer__swap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 4px;
+}
+
+.optimizer__swap-from,
+.optimizer__swap-to {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.optimizer__swap-from {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.optimizer__swap-to {
+  background: rgba(108, 220, 240, 0.15);
+  color: var(--accent-wave);
+}
+
+.optimizer__swap-arrow {
+  color: var(--text-muted);
+}
+
+.optimizer__swap-stat {
+  margin: 0 0 2px;
+  font-size: 13px;
+}
+
+.optimizer__swap-stat strong {
+  color: var(--accent-wave);
+}
+
+.optimizer__swap-stat em {
+  margin-left: 6px;
+  font-style: normal;
+  font-size: 12px;
+  color: #3fbf7f;
+}
+
+/* 방법 비교 표(민맥싱만 / 깡만 / 섞어서) — 계획 카드 위 전체 폭 */
+.optimizer__compare {
+  grid-column: 1 / -1;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.optimizer__compare th,
+.optimizer__compare td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border-hairline);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.optimizer__compare th:first-child,
+.optimizer__compare td:first-child {
+  text-align: left;
+}
+
+.optimizer__compare th {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.optimizer__compare-best td {
+  color: var(--accent-wave);
+  font-weight: 700;
+}
+
+.optimizer__compare-best td:first-child::after {
+  content: ' · 가장 빠름';
+  font-size: 11px;
+}
+
+.optimizer__compare-no {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* 결과 화면은 입력 칸이 없어서 2단 배치를 풀고 결과를 전체 폭으로 */
+@media (min-width: 900px) {
+  .optimizer--wide.optimizer--result {
+    display: block;
+  }
+}
+
+.optimizer--result > .optimizer__results {
+  margin-top: 12px;
+}

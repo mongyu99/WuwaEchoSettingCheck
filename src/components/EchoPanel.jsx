@@ -92,7 +92,7 @@ export default function EchoPanel({
                 <input type="text" value={echo.mainStats[0]?.valueText ?? ''} readOnly tabIndex={-1} aria-label="메인 스탯 수치" />
               </li>
               <li className="echo-panel__main-row">
-                <input type="text" value={echo.mainStats[1]?.label ?? ''} readOnly tabIndex={-1} aria-label="고정 스탯" />
+                <input type="text" className="echo-panel__fixed-label" value={echo.mainStats[1]?.label ?? ''} readOnly tabIndex={-1} aria-label="고정 스탯" />
                 <input type="text" value={echo.mainStats[1]?.valueText ?? ''} readOnly tabIndex={-1} aria-label="고정 스탯 수치" />
               </li>
             </>

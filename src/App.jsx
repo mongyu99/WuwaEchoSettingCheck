@@ -362,8 +362,12 @@ export default function App() {
           />
         )
       case 'stats':
+      case 'optimize':
         return (
           <StatsPage
+            optimizeMode={page === 'optimize'}
+            onOpenOptimizer={() => setPage('optimize')}
+            onBackFromOptimizer={() => setPage('stats')}
             echoes={echoes}
             character={character}
             weapon={record.weapon}

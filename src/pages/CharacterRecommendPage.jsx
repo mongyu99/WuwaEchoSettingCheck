@@ -285,7 +285,7 @@ export default function CharacterRecommendPage({ onGoToEchoBag, onReplaceEchoes,
                   )}
                 </div>
 
-                {!customSets && !build.setsMet && <p className="char-rec__warn">추천 세트 에코가 모자라서 세트 개수를 다 못 맞췄어요.</p>}
+                {!customSets && !build.setsMet && <p className="char-rec__warn">추천 세트 에코가 모자라요.</p>}
 
                 {/* 왼쪽: 추천 에코 5개, 오른쪽: 적용하면 바뀌는 스탯 */}
                 <div className="char-rec__body">
