@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createStatVoter } from '../utils/statVote'
 import ConfirmDialog from '../components/ConfirmDialog'
 import Modal from '../components/Modal'
 import { findGameArea, screenCaptureSupported } from '../components/ScreenCapture'
@@ -162,7 +163,7 @@ function TargetOdds({ targets, setTargets, stats }) {
 const EMPTY_MANUAL_STATS = [0, 1, 2, 3, 4].map((i) => ({ id: `manual-${i}`, label: '', valueText: '' }))
 
 /** 공유 화면을 0.5초마다 확인해서, 지금 보고 있는 에코의 서브 스탯에 잘 맞는 캐릭터를 추천합니다. 모든 처리는 브라우저 안에서 합니다. */
-export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes, characterData = {} }) {
+export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterEchoes, characterData = {} }) {
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const [sharing, setSharing] = useState(false)
@@ -208,10 +209,13 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes, charac
   // 보통 가방(오른쪽 상세)에서 에코를 보고 → 강화 화면(왼쪽)으로 들어갑니다. 강화 화면에는 세트가 안 보이고,
   // 강화 중엔 메인 수치가 작아 코스트도 못 읽어서, 바로 전 오른쪽에서 읽은 세트·코스트·메인 이름을 이어서 씁니다.
   const lastRightRef = useRef(null) // { setId, cost, mainLabel }
+  const voterRef = useRef(null) // 실시간 인식 수치 다수결·고정(statVote.js)
+  voterRef.current ??= createStatVoter()
+  const stabilize = (found, foundMain) => voterRef.current.stabilize(found, foundMain)
   const applyRecognized = ({ subStats: found, main: foundMain, setId: foundSetId, panel }) => {
     // 이번에 못 읽었으면(옵션 0개) 바로 전 결과를 그대로 둡니다(지우지 않음).
     if (found.length === 0) return
-    setSubStats(found)
+    setSubStats(stabilize(found, foundMain))
     if (panel === 'right') {
       lastRightRef.current = { setId: foundSetId, cost: costOfMain(foundMain), mainLabel: foundMain?.label ?? null }
       setDetectedSetId(foundSetId)
@@ -267,6 +271,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes, charac
       const recognized = await recognizeEchoPanel(area, session)
       saveOcrSample(area, recognized, 'capture')
       setDebugViews(recognized.views)
+      voterRef.current.reset() // 캡쳐는 한 장씩이라 다수결 기록을 쓰지 않습니다.
       applyRecognized(recognized)
       if (recognized.subStats.length === 0) setError('에코 옵션을 찾지 못했어요. 에코 상세 화면이나 강화 화면을 캡쳐해 주세요.')
     } catch (err) {
@@ -511,8 +516,9 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes, charac
                   </p>
                 )}
                 <ul className="live-check__summary-subs">
-                  {(shownStats ?? []).map((st) => (
-                    <li key={st.label}>
+                  {(shownStats ?? []).map((st, i) => (
+                    // 줄 위치로 key: 인식 중 같은 이름이 잠깐 두 번 잡히면 이름 key가 겹쳐 이전 줄이 화면에 남았습니다.
+                    <li key={i}>
                       <span>{st.label}</span>
                       {/* 이 옵션이 나올 수 있는 최저~최고 수치와 지금 몇 단계인지 */}
                       {(() => {
@@ -672,6 +678,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, characterEchoes, charac
                 characterEchoes={characterEchoes}
                 characterData={characterData}
                 onApply={(character, echo, slot) => onApplyEcho(character, echo, slot, true)}
+                onGoToSetup={onGoToSetup}
               />
             ) : (
             <>

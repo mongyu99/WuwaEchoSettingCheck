@@ -400,7 +400,14 @@ export default function App() {
       case 'patchnotes':
         return <PatchNotesPage />
       case 'live':
-        return <LiveEchoCheckPage onApplyEcho={handleApplyLiveEcho} characterEchoes={characterEchoes} characterData={characterData} />
+        return (
+          <LiveEchoCheckPage
+            onApplyEcho={handleApplyLiveEcho}
+            onGoToSetup={handleSelectCharacter}
+            characterEchoes={characterEchoes}
+            characterData={characterData}
+          />
+        )
       case 'recommend':
         return (
           <CharacterRecommendPage
