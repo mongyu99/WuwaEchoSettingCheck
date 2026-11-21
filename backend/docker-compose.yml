@@ -76,6 +76,17 @@ services:
       dockerfile: Dockerfile
     ports:
       - '80:80'
+    # 게임 공식 이미지는 git에 올리지 않고, 서버 폴더를 그대로 끼워서 내보냅니다.
+    # 서버는 backend/.env의 CONTENT_IMAGES_DIR(=git 밖 폴더), 로컬은 기본값 ../public 을 씁니다.
+    # 이미지 올리기: sh local-seed/dump-content.sh --apply (DB와 같이 덮어씀)
+    volumes:
+      - ${CONTENT_IMAGES_DIR:-../public}/banners:/usr/share/nginx/html/banners:ro
+      - ${CONTENT_IMAGES_DIR:-../public}/characters:/usr/share/nginx/html/characters:ro
+      - ${CONTENT_IMAGES_DIR:-../public}/echo-sets:/usr/share/nginx/html/echo-sets:ro
+      - ${CONTENT_IMAGES_DIR:-../public}/events:/usr/share/nginx/html/events:ro
+      - ${CONTENT_IMAGES_DIR:-../public}/main:/usr/share/nginx/html/main:ro
+      - ${CONTENT_IMAGES_DIR:-../public}/main-echoes:/usr/share/nginx/html/main-echoes:ro
+      - ${CONTENT_IMAGES_DIR:-../public}/weapons:/usr/share/nginx/html/weapons:ro
     depends_on:
       - app
     mem_limit: 128m

@@ -24,3 +24,12 @@ test/ocr-fixtures/
 
 # 글자 인식 언어 데이터(tesseract가 node에서 돌 때 자동으로 받는 캐시). 사이트는 CDN에서 받아서 필요 없음
 *.traineddata
+
+# 게임 공식 이미지(관리자 페이지·이미지 스크립트로 만듦). 운영 서버에는 dump-content.sh --apply로 따로 올림
+public/banners/
+public/characters/
+public/echo-sets/
+public/events/
+public/main/
+public/main-echoes/
+public/weapons/
