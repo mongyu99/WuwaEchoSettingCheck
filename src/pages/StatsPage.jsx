@@ -595,7 +595,8 @@ function OptimizerPanel({
       abandoned.flatMap((cat) => [OPTIMIZER_CATEGORIES[cat]?.percentLabel, OPTIMIZER_CATEGORIES[cat]?.flatLabel].filter(Boolean)),
     )
     const effectiveValid = validLabels.filter((l) => !dropLabels.has(l))
-    const freeIds = new Set()
+    // 서브 옵션 id는 에코마다 stat-0, stat-1…로 겹쳐서, id가 아니라 옵션 자체로 표시합니다.
+    const freeSubs = new Set()
     for (const cat of OPTIMIZER_TARGET_ORDER) {
       const t = parseFloat(targets[cat])
       if (!t || t <= 0) continue
@@ -611,16 +612,16 @@ function OptimizerPanel({
         .map(({ s }) => {
           const v = parseFloat(s.valueText)
           const amount = s.label === info.flatLabel ? v : isBase ? (v / 100) * calc.base : v
-          return { id: s.id, amount }
+          return { s, amount }
         })
         .sort((a, b) => a.amount - b.amount)
       for (const sub of subs) {
         if (sub.amount > margin) break
         margin -= sub.amount
-        freeIds.add(sub.id)
+        freeSubs.add(sub.s)
       }
     }
-    const planEchoes = echoes.map((e) => ({ ...e, subStats: e.subStats.map((s) => (freeIds.has(s.id) ? { ...s, free: true } : s)) }))
+    const planEchoes = echoes.map((e) => ({ ...e, subStats: e.subStats.map((s) => (freeSubs.has(s) ? { ...s, free: true } : s)) }))
     return { echoes: planEchoes, validLabels: effectiveValid }
   }
 

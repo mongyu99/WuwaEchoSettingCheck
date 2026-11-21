@@ -250,3 +250,23 @@
   width: 100%;
   margin-top: 12px;
 }
+
+/* 사용법 버튼은 제목 바로 옆에 */
+.uploader__title-row .usage-guide__open {
+  margin-right: auto;
+}
+
+/* 스크린샷 업로드 주의사항 */
+.uploader__notes {
+  margin: 12px 0 0;
+  padding: 12px 16px 12px 32px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.uploader__notes b {
+  color: var(--text-primary, #fff);
+}

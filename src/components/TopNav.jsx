@@ -22,6 +22,7 @@ const MENU = [
 ]
 
 // 사이트 자체의 업데이트 기록이라 게임 메뉴와 떨어뜨려 오른쪽 끝(테마 스위치 앞)에 둡니다.
+const GUIDE = { page: 'guide', label: '가이드', handler: 'onGoToGuide' }
 const PATCH_NOTES = { page: 'patchnotes', label: '패치노트', handler: 'onGoToPatchNotes' }
 
 export default function TopNav({ currentPage, theme, onToggleTheme, characterData, onLoadCloudData, ...handlers }) {
@@ -73,6 +74,13 @@ export default function TopNav({ currentPage, theme, onToggleTheme, characterDat
         ))}
       </nav>
       <div className="top-nav__right">
+        <button
+          className={`top-nav__link ${currentPage === GUIDE.page ? 'top-nav__link--active' : ''}`}
+          aria-current={currentPage === GUIDE.page ? 'page' : undefined}
+          onClick={go(GUIDE.handler)}
+        >
+          {GUIDE.label}
+        </button>
         <BackupPanel characterData={characterData} onLoadData={onLoadCloudData} />
         <button
           className={`top-nav__link ${currentPage === PATCH_NOTES.page ? 'top-nav__link--active' : ''}`}

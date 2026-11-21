@@ -26,7 +26,7 @@ function CountUp({ value, format }) {
  * 얼마나 바뀌는지 바로 보여 줍니다. 바꿀 자리는 같은 코스트 중 점수가 가장 낮은 자리로 자동으로 고르고,
  * 다른 자리를 눌러 바꿀 수 있습니다. 세트 효과·메인 에코는 지금 세팅 그대로 본다고 가정합니다.
  */
-export default function LiveCharacterCompare({ character, echo, hasEcho = false, characterEchoes, characterData, onApply }) {
+export default function LiveCharacterCompare({ character, echo, hasEcho = false, characterEchoes, characterData, onApply, onGoToSetup }) {
   const [slotOverride, setSlotOverride] = useState(null)
   const [infoOpen, setInfoOpen] = useState(false) // 오른쪽 위 i: 점수·확률·비교 방법 설명
   const current = characterEchoes[character.id] ?? []
@@ -46,7 +46,9 @@ export default function LiveCharacterCompare({ character, echo, hasEcho = false,
   }, [character, cost, current])
   // 캐릭터나 코스트가 바뀌면 직접 고른 자리는 풀고 다시 자동으로 고릅니다.
   useEffect(() => setSlotOverride(null), [character.id, cost])
-  const slot = slotOverride ?? autoSlot
+  // 직접 누른 칸: 빈칸이면 표시는 누른 칸에, 저장·비교는 첫 빈칸으로(저장은 앞에서부터 채워짐).
+  const slot = slotOverride === null ? autoSlot : current[slotOverride] ? slotOverride : current.length < 5 ? current.length : null
+  const shownSlot = slotOverride ?? autoSlot
 
   const compare = useMemo(() => {
     if (!echo || slot === null) return null
@@ -78,6 +80,17 @@ export default function LiveCharacterCompare({ character, echo, hasEcho = false,
 
   return (
     <div className="live-compare">
+      {/* 빌드 체크에 저장한 에코가 하나도 없으면 비교할 게 없어서, 먼저 세팅하러 가게 안내합니다. */}
+      {current.length === 0 && (
+        <div className="live-compare__empty">
+          <p>{character.name}의 에코 세팅이 없어서 비교할 수 없어요.</p>
+          {onGoToSetup && (
+            <button type="button" className="btn btn--primary" onClick={() => onGoToSetup(character)}>
+              세팅하러 가기 →
+            </button>
+          )}
+        </div>
+      )}
       <div className="live-compare__title-row">
         <p className="live-compare__title">이 에코로 바꾸면</p>
         <span className="live-compare__slot-note">
@@ -110,9 +123,8 @@ export default function LiveCharacterCompare({ character, echo, hasEcho = false,
             <button
               key={i}
               type="button"
-              className={`live-compare__slot ${slot === i ? 'live-compare__slot--on' : ''}`}
-              // 빈 자리는 순서가 의미 없어서(저장하면 앞에서부터 채워짐) 어느 빈칸을 눌러도 첫 빈칸으로 봅니다.
-              onClick={() => setSlotOverride(e ? i : current.length)}
+              className={`live-compare__slot ${shownSlot === i ? 'live-compare__slot--on' : ''}`}
+              onClick={() => setSlotOverride(i)}
               title={e ? `${getEchoCost(e)}코 · ${scoreOf(e).toFixed(1)}점` : '빈 자리'}
             >
               <small>{e ? `${getEchoCost(e)}코` : '빈칸'}</small>

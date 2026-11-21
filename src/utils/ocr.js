@@ -102,8 +102,14 @@ export function snapSubStatsToCatalog(subStats) {
       return { ...s, label: '', valueText: '' }
     }
 
-    const rawNum = parseFloat(s.valueText)
+    let rawNum = parseFloat(s.valueText)
     const options = SUB_STAT_OPTIONS[label]
+    // 앞자리 "1"이 빠지는 경우가 있어서(11.6% → "1.6%") 그대로는 없는 값인데 앞에 1을 붙이면 딱 맞는 값이면 그걸로 봅니다.
+    // (예전엔 가장 가까운 6.4%로 맞춰 버렸음)
+    if (!Number.isNaN(rawNum) && !options.some((v) => Math.abs(v - rawNum) < 1e-9)) {
+      const withOne = parseFloat(`1${String(s.valueText).replace(/[^0-9.]/g, '')}`)
+      if (options.some((v) => Math.abs(v - withOne) < 1e-9)) rawNum = withOne
+    }
     let nearest = options[0]
     if (!Number.isNaN(rawNum)) {
       let bestDiff = Math.abs(options[0] - rawNum)
