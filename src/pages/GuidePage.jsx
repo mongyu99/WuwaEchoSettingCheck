@@ -44,7 +44,28 @@ const FLOWS = [
   },
 ]
 
+/** 화면 캡쳐 + 눌러야 할 곳(번호 + 이름이 붙은 깜빡이는 테두리) */
+function Shot({ s }) {
+  return (
+    <>
+      <img key={s.image} src={assetPath(`guide/${s.image}`)} alt={s.title} width="1200" height="675" decoding="async" />
+      {(s.spots ?? []).map((sp, i) => (
+        <span
+          key={`${s.image}-${i}`}
+          className="guide__spot"
+          style={{ left: `${sp.x}%`, top: `${sp.y}%`, width: `${sp.w}%`, height: `${sp.h}%` }}
+        >
+          <em className={sp.y + sp.h > 88 ? 'guide__spot-label guide__spot-label--up' : 'guide__spot-label'}>
+            {i + 1}. {sp.label}
+          </em>
+        </span>
+      ))}
+    </>
+  )
+}
+
 export default function GuidePage() {
+  const [zoom, setZoom] = useState(false) // 휴대폰: 그림 크게 보기
   // 다음 단계 그림이 눌렀을 때 바로 뜨게, 페이지를 열면 전부 미리 받아 둡니다(장당 20~50KB).
   useEffect(() => {
     new Set(FLOWS.flatMap((f) => f.steps.map((st) => st.image))).forEach((name) => {
@@ -91,7 +112,21 @@ export default function GuidePage() {
         <ol className="guide__steps">
           {flow.steps.map((st, i) => (
             <li key={st.title}>
-              <button type="button" className={`guide__step ${i === step ? 'guide__step--on' : ''}`} onClick={() => setStep(i)}>
+              <button
+                type="button"
+                className={`guide__step ${i === step ? 'guide__step--on' : ''}`}
+                onClick={() => setStep(i)}
+                // 휴대폰(가로로 넘기는 단계 목록): 지금 단계가 보이게 목록만 옆으로 밀어 줍니다(페이지는 안 움직임).
+                ref={(el) => {
+                  if (el && i === step && el.parentElement?.parentElement) {
+                    const list = el.parentElement.parentElement
+                    if (list.scrollWidth > list.clientWidth) {
+                      const left = list.scrollLeft + el.getBoundingClientRect().left - list.getBoundingClientRect().left - 16
+                      list.scrollTo({ left, behavior: 'smooth' })
+                    }
+                  }
+                }}
+              >
                 <span className="guide__step-num">{i + 1}</span>
                 {st.title}
               </button>
@@ -132,22 +167,23 @@ export default function GuidePage() {
           </div>
         </aside>
 
-        {/* 오른쪽: 실제 화면 캡쳐 */}
+        {/* 오른쪽: 실제 화면 캡쳐. 휴대폰에선 그림이 작아서 눌러 크게 볼 수 있게 합니다. */}
         <figure className="guide__view">
-          <img key={s.image} src={assetPath(`guide/${s.image}`)} alt={s.title} width="1200" height="675" decoding="async" />
-          {/* 눌러야 할 곳: 번호 + 이름이 붙은 깜빡이는 테두리 */}
-          {(s.spots ?? []).map((sp, i) => (
-            <span
-              key={`${s.image}-${i}`}
-              className="guide__spot"
-              style={{ left: `${sp.x}%`, top: `${sp.y}%`, width: `${sp.w}%`, height: `${sp.h}%` }}
-            >
-              <em className={sp.y + sp.h > 88 ? 'guide__spot-label guide__spot-label--up' : 'guide__spot-label'}>
-                {i + 1}. {sp.label}
-              </em>
-            </span>
-          ))}
+          <Shot s={s} />
+          <button type="button" className="guide__zoom-btn" onClick={() => setZoom(true)}>
+            크게 보기
+          </button>
         </figure>
+        {zoom && (
+          <div className="guide__zoom" role="dialog" aria-label={s.title} onClick={() => setZoom(false)}>
+            <p className="guide__zoom-hint">옆으로 밀어서 보세요 · 아무 곳이나 누르면 닫혀요</p>
+            <div className="guide__zoom-scroll">
+              <figure className="guide__view guide__view--zoom">
+                <Shot s={s} />
+              </figure>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   )

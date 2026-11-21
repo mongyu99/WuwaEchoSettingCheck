@@ -5,6 +5,7 @@ import SiteFooter from './components/SiteFooter'
 import HomePage from './pages/HomePage'
 import PatchNotesPage from './pages/PatchNotesPage'
 import GuidePage from './pages/GuidePage'
+import InfoPage from './pages/InfoPage'
 import EventCalendarPage from './pages/EventCalendarPage'
 import LiveEchoCheckPage from './pages/LiveEchoCheckPage'
 import EchoBagPage from './pages/EchoBagPage'
@@ -321,6 +322,13 @@ export default function App() {
   const goToCharacters = () => setPage('characters')
   const goToPatchNotes = () => setPage('patchnotes')
   const goToGuide = () => setPage('guide')
+  // 하단 안내(자주 묻는 질문·약관 등): 어느 항목을 펼칠지 함께 기억합니다.
+  const [infoSection, setInfoSection] = useState('faq')
+  const goToInfo = (section) => {
+    setInfoSection(section)
+    setPage('info')
+    window.scrollTo(0, 0)
+  }
   const goToEventCalendar = () => setPage('events')
   const goToEventNote = () => setPage('eventnote')
   const goToLiveCheck = () => setPage('live')
@@ -399,6 +407,8 @@ export default function App() {
         )
       case 'characters':
         return <CharacterSelectPage onSelect={handleSelectCharacter} charactersWithData={charactersWithData} characterEchoes={characterEchoes} />
+      case 'info':
+        return <InfoPage key={infoSection} section={infoSection} />
       case 'guide':
         return <GuidePage />
       case 'patchnotes':
@@ -464,7 +474,7 @@ export default function App() {
           </div>
         </main>
 
-        <SiteFooter />
+        <SiteFooter onOpenInfo={goToInfo} />
       </div>
     </>
   )
