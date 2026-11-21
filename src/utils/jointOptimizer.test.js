@@ -35,3 +35,24 @@ describe('여러 목표를 한 번에', () => {
     expect(r.fast).toBeNull()
   })
 })
+
+describe('가장 낮은 단계로 맞추기', () => {
+  const echoes = Array.from({ length: 5 }, () => echo([['공격력%', '7.1%'], ['HP%', '8.6%'], ['방어력%', '9%']]))
+
+  it('목표가 6.3이면 대표 단계(더 높은 값) 대신 6.3을 노린다', () => {
+    const r = planJoint({ goals: [goal('크리티컬', '크리티컬%', 6.3)], echoes, validLabels: valid })
+    expect(r.fast.steps).toHaveLength(1)
+    expect(r.fast.steps[0].targets[0].value).toBe(6.3)
+    expect(r.fast.steps[0].changes[0].to).toBe('6.3%')
+  })
+
+  it('낮춘 뒤에도 모든 목표를 채운다', () => {
+    const r = planJoint({ goals: [goal('크리티컬', '크리티컬%', 14.6), goal('크리티컬 피해', '크리티컬 피해%', 7.2)], echoes, validLabels: valid })
+    for (const plan of [r.fast, r.safe]) {
+      const total = (i) => plan.steps.reduce((s, st) => s + st.gains[i], 0)
+      expect(total(0)).toBeGreaterThanOrEqual(14.6 - 1e-6)
+      expect(total(1)).toBeGreaterThanOrEqual(7.2 - 1e-6)
+      expect(plan.attempts).toBeCloseTo(plan.steps.reduce((s, st) => s + st.attempts, 0))
+    }
+  })
+})

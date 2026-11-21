@@ -1,0 +1,326 @@
+.guide {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.guide__eyebrow {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: var(--accent-wave);
+}
+
+.guide__head h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+/* 질문 세 개 */
+.guide__flows {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.guide__flow {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 12px;
+  background: var(--bg-surface);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.guide__flow small {
+  font-size: 11px;
+  color: var(--accent-wave);
+}
+
+.guide__flow b {
+  font-size: 15px;
+}
+
+.guide__flow span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.guide__flow:hover {
+  border-color: var(--accent-wave);
+}
+
+.guide__flow--on {
+  border-color: var(--accent-wave);
+  background: rgba(108, 220, 240, 0.08);
+}
+
+/* 단계 목록 | 화면 */
+.guide__body {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.guide__side {
+  position: sticky;
+  top: calc(var(--top-nav-height, 64px) + 16px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.guide__caption {
+  padding: 16px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 12px;
+  background: var(--bg-surface);
+}
+
+.guide__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide__step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.guide__step:hover {
+  color: inherit;
+}
+
+.guide__step--on {
+  border-color: var(--border-hairline);
+  background: var(--bg-surface);
+  color: inherit;
+  font-weight: 600;
+}
+
+.guide__step-num {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+}
+
+.guide__step--on .guide__step-num {
+  background: var(--accent-wave);
+  color: #0b1220;
+}
+
+.guide__view {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-hairline);
+  border-radius: 12px;
+  background: var(--bg-surface);
+}
+
+.guide__view img {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* 모든 그림을 같은 16:9 칸에(그림이 늦게 떠도 칸 크기는 그대로) */
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: top;
+  background: #0b1220;
+  animation: guide-fade 0.25s ease;
+}
+
+@keyframes guide-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.guide__count {
+  margin: 0 0 4px;
+  font-size: 12px;
+  color: var(--accent-wave);
+}
+
+.guide__caption h3 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.guide__caption > p:not(.guide__count) {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+
+.guide__nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.guide__nav .btn--primary {
+  flex: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide__view img {
+    animation: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .guide__flows,
+  .guide__body {
+    grid-template-columns: 1fr;
+  }
+  .guide__side {
+    position: static;
+  }
+  .guide__steps {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+  .guide__step {
+    white-space: nowrap;
+  }
+}
+
+/* 설명 칸 높이 고정: 글 길이가 달라도 [이전]/[다음] 버튼 위치가 그대로 */
+.guide__caption {
+  display: flex;
+  flex-direction: column;
+  height: 270px;
+}
+
+/* 질문마다 단계 수가 달라도(3~5개) 아래 설명 칸 위치가 같게 6단계 높이로 고정 */
+.guide__side .guide__steps {
+  min-height: 294px;
+}
+
+.guide__caption > p:not(.guide__count) {
+  flex: 1;
+}
+
+.guide__nav {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: stretch;
+}
+
+.guide__nav {
+  height: 64px;
+  flex: none;
+}
+
+.guide__nav .btn {
+  height: 100%;
+}
+
+/* 다음 질문 버튼: 두 줄(작은 "다음 질문 →" + 질문) */
+.guide__next-q {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  overflow: hidden;
+  padding: 6px 14px;
+  text-align: left;
+  line-height: 1.35;
+}
+
+.guide__next-q small {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.guide__next-q span {
+  font-size: 13px;
+  word-break: keep-all;
+}
+
+/* 그림 속 눌러야 할 곳 */
+.guide__view {
+  position: relative;
+}
+
+.guide__spot {
+  position: absolute;
+  border: 2px solid var(--accent-wave);
+  border-radius: 8px;
+  box-shadow: 0 0 0 4px rgba(108, 220, 240, 0.25);
+  pointer-events: none;
+  animation: guide-spot 1.4s ease-in-out infinite;
+}
+
+.guide__spot-label {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--accent-wave);
+  color: #0b1220;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.guide__spot-label--up {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+@keyframes guide-spot {
+  50% {
+    box-shadow: 0 0 0 8px rgba(108, 220, 240, 0.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide__spot {
+    animation: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .guide__caption {
+    height: auto;
+  }
+  .guide__side .guide__steps {
+    min-height: 0;
+  }
+  .guide__spot-label {
+    font-size: 10px;
+  }
+}

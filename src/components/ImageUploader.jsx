@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import UsageGuide from './UsageGuide'
 import { normalizeImage, cropNormalizedImage, blobToDataURL, MAX_IMAGES, TARGET_WIDTH, TARGET_HEIGHT } from '../utils/image'
 import { FIXED_REGIONS, REGION_META, SCAN_PREVIEW_REGION } from '../config/regions'
 import Modal from './Modal'
@@ -83,28 +84,29 @@ export default function ImageUploader({ onExtractAll, isProcessing, progress }) 
       <header className="uploader__head">
         <div className="uploader__title-row">
           <h2>업로드 방식을 선택해주세요.</h2>
+          <UsageGuide />
           {mode !== null && screenCaptureSupported && (
             <button type="button" className="btn btn--ghost uploader__mode-back" onClick={() => setMode(null)}>
               ← 뒤로
             </button>
           )}
         </div>
-        <p className="uploader__hint">
+        <p className="uploader__hint" data-tour="hint">
           캐릭터 -&gt; 에코 -&gt; 교체에서 에코를 순서대로 클릭해주세요.
         </p>
       </header>
 
       {mode === null && (
         <div className="uploader__modes">
-          <button type="button" className="uploader__mode" onClick={() => setMode('upload')}>
+          <button type="button" className="uploader__mode" onClick={() => setMode('upload')} data-tour="upload">
             <strong>스크린샷</strong> 
             <span>저장한 사진으로 업로드 할게요.</span>
           </button>
-          <button type="button" className="uploader__mode" onClick={() => setMode('share')}>
+          <button type="button" className="uploader__mode" onClick={() => setMode('share')} data-tour="share">
             <strong>PC 공유</strong>
             <span>화면 공유로 실시간 업로드 할게요.</span>
           </button>
-          <button type="button" className="uploader__mode" onClick={() => setMode('auto')}>
+          <button type="button" className="uploader__mode" onClick={() => setMode('auto')} data-tour="auto">
             <strong>자동 캡처</strong>
             <span>화면 공유 중 새 에코가 보이면 알아서 캡처할게요.</span>
           </button>
@@ -145,6 +147,18 @@ export default function ImageUploader({ onExtractAll, isProcessing, progress }) 
           />
           <span>이미지 선택 또는 드래그해서 놓기 ({items.length}/{MAX_IMAGES})</span>
         </label>
+      )}
+
+      {/* 스크린샷 업로드 주의사항 */}
+      {mode === 'upload' && (
+        <ul className="uploader__notes">
+          <li>게임 화면 <b>전체</b>를 캡처해 주세요. 에코 부분만 잘라낸 사진은 인식이 안 돼요.</li>
+          <li>캐릭터 → 에코 → 교체 화면에서, 에코 옵션이 다 보이는 상태로 찍어 주세요.</li>
+          <li>에코 <b>한 개당 사진 한 장</b>이에요. 끼고 있는 순서대로 올리면 그 순서로 들어가요.</li>
+          <li>마우스 커서나 다른 창이 옵션 글자를 가리지 않게 해 주세요.</li>
+          <li>휴대폰으로 모니터를 찍은 사진은 글자가 흐려서 잘 못 읽어요.</li>
+          <li>+25 강화가 끝나지 않은 에코는 옵션이 덜 보여서 정확하지 않을 수 있어요.</li>
+        </ul>
       )}
 
       {items.length > 0 && (

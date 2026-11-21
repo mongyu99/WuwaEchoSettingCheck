@@ -43,7 +43,7 @@ function goalOptions(goal, subs, allow) {
         pctOpts.push({
           slots: 0,
           gain: t - cur,
-          targets: [{ label: info.percentLabel, value: t }],
+          targets: [{ label: info.percentLabel, value: t, from: cur, scale: 1 }],
           changes: [{ kind: 'upgrade', label: info.percentLabel, from: pctStat.valueText, to: fmtValue(info.percentLabel, t) }],
           upgraded: pctStat,
         })
@@ -53,7 +53,7 @@ function goalOptions(goal, subs, allow) {
         pctOpts.push({
           slots: 1,
           gain: t,
-          targets: [{ label: info.percentLabel, value: t }],
+          targets: [{ label: info.percentLabel, value: t, from: 0, scale: 1 }],
           changes: [{ kind: 'add', label: info.percentLabel, to: fmtValue(info.percentLabel, t) }],
           upgraded: null,
         })
@@ -68,7 +68,7 @@ function goalOptions(goal, subs, allow) {
       const flatOpt = {
         slots: 1,
         gain: (f / base) * 100,
-        targets: [{ label: info.flatLabel, value: f }],
+        targets: [{ label: info.flatLabel, value: f, from: 0, scale: 100 / base }],
         changes: [{ kind: 'add', label: info.flatLabel, to: fmtValue(info.flatLabel, f) }],
         upgraded: null,
       }
@@ -136,7 +136,7 @@ function echoCandidates(echo, echoIndex, goals, validLabels, allow) {
     for (const opt of perGoal[gi]) {
       walk(gi + 1, {
         slots: acc.slots + opt.slots,
-        targets: [...acc.targets, ...opt.targets],
+        targets: [...acc.targets, ...opt.targets.map((t) => ({ ...t, goal: gi }))],
         changes: [...acc.changes, ...opt.changes],
         upgraded: opt.upgraded ? [...acc.upgraded, opt.upgraded] : acc.upgraded,
         gains: [...acc.gains, opt.gain],
@@ -190,6 +190,43 @@ function beamSearch(perEcho, needs, better) {
   return done.reduce((best, s) => (better(s, best) ? s : best))
 }
 
+/**
+ * 계획을 정한 뒤, 붙어야 할 수치를 목표를 채우는 가장 낮은 단계로 내립니다.
+ * (탐색은 대표 단계 몇 개만 봐서, 6.9%면 충분한데 7.5%를 노리라고 하는 경우가 있음) 어려운 교체부터 내립니다.
+ */
+function lowerTiers(plan, needs) {
+  if (!plan) return plan
+  const totals = needs.map((_, i) => plan.steps.reduce((sum, st) => sum + st.gains[i], 0))
+  const order = plan.steps.map((st, i) => i).sort((a, b) => plan.steps[b].attempts - plan.steps[a].attempts)
+  const steps = [...plan.steps]
+  for (const si of order) {
+    const st = steps[si]
+    const targets = st.targets.map((t) => ({ ...t }))
+    const gains = [...st.gains]
+    targets.forEach((t, ti) => {
+      if (t.goal === undefined) return
+      const gainOf = (v) => (v - t.from) * t.scale
+      const others = totals[t.goal] - gainOf(t.value)
+      const lowest = [...(SUB_STAT_OPTIONS[t.label] ?? [])].sort((a, b) => a - b).filter((v) => v > t.from && v < t.value).find((v) => others + gainOf(v) >= needs[t.goal] - 1e-9)
+      if (lowest === undefined) return
+      const diff = gainOf(lowest) - gainOf(t.value)
+      totals[t.goal] += diff
+      gains[t.goal] += diff
+      targets[ti] = { ...t, value: lowest }
+    })
+    const changes = st.changes.map((c, i) => (targets[i] && targets[i].value !== st.targets[i].value ? { ...c, to: fmtValue(c.label, targets[i].value) } : c))
+    const probability = echoMultiTargetProbability(0, [...st.keep, ...targets])
+    steps[si] = { ...st, targets, changes, gains, probability, attempts: expectedAttempts(probability) }
+  }
+  return {
+    ...plan,
+    steps,
+    gains: totals,
+    attempts: steps.reduce((sum, st) => sum + st.attempts, 0),
+    minProbability: Math.min(...steps.map((st) => st.probability)),
+  }
+}
+
 const fastBetter = (a, b) => a.attempts < b.attempts - 1e-9 || (Math.abs(a.attempts - b.attempts) < 1e-9 && a.minProbability > b.minProbability)
 const safeBetter = (a, b) =>
   a.minProbability > b.minProbability + 1e-12 || (Math.abs(a.minProbability - b.minProbability) < 1e-12 && a.attempts < b.attempts)
@@ -203,8 +240,8 @@ export function planJoint({ goals, echoes, validLabels }) {
   const needs = goals.map((g) => g.need)
   const solve = (allow) => {
     const perEcho = echoes.map((e, i) => echoCandidates(e, i, goals, validLabels, allow)).filter((c) => c.length > 0)
-    const fast = beamSearch(perEcho, needs, fastBetter)
-    const safe = beamSearch(perEcho, needs, safeBetter)
+    const fast = lowerTiers(beamSearch(perEcho, needs, fastBetter), needs)
+    const safe = lowerTiers(beamSearch(perEcho, needs, safeBetter), needs)
     return { fast, safe }
   }
   const hasFlat = goals.some((g) => g.info.flatLabel && g.base > 0)
