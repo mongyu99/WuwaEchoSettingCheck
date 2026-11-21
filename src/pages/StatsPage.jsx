@@ -764,6 +764,18 @@ export default function StatsPage({
   onBackFromOptimizer,
 }) {
   const [resetOpen, setResetOpen] = useState(false)
+  // 유효 옵션 안내 말풍선: 화면에 들어오면 처음엔 무조건 펼쳐 두고, 화면 아무 곳이나 누르면 닫힙니다. i로 다시 열 수 있어요.
+  const [validInfoOpen, setValidInfoOpen] = useState(true)
+  useEffect(() => {
+    if (!validInfoOpen) return
+    const close = () => setValidInfoOpen(false)
+    // 여는 클릭이 그대로 닫는 클릭이 되지 않게 다음 순간부터 듣습니다.
+    const id = setTimeout(() => document.addEventListener('pointerdown', close), 0)
+    return () => {
+      clearTimeout(id)
+      document.removeEventListener('pointerdown', close)
+    }
+  }, [validInfoOpen])
   const [retakeOpen, setRetakeOpen] = useState(false)
   const [weaponModalOpen, setWeaponModalOpen] = useState(false)
   const [comboModalOpen, setComboModalOpen] = useState(false)
@@ -975,14 +987,26 @@ export default function StatsPage({
 
           <div className="optimizer__title-row stats-page__valid-title">
             <h4>유효 옵션</h4>
-            <span className="optimizer__info" tabIndex={0} role="button" aria-label="유효 옵션 안내">
+            <button
+              type="button"
+              className="optimizer__info stats-page__valid-info-btn"
+              aria-label="유효 옵션 안내"
+              aria-expanded={validInfoOpen}
+              // 열린 상태에서 i를 누르면 "아무 곳 클릭 → 닫힘"과 겹쳐 다시 열리지 않게, i 클릭은 여기서만 처리합니다.
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => setValidInfoOpen((v) => !v)}
+            >
               i
-            </span>
-            <div className="optimizer__formula" role="tooltip">
-              실제 유효 옵션과 차이가 있습니다.
-              <br />
-              계속 수정중입니다.
-            </div>
+            </button>
+            {/* 유효 옵션 기준 안내: 피해 유형을 고르게 쓰는 캐릭터(청초·페비 등)는 빠진 피해 보너스도 도움이 될 수 있음 */}
+            {validInfoOpen && (
+              <div className="stats-page__valid-notice" role="note">
+                <b>이 유효 옵션은 공식에서 권장하는 옵션이에요.</b>
+                <span>청초, 페비처럼 여러 피해 유형을 고르게 쓰는 캐릭터는 유효 옵션에 없는 피해 보너스도 실제로는 도움이 될 수 있어요.</span>
+                <span>점수는 참고용으로 봐 주세요.</span>
+                <small>화면 아무 곳이나 누르면 닫혀요.</small>
+              </div>
+            )}
           </div>
           <ul className="stats-page__valid-list">
             {validLabels.length === 0 && <li className="echo-panel__empty">설정된 유효 옵션 없음</li>}

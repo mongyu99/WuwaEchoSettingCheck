@@ -2107,3 +2107,70 @@
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(8px);
 }
+
+/* 유효 옵션 안내 말풍선: i 아래에 뜨고, 처음엔 펼쳐진 채로 */
+.stats-page__valid-title {
+  position: relative;
+}
+
+.stats-page__valid-notice {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 300px;
+  max-width: calc(100vw - 32px);
+  padding: 14px 16px;
+  border: 1px solid var(--ww-gold, #d8b35a);
+  border-radius: 10px;
+  background: var(--bg-surface, #141b2b);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: left;
+  animation: valid-notice-in 0.2s ease;
+}
+
+/* 말풍선 꼬리(i 쪽) */
+.stats-page__valid-notice::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 64px;
+  width: 10px;
+  height: 10px;
+  border-top: 1px solid var(--ww-gold, #d8b35a);
+  border-left: 1px solid var(--ww-gold, #d8b35a);
+  background: inherit;
+  transform: rotate(45deg);
+}
+
+.stats-page__valid-notice b {
+  font-size: 14px;
+  color: var(--ww-gold, #d8b35a);
+}
+
+.stats-page__valid-notice span {
+  color: var(--text-primary, inherit);
+}
+
+.stats-page__valid-notice small {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+@keyframes valid-notice-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stats-page__valid-notice {
+    animation: none;
+  }
+}
