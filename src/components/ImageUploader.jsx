@@ -158,6 +158,7 @@ export default function ImageUploader({ onExtractAll, isProcessing, progress }) 
           <li>마우스 커서나 다른 창이 옵션 글자를 가리지 않게 해 주세요.</li>
           <li>휴대폰으로 모니터를 찍은 사진은 글자가 흐려서 잘 못 읽어요.</li>
           <li>+25 강화가 끝나지 않은 에코는 옵션이 덜 보여서 정확하지 않을 수 있어요.</li>
+          <li><b>덩치가 큰 에코</b>는 인식이 안 되거나 틀리게 읽힐 수 있어요. 인식 결과를 꼭 확인하고, 틀린 곳은 직접 고쳐 주세요.</li>
         </ul>
       )}
 

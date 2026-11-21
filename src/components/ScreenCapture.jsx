@@ -221,13 +221,15 @@ export default function ScreenCapture({ onCapture, remaining, auto = false }) {
         <button type="button" className="btn btn--primary screen-capture__start" onClick={start}>
           화면 공유로 바로 캡처 (PC 전용)
         </button>
-        <ul className="uploader__hint screen-capture__notes">
-          <li>모니터 전체가 아니라 게임 창을 선택해 주세요. 다른 창이 함께 잡히면 인식되지 않을 수 있습니다.</li>
-          <li>16:9 화면에 맞춰져 있어요. 16:10 등 다른 비율에서는 화면이 깨지거나 스탯 위치가 어긋날 수 있습니다.</li>
-          <li>창 크기가 작거나 해상도가 낮으면 글자가 뭉개져 인식되지 않을 수 있습니다.</li>
-        </ul>
         </>
       )}
+      {/* 주의사항: 공유 중(PC 공유 · 자동 캡처)에도 계속 보이게 */}
+      <ul className="uploader__hint screen-capture__notes">
+        <li>모니터 전체가 아니라 게임 창을 선택해 주세요. 다른 창이 함께 잡히면 인식되지 않을 수 있습니다.</li>
+        <li>16:9 화면에 맞춰져 있어요. 16:10 등 다른 비율에서는 화면이 깨지거나 스탯 위치가 어긋날 수 있습니다.</li>
+        <li>창 크기가 작거나 해상도가 낮으면 글자가 뭉개져 인식되지 않을 수 있습니다.</li>
+        <li>덩치가 큰 에코는 인식이 안 되거나 틀리게 읽힐 수 있습니다. 인식 결과를 꼭 확인하고, 틀린 곳은 직접 고쳐 주세요.</li>
+      </ul>
       {error && <p className="screen-capture__error">{error}</p>}
     </div>
   )
