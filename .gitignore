@@ -3,17 +3,7 @@ dist
 .DS_Store
 .env
 .env.local
-raw-characters/*
-!raw-characters/.gitkeep
-raw-characters-backup
-raw-weapons/*
-!raw-weapons/.gitkeep
-raw-echo-sets/*
-!raw-echo-sets/.gitkeep
-raw-main-echo/*
-!raw-main-echo/.gitkeep
-raw-banners/*
-!raw-banners/.gitkeep
+raw-*/
 # 로컬 DB에 넣는 게임 데이터 시드 (저장소에는 테이블 구조만 올림)
 backend/local-seed/
 
@@ -30,3 +20,6 @@ test/ocr-fixtures/
 # 에디터가 만드는 개인 설정·캐시 (Visual Studio, VS Code)
 .vs/
 .vscode/
+
+# 글자 인식 언어 데이터(tesseract가 node에서 돌 때 자동으로 받는 캐시). 사이트는 CDN에서 받아서 필요 없음
+*.traineddata

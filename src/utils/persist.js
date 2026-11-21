@@ -19,11 +19,3 @@ export function loadState() {
     return null
   }
 }
-
-export function clearState() {
-  try {
-    localStorage.removeItem(STORAGE_KEY)
-  } catch (err) {
-    console.error('저장된 상태를 지우는 데 실패했어요.', err)
-  }
-}
