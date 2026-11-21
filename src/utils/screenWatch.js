@@ -58,7 +58,6 @@ export function bagSignatureDiff(a, b) {
   return changed
 }
 
-export const bagSignatureChanged = (a, b) => bagSignatureDiff(a, b) >= MIN_CHANGED_CELLS
 
 function toGray(ctx, width, height) {
   const { data } = ctx.getImageData(0, 0, width, height)

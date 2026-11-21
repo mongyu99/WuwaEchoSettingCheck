@@ -7,7 +7,9 @@ const MAKER_YOUTUBE_URL = 'https://www.youtube.com/@MongYu99';
 // 사이트 소스 코드(깃허브 저장소) 주소입니다.
 const SOURCE_CODE_URL = 'https://github.com/mongyu99/WuwaEchoSettingCheck';
 // 셸라스님 유튜브 주소입니다. 비어 있으면 이름만 글자로 보여 줍니다.
-const SHELLAS_YOUTUBE_URL = 'https://www.youtube.com/@%EC%85%B8%EB%9D%BC%EC%8A%A4';
+// 도움 받은 사이트(에코 옵션 추출 사이트) 주소입니다.
+const HELPED_SITE_URL = 'https://lhs1205.github.io/wuwa_echo_extractor/'
+const SHELLAS_YOUTUBE_URL ='https://www.youtube.com/@%EC%85%B8%EB%9D%BC%EC%8A%A4';
 
 export default function SiteFooter({ onOpenInfo }) {
   return (
@@ -56,6 +58,12 @@ export default function SiteFooter({ onOpenInfo }) {
             ) : (
               <span className="site-footer__credit">셸라스님</span>
             )}
+          </p>
+          <p className="site-footer__credit-text">
+            도움 받은 사이트{' '}
+            <a className="site-footer__credit" href={HELPED_SITE_URL} target="_blank" rel="noreferrer">
+              에코 옵션 추출기 ↗
+            </a>
           </p>
         </div>
       </footer>

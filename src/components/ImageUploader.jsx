@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react'
-import UsageGuide from './UsageGuide'
 import { normalizeImage, cropNormalizedImage, blobToDataURL, MAX_IMAGES, TARGET_WIDTH, TARGET_HEIGHT } from '../utils/image'
 import { FIXED_REGIONS, REGION_META, SCAN_PREVIEW_REGION } from '../config/regions'
 import Modal from './Modal'
@@ -84,29 +83,28 @@ export default function ImageUploader({ onExtractAll, isProcessing, progress }) 
       <header className="uploader__head">
         <div className="uploader__title-row">
           <h2>업로드 방식을 선택해주세요.</h2>
-          <UsageGuide />
           {mode !== null && screenCaptureSupported && (
             <button type="button" className="btn btn--ghost uploader__mode-back" onClick={() => setMode(null)}>
               ← 뒤로
             </button>
           )}
         </div>
-        <p className="uploader__hint" data-tour="hint">
+        <p className="uploader__hint">
           캐릭터 -&gt; 에코 -&gt; 교체에서 에코를 순서대로 클릭해주세요.
         </p>
       </header>
 
       {mode === null && (
         <div className="uploader__modes">
-          <button type="button" className="uploader__mode" onClick={() => setMode('upload')} data-tour="upload">
+          <button type="button" className="uploader__mode" onClick={() => setMode('upload')}>
             <strong>스크린샷</strong> 
             <span>저장한 사진으로 업로드 할게요.</span>
           </button>
-          <button type="button" className="uploader__mode" onClick={() => setMode('share')} data-tour="share">
+          <button type="button" className="uploader__mode" onClick={() => setMode('share')}>
             <strong>PC 공유</strong>
             <span>화면 공유로 실시간 업로드 할게요.</span>
           </button>
-          <button type="button" className="uploader__mode" onClick={() => setMode('auto')} data-tour="auto">
+          <button type="button" className="uploader__mode" onClick={() => setMode('auto')}>
             <strong>자동 캡처</strong>
             <span>화면 공유 중 새 에코가 보이면 알아서 캡처할게요.</span>
           </button>
@@ -158,6 +156,7 @@ export default function ImageUploader({ onExtractAll, isProcessing, progress }) 
           <li>마우스 커서나 다른 창이 옵션 글자를 가리지 않게 해 주세요.</li>
           <li>휴대폰으로 모니터를 찍은 사진은 글자가 흐려서 잘 못 읽어요.</li>
           <li>+25 강화가 끝나지 않은 에코는 옵션이 덜 보여서 정확하지 않을 수 있어요.</li>
+          <li><b>덩치가 큰 에코</b>는 인식이 안 되거나 틀리게 읽힐 수 있어요. 인식 결과를 꼭 확인하고, 틀린 곳은 직접 고쳐 주세요.</li>
         </ul>
       )}
 
