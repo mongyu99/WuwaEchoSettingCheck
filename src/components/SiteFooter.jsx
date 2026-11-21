@@ -1,18 +1,15 @@
-import { useState } from 'react'
-import Modal from './Modal'
-import { LEGAL_NOTICES } from '../config/legalNotices'
+import { INFO_SECTIONS } from '../config/legalNotices'
 import './SiteFooter.css'
 
 import { CONTACT_URL } from '../config/contact'
 // 제작자(몽유) 유튜브 주소입니다.
 const MAKER_YOUTUBE_URL = 'https://www.youtube.com/@MongYu99';
+// 사이트 소스 코드(깃허브 저장소) 주소입니다.
+const SOURCE_CODE_URL = 'https://github.com/mongyu99/WuwaEchoSettingCheck';
 // 셸라스님 유튜브 주소입니다. 비어 있으면 이름만 글자로 보여 줍니다.
 const SHELLAS_YOUTUBE_URL = 'https://www.youtube.com/@%EC%85%B8%EB%9D%BC%EC%8A%A4';
 
-export default function SiteFooter() {
-  const [openKey, setOpenKey] = useState(null)
-  const active = openKey ? LEGAL_NOTICES[openKey] : null
-
+export default function SiteFooter({ onOpenInfo }) {
   return (
     <>
       <footer className="site-footer">
@@ -24,15 +21,12 @@ export default function SiteFooter() {
 
         <div className="site-footer__col">
           <span className="site-footer__heading">안내</span>
-          <button className="site-footer__link" onClick={() => setOpenKey('copyright')}>
-            저작권 안내
-          </button>
-          <button className="site-footer__link" onClick={() => setOpenKey('privacy')}>
-            개인정보처리방침
-          </button>
-          <button className="site-footer__link" onClick={() => setOpenKey('terms')}>
-            이용약관
-          </button>
+          {/* 누르면 안내 페이지의 그 항목으로 */}
+          {INFO_SECTIONS.map((s) => (
+            <button key={s.key} className="site-footer__link" onClick={() => onOpenInfo?.(s.key)}>
+              {s.title}
+            </button>
+          ))}
           {CONTACT_URL && (
             <a className="site-footer__link" href={CONTACT_URL} target="_blank" rel="noreferrer">
               문의
@@ -48,6 +42,10 @@ export default function SiteFooter() {
             <a className="site-footer__credit" href={MAKER_YOUTUBE_URL} target="_blank" rel="noreferrer">
               몽유 ↗
             </a>
+            {' · '}
+            <a className="site-footer__credit" href={SOURCE_CODE_URL} target="_blank" rel="noreferrer">
+              GitHub ↗
+            </a>
           </p>
           <p className="site-footer__credit-text">
             초기 기획 및 영감에 도움을 주신{' '}
@@ -62,11 +60,6 @@ export default function SiteFooter() {
         </div>
       </footer>
 
-      <Modal open={!!active} title={active?.title} onClose={() => setOpenKey(null)}>
-        {active?.body.map((line, i) => (
-          <p key={i}>{line}</p>
-        ))}
-      </Modal>
     </>
   )
 }

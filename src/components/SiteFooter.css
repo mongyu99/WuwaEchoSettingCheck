@@ -95,3 +95,9 @@ a.site-footer__credit:hover {
     width: 100%;
   }
 }
+
+/* 안내 링크: 읽기 쉽게 조금 크게 */
+.site-footer .site-footer__link {
+  font-size: 14px;
+  line-height: 1.9;
+}
