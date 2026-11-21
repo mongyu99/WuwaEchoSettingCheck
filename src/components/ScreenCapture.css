@@ -73,6 +73,16 @@
   width: 100%;
 }
 
-.screen-capture__notes {
-  padding-left: 18px;
+.screen-capture .uploader__notes {
+  margin: 12px 0 0;
+  padding: 12px 16px 12px 32px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.screen-capture .uploader__notes b {
+  color: var(--text-primary, #fff);
 }
