@@ -2197,3 +2197,15 @@
     animation: none;
   }
 }
+
+/* 목표 스탯 계산기 맨 아래 안내(계산하기 버튼 밑) */
+.optimizer__notice {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--accent-wave);
+  border-radius: 6px;
+  background: var(--bg-surface-raised);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}

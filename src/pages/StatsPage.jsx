@@ -697,14 +697,6 @@ function OptimizerPanel({
         계산 결과는 어디까지나 참고용이며, 실제 게임 내 확률과 다를 수 있습니다.
       </p>
       {mode === 'input' && (
-        <p className="uploader__hint optimizer__hint">
-          0을 넣으면 그 옵션은 무효로 처리합니다.
-          <br />
-          목표보다 높은 스탯은 넘친 만큼의 옵션을 다른 옵션으로 변경 가능한 자리로 봐요.
-        </p>
-      )}
-
-      {mode === 'input' && (
       <>
       <div className="optimizer__grid">
         {OPTIMIZER_TARGET_ORDER.map((cat) => (
@@ -720,6 +712,11 @@ function OptimizerPanel({
         ))}
       </div>
       <button className="btn btn--primary optimizer__calc-btn" onClick={submit}>계산하기</button>
+      <p className="optimizer__notice">
+        0을 넣으면 유효 옵션이라도 그 옵션은 없는 옵션으로 처리합니다.
+        <br />
+        목표보다 높은 스탯은 넘친 만큼의 옵션을 다른 옵션으로 변경 가능한 자리로 봅니다.
+      </p>
       </>
       )}
 
