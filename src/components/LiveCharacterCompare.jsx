@@ -46,9 +46,12 @@ export default function LiveCharacterCompare({ character, echo, hasEcho = false,
   }, [character, cost, current])
   // 캐릭터나 코스트가 바뀌면 직접 고른 자리는 풀고 다시 자동으로 고릅니다.
   useEffect(() => setSlotOverride(null), [character.id, cost])
+  // 코스트가 다른 자리는 바꿀 수 없어서 고를 수 없게 합니다(코스트를 못 읽었으면 모든 자리를 열어 둡니다).
+  const otherCost = (e) => !!cost && !!e && Number(getEchoCost(e)) !== cost
+  const override = slotOverride !== null && otherCost(current[slotOverride]) ? null : slotOverride
   // 직접 누른 칸: 빈칸이면 표시는 누른 칸에, 저장·비교는 첫 빈칸으로(저장은 앞에서부터 채워짐).
-  const slot = slotOverride === null ? autoSlot : current[slotOverride] ? slotOverride : current.length < 5 ? current.length : null
-  const shownSlot = slotOverride ?? autoSlot
+  const slot = override === null ? autoSlot : current[override] ? override : current.length < 5 ? current.length : null
+  const shownSlot = override ?? autoSlot
 
   const compare = useMemo(() => {
     if (!echo || slot === null) return null
@@ -94,7 +97,9 @@ export default function LiveCharacterCompare({ character, echo, hasEcho = false,
       <div className="live-compare__title-row">
         <p className="live-compare__title">이 에코로 바꾸면</p>
         <span className="live-compare__slot-note">
-          {slot !== null && (slotOverride === null ? '같은 코스트 중 점수가 가장 낮은 자리와 비교' : '고른 자리와 비교')}
+          {!cost && echo
+            ? '코스트 미확인 · 같은 코스트 자리를 직접 골라 주세요'
+            : slot !== null && (override === null ? '같은 코스트 중 점수가 가장 낮은 자리와 비교' : '고른 자리와 비교')}
         </span>
         <button
           type="button"
@@ -119,14 +124,18 @@ export default function LiveCharacterCompare({ character, echo, hasEcho = false,
       <div className="live-compare__slots" aria-label="바꿀 자리">
         {Array.from({ length: 5 }, (_, i) => {
           const e = current[i]
+          const blocked = otherCost(e)
           return (
             <button
               key={i}
               type="button"
-              className={`live-compare__slot ${shownSlot === i ? 'live-compare__slot--on' : ''}`}
+              className={`live-compare__slot ${shownSlot === i ? 'live-compare__slot--on' : ''} ${blocked ? 'live-compare__slot--blocked' : ''}`}
               onClick={() => setSlotOverride(i)}
-              title={e ? `${getEchoCost(e)}코 · ${scoreOf(e).toFixed(1)}점` : '빈 자리'}
+              disabled={blocked}
+              title={blocked ? `${getEchoCost(e)}코 자리라 ${cost}코 에코와 바꿀 수 없어요` : e ? `${getEchoCost(e)}코 · ${scoreOf(e).toFixed(1)}점` : '빈 자리'}
             >
+              {/* 같은 코스트 중 점수가 가장 낮은 자리 = 바꾸기 추천 */}
+              {autoSlot === i && <span className="live-compare__rec">추천</span>}
               <small>{e ? `${getEchoCost(e)}코` : '빈칸'}</small>
               {/* 자리 점수: 저장해서 바뀌면 촤르륵 올라가고, 오른쪽에 등급 아이콘 */}
               <b className="live-compare__slot-score">
@@ -153,7 +162,9 @@ export default function LiveCharacterCompare({ character, echo, hasEcho = false,
       {!echo ? (
         <p className="uploader__hint">{hasEcho ? '코스트를 못 읽었어요. 인식한 에코의 [수정]에서 코스트를 골라 주세요.' : '게임에서 에코를 띄우면 비교해 드려요.'}</p>
       ) : slot === null ? (
-        <p className="uploader__hint">{cost}코 에코를 끼고 있지 않아요. 바꿀 자리를 위에서 골라 주세요.</p>
+        <p className="uploader__hint">
+          {cost ? `${cost}코 에코를 끼고 있지 않아요. 바꿀 자리를 위에서 골라 주세요.` : '코스트를 못 읽었어요. 같은 코스트 자리를 위에서 골라 비교해 보세요.'}
+        </p>
       ) : (
         compare && (
           <>
@@ -198,10 +209,15 @@ export default function LiveCharacterCompare({ character, echo, hasEcho = false,
                 </tbody>
               </table>
             )}
-            <button type="button" className="btn btn--primary live-compare__apply" onClick={() => onApply(character, echo, slot)}>
-              이 자리에 저장
-            </button>
-          </>
+            <button
+              type="button"
+              className="btn btn--primary live-compare__apply"
+              disabled={!cost}
+              title={cost ? undefined : '코스트를 골라야 저장할 수 있어요.'}
+              onClick={() => onApply(character, echo, slot)}
+            >
+              {cost ? '이 자리에 저장' : '코스트를 골라야 저장할 수 있어요'}
+            </button>          </>
         )
       )}
     </div>

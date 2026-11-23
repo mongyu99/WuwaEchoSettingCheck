@@ -448,6 +448,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
     <EnhanceMissionCard
       mission={mission}
       character={CHARACTERS.find((c) => c.id === mission.characterId)}
+      currentEchoes={characterEchoes?.[mission.characterId] ?? []}
       echo={shownStats && currentCost ? buildEcho(shownMain, shownStats, currentCost) : shownStats ? { cost: null, subStats: shownStats } : null}
       onSave={(i) => {
         const goal = mission.goals[i]
@@ -587,6 +588,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
               sharing={sharing}
               setId={setId}
               cost={currentCost}
+              main={shownMain}
               stats={shownStats}
               missionCard={missionCard}
               onRecognize={recognizeNow}
@@ -774,7 +776,8 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
             {pinned ? (
               <LiveCharacterCompare
                 character={pinned}
-                echo={shownStats && currentCost ? buildEcho(shownMain, shownStats, currentCost) : null}
+                // 코스트를 못 읽어도 비교는 할 수 있게 넘깁니다(자리는 모두 열리고 "코스트 미확인" 안내, 저장은 막힘).
+                echo={shownStats ? buildEcho(shownMain, shownStats, currentCost) : null}
                 hasEcho={!!shownStats}
                 characterEchoes={characterEchoes}
                 characterData={characterData}
