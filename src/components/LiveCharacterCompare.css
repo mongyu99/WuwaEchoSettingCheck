@@ -61,6 +61,28 @@
   color: var(--ww-ink);
   font: inherit;
   cursor: pointer;
+  position: relative;
+}
+
+/* 코스트가 달라 바꿀 수 없는 자리 */
+.live-compare__slot--blocked {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* 바꾸기 추천 자리(같은 코스트 중 점수가 가장 낮은 자리) */
+.live-compare__rec {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--accent-wave);
+  color: var(--bg-void);
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .live-compare__slot:disabled {

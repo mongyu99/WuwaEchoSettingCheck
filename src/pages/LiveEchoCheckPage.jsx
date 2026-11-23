@@ -30,6 +30,7 @@ import LivePipPanel from '../components/LivePipPanel'
 // 에코 가방처럼 가볍게 자주 봅니다: 매번 전체 화면을 복사하지 않고(게임 위치는 2초마다만 찾음)
 // 작은 비교용 그림만 영상에서 바로 뽑고, 화면이 멈췄을 때만 전체를 잘라 글자를 읽습니다.
 const CHECK_INTERVAL_MS = 150
+const SETTLE_MS = 500 // 화면이 바뀐 뒤 이만큼 그대로 있어야(연출이 끝나야) 읽습니다
 const RECT_REFRESH_MS = 2000
 const CAPTURE_FPS = 15
 const MAX_TOTAL_COST = 12
@@ -326,23 +327,70 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
     }
   }
 
+  // 자동 인식(화면이 멈추면 알아서 읽기) 켜기/끄기. 끄면 [지금 인식] 버튼을 누를 때만 읽습니다.
+  const [autoRecognize, setAutoRecognize] = useState(true)
+  const autoRef = useRef(true)
+  autoRef.current = autoRecognize
+  const sessionRef = useRef(null) // 화면 공유 중에 쓰는 글자 인식기(자동·수동이 같이 씀)
+  const busyRef = useRef(false) // 인식이 도는 중이면 다음 인식은 건너뜁니다(자동·수동 공통)
+  const [manualBusy, setManualBusy] = useState(false)
+  const [recognizeFlash, setRecognizeFlash] = useState({ n: 0, ok: true }) // PiP 창 "인식됨" 반짝임
+
+  /**
+   * [지금 인식]: 지금 화면을 캡쳐 인식처럼 한 장씩 새로 읽습니다(다수결 기록을 쓰지 않음).
+   * 공유 영상은 스크린샷보다 흐릴 수 있어서, 0.2초 간격으로 최대 3번 읽어 연달아 같은 결과가 나오면 바로 씁니다.
+   */
+  const recognizeNow = async () => {
+    const video = videoRef.current
+    const session = sessionRef.current
+    if (!sharing || !video?.videoWidth || !session || busyRef.current) return
+    busyRef.current = true
+    setManualBusy(true)
+    try {
+      const rect = findGameRect(video)
+      let previous = null
+      let recognized = null
+      for (let i = 0; i < 3; i++) {
+        if (i > 0) await new Promise((r) => setTimeout(r, 200))
+        const area = grabRect(video, rect)
+        recognized = await recognizeEchoPanel(area, session)
+        saveOcrSample(area, recognized, 'live')
+        const key = JSON.stringify(recognized.subStats)
+        if (recognized.subStats.length > 0 && key === previous) break
+        previous = key
+      }
+      setDebugViews(recognized.views)
+      voterRef.current.reset()
+      applyRecognized(recognized)
+      const ok = recognized.subStats.length > 0
+      setRecognizeFlash((f) => ({ n: f.n + 1, ok }))
+      setError(ok ? null : '에코 옵션을 찾지 못했어요. 에코 상세 화면이나 강화 화면을 띄우고 다시 눌러 주세요.')
+    } catch (err) {
+      console.error(err)
+    } finally {
+      busyRef.current = false
+      setManualBusy(false)
+    }
+  }
+
   useEffect(() => {
     if (!sharing) return undefined
     videoRef.current.srcObject = streamRef.current
 
-    let busy = false
     let cancelled = false
     let lastSignature = null // 마지막으로 글자 인식을 돌린 화면
     let previousSignature = null // 바로 전 확인의 화면
+    let stableSince = 0 // 화면이 마지막으로 바뀐 시각
     let rect = null // 공유 화면 안 게임 화면 위치
     let rectAt = 0
     const session = createOcrSession()
+    sessionRef.current = session
 
     const check = async () => {
       const video = videoRef.current
-      // 이전 인식이 0.5초 넘게 걸리면 끝날 때까지 이번 확인은 건너뜁니다.
-      if (busy || !video?.videoWidth) return
-      busy = true
+      // 자동 인식을 껐거나, 이전 인식이 아직 돌고 있으면 건너뜁니다.
+      if (!autoRef.current || busyRef.current || !video?.videoWidth) return
+      busyRef.current = true
       try {
         const now = performance.now()
         if (!rect || now - rectAt > RECT_REFRESH_MS) {
@@ -351,9 +399,10 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
         }
         const signature = panelSignature(video, rect.w, rect.h, rect.x, rect.y)
         // 화면이 움직이는 동안(에코 전환, 강화 연출 등)은 기다렸다가, 멈춘 뒤에 한 번만 인식합니다.
-        const moving = signatureChanged(previousSignature, signature)
+        // 화면이 바뀌면 그때부터 다시 세고, 0.5초(SETTLE_MS) 동안 그대로 있으면 그 화면을 한 번만 읽습니다.
+        if (signatureChanged(previousSignature, signature)) stableSince = now
         previousSignature = signature
-        if (moving || !signatureChanged(lastSignature, signature)) return
+        if (now - stableSince < SETTLE_MS || !signatureChanged(lastSignature, signature)) return
         lastSignature = signature
 
         const area = grabRect(video, rect)
@@ -367,7 +416,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
       } catch (err) {
         console.error(err)
       } finally {
-        busy = false
+        busyRef.current = false
       }
     }
 
@@ -375,6 +424,8 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
     return () => {
       cancelled = true
       clearInterval(timer)
+      sessionRef.current = null
+      busyRef.current = false
       session.terminate()
     }
   }, [sharing])
@@ -397,6 +448,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
     <EnhanceMissionCard
       mission={mission}
       character={CHARACTERS.find((c) => c.id === mission.characterId)}
+      currentEchoes={characterEchoes?.[mission.characterId] ?? []}
       echo={shownStats && currentCost ? buildEcho(shownMain, shownStats, currentCost) : shownStats ? { cost: null, subStats: shownStats } : null}
       onSave={(i) => {
         const goal = mission.goals[i]
@@ -417,8 +469,25 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
   // 패널 머리줄: 제목 + (PC면) 실시간/캡쳐 전환
   const modeTabs = (
     <div className="live-check__panel-head">
-      <h3>{mode === 'capture' ? '캡쳐 인식' : '실시간 인식'}</h3>
+      <h3>{mode === 'capture' ? '캡쳐 인식' : '실시간 인식 - 베타'}</h3>
       {screenCaptureSupported && (
+        <div className="live-check__head-tools">
+        {/* 자동 인식 켜기/끄기: 위 메뉴의 애니메이션 스위치와 같은 모양 */}
+        {mode === 'live' && (
+          <button
+            type="button"
+            className={`motion-switch ${autoRecognize ? 'motion-switch--on' : ''}`}
+            role="switch"
+            aria-checked={autoRecognize}
+            onClick={() => setAutoRecognize((on) => !on)}
+            title="끄면 [지금 화면 인식]을 누를 때만 읽어요."
+          >
+            <span className="motion-switch__track">
+              <span className="motion-switch__knob" />
+            </span>
+            자동 인식
+          </button>
+        )}
         <div className="live-check__modes" role="tablist" aria-label="인식 방식">
           {[
             ['live', '실시간'],
@@ -438,6 +507,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
               {label}
             </button>
           ))}
+        </div>
         </div>
       )}
     </div>
@@ -501,6 +571,13 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
                 화면 공유 시작
               </button>
             )}
+            {sharing && (
+              <div className="live-check__manual">
+                <button type="button" className="btn btn--primary" disabled={manualBusy} onClick={recognizeNow}>
+                  {manualBusy ? '읽는 중...' : '지금 화면 인식'}
+                </button>
+              </div>
+            )}
             {pipSupported && (
               <button type="button" className="btn btn--ghost" onClick={pip.pipWindow ? pip.close : pip.open}>
                 {pip.pipWindow ? '작은 창 닫기' : '게임 위에 작은 창 띄우기'}
@@ -511,8 +588,14 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
               sharing={sharing}
               setId={setId}
               cost={currentCost}
+              main={shownMain}
               stats={shownStats}
               missionCard={missionCard}
+              onRecognize={recognizeNow}
+              recognizing={manualBusy}
+              flash={recognizeFlash}
+              autoRecognize={autoRecognize}
+              onToggleAuto={setAutoRecognize}
               results={results}
             />
             {error && <p className="screen-capture__error">{error}</p>}
@@ -693,7 +776,8 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
             {pinned ? (
               <LiveCharacterCompare
                 character={pinned}
-                echo={shownStats && currentCost ? buildEcho(shownMain, shownStats, currentCost) : null}
+                // 코스트를 못 읽어도 비교는 할 수 있게 넘깁니다(자리는 모두 열리고 "코스트 미확인" 안내, 저장은 막힘).
+                echo={shownStats ? buildEcho(shownMain, shownStats, currentCost) : null}
                 hasEcho={!!shownStats}
                 characterEchoes={characterEchoes}
                 characterData={characterData}

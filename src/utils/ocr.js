@@ -370,6 +370,17 @@ export function buildStatsFromLines(lineObjs) {
       prev.text = `${prev.text} ${l.text}`
       continue
     }
+    // 강조된(배경이 밝은) 줄은 수치가 먼저 읽히기도 합니다("8.6%" 다음 줄 "+ 공격력"). 이름 없는 수치 줄 바로 뒤에
+    // 숫자 없는 줄이 오면 둘을 "이름 수치" 한 줄로 합칩니다.
+    if (!isNumericOnly && prev?.numericOnly && !/\d/.test(l.text)) {
+      prev.text = `${l.text} ${prev.text}`
+      prev.numericOnly = false
+      continue
+    }
+    if (isNumericOnly) {
+      merged.push({ ...l, numericOnly: true })
+      continue
+    }
     merged.push({ ...l })
   }
 

@@ -141,6 +141,18 @@
   color: #e06060;
 }
 
+/* 조건 미달이지만 지금 그 자리 에코보다 점수가 높을 때 */
+.mission__notice {
+  margin: 6px 0 0;
+  padding: 6px 10px;
+  border-left: 3px solid var(--accent-wave);
+  border-radius: 6px;
+  background: var(--bg-surface-raised);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
 /* 머리 누르면 접기/펼치기 */
 .mission__toggle {
   position: relative;
