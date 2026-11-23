@@ -36,14 +36,14 @@ function copyStyles(target) {
 }
 
 /** PiP 창을 열고 닫는 상태. 열린 창(window)이나 null을 돌려줍니다. */
-export function usePipWindow() {
+export function usePipWindow(title = '명체크 · 가방 스캔', size = { width: 320, height: 440 }) {
   const [pipWindow, setPipWindow] = useState(null)
 
   const open = async () => {
     if (!pipSupported || pipWindow) return
     try {
-      const win = await window.documentPictureInPicture.requestWindow({ width: 320, height: 440 })
-      win.document.title = '명체크 · 가방 스캔'
+      const win = await window.documentPictureInPicture.requestWindow(size)
+      win.document.title = title
       copyStyles(win)
       win.addEventListener('pagehide', () => setPipWindow(null))
       setPipWindow(win)

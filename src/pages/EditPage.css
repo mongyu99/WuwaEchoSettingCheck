@@ -84,6 +84,73 @@
   min-width: 0;
 }
 
+/* 넓은 화면: 에코 5개를 가로로 나란히(한 칸 = 사진 위, 수정 칸 아래) 놓아 한 화면에 다 보이게 합니다. */
+@media (min-width: 1100px) {
+  .echo-list {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .echo-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .echo-row__thumb-wrap {
+    flex: none;
+    width: auto;
+    padding: 8px;
+  }
+  .echo-row .echo-panel {
+    gap: 10px;
+    padding: 12px;
+  }
+  .echo-row .echo-panel__block {
+    padding-left: 8px;
+  }
+  .echo-row .echo-panel__block ul {
+    gap: 4px;
+  }
+  .echo-row .echo-panel__sub-row {
+    grid-template-columns: minmax(0, 1fr) 74px 12px;
+    gap: 4px;
+  }
+  .echo-row .echo-panel__main-row {
+    grid-template-columns: minmax(0, 1fr) 56px;
+    gap: 4px;
+  }
+  .echo-row .echo-panel__sub-row select,
+  .echo-row .echo-panel__main-row select,
+  .echo-row .echo-panel__main-row input {
+    padding: 4px 4px;
+    font-size: 12px;
+  }
+}
+
+.edit-page__toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1000;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border: 1px solid var(--accent-wave);
+  border-radius: 12px;
+  background: var(--bg-surface-raised);
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.6;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  animation: fade-in 0.25s ease;
+}
+
+@media (max-width: 640px) {
+  .edit-page__toast {
+    right: 16px;
+    bottom: 16px;
+  }
+}
+
 .edit-page__actions {
   display: flex;
   justify-content: flex-end;

@@ -21,6 +21,7 @@ import MobileSection from '../components/MobileSection'
 import Modal from '../components/Modal'
 import RetakeModal from '../components/RetakeModal'
 import EchoScoreCard from '../components/EchoScoreCard'
+import EchoOddsCard from '../components/EchoOddsCard'
 import './StatsPage.css'
 
 const ELEMENT_DAMAGE_LABELS = ['응결 피해 보너스', '용융 피해 보너스', '전도 피해 보너스', '기류 피해 보너스', '회절 피해 보너스', '인멸 피해 보너스']
@@ -886,6 +887,73 @@ export default function StatsPage({
     return () => observer.disconnect()
   }, [])
 
+  // 오른쪽 칸(목표 계산기, 교체 우선순위)을 왼쪽 카드와 위·아래 끝까지 맞춥니다.
+  // 서로 다른 칸이라 CSS만으로는 못 맞춰서, 왼쪽 카드의 실제 위치를 재서 오른쪽 칸 기준 좌표로 옮깁니다.
+  // 넓은 화면(두 칸 배치)에서만 쓰고, 좁은 화면은 원래대로 세로로 쌓습니다.
+  const optimizerWrapRef = useRef(null)
+  const [sideLayout, setSideLayout] = useState(null)
+  useEffect(() => {
+    const wrap = optimizerWrapRef.current
+    const agg = aggregateColRef.current
+    const editor = echoEditorRef.current?.querySelector('.echo-editor')
+    if (!wrap || !agg) return
+    const wide = window.matchMedia('(min-width: 1101px)')
+    const measure = () => {
+      if (!wide.matches) return setSideLayout(null)
+      const base = wrap.getBoundingClientRect().top
+      const a = agg.getBoundingClientRect()
+      const e = editor?.getBoundingClientRect()
+      const next = {
+        calc: { top: a.top - base, height: a.height },
+        odds: e ? { top: e.top - base, height: e.height } : null,
+      }
+      // 값이 같으면 다시 그리지 않습니다. 매번 새로 그리면 애니메이션 → 다시 재기 → 다시 그리기가 끝없이 돌아 화면이 떨립니다.
+      setSideLayout((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next))
+    }
+    // 왼쪽 카드는 크기가 그대로여도 위쪽 내용(이미지·글꼴 로딩, 접기/펴기)에 따라 자리가 밀릴 수 있어서,
+    // 카드 자체뿐 아니라 본문 전체와 창 크기 변화, 글꼴 로딩 완료 때도 다시 잽니다.
+    // 화면이 처음 뜰 때 커지며 나타나는 애니메이션 도중에 재면 줄어든 크기가 잡혀서, 애니메이션이 끝날 때도 다시 잽니다.
+    const observer = new ResizeObserver(measure)
+    observer.observe(wrap)
+    observer.observe(agg)
+    if (editor) observer.observe(editor)
+    const main = wrap.parentElement?.querySelector('.stats-page__main')
+    if (main) observer.observe(main)
+    observer.observe(document.body)
+    wide.addEventListener('change', measure)
+    window.addEventListener('resize', measure)
+    window.addEventListener('load', measure)
+    document.addEventListener('animationend', measure, true)
+    document.addEventListener('transitionend', measure, true)
+    document.fonts?.ready.then(measure)
+    return () => {
+      observer.disconnect()
+      wide.removeEventListener('change', measure)
+      window.removeEventListener('resize', measure)
+      window.removeEventListener('load', measure)
+      document.removeEventListener('animationend', measure, true)
+      document.removeEventListener('transitionend', measure, true)
+    }
+  }, [echoes.length > 0, optimizeMode]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 최적화 화면: 빠른/안정적인 계획을 바꾸면 결과 줄 수가 달라 아래 푸터가 오르내려서,
+  // 지금까지 가장 컸던 높이를 최소 높이로 붙잡아 둡니다(줄어들지 않고 늘어나기만 함).
+  const optimizePageRef = useRef(null)
+  useEffect(() => {
+    const node = optimizePageRef.current
+    if (!node) return
+    let max = 0
+    const observer = new ResizeObserver(() => {
+      const height = node.scrollHeight
+      if (height > max) {
+        max = height
+        node.style.minHeight = `${max}px`
+      }
+    })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [optimizeMode])
+
   // 각 항목은 "추천이 나온 시점의 상태"(라벨+수치)를 담고 있어서, 사용자가 그 자리를 조금이라도
   // 바꾸면 더 이상 일치하지 않아 하늘색 표시가 자동으로 풀립니다.
   const suggestedStatsForSelected = []
@@ -923,7 +991,7 @@ export default function StatsPage({
   // 최적화하기 화면: 목표 스탯 계산기만 넓게 보여 주고, 빠른 계획 / 안정적인 계획을 나란히 둡니다.
   if (optimizeMode) {
     return (
-      <section className="stats-page optimize-page">
+      <section className="stats-page optimize-page" ref={optimizePageRef}>
         <header className="optimize-page__head">
           <div>
             <span className="uploader__eyebrow">목표 스탯 계산기 - 베타</span>
@@ -1363,7 +1431,7 @@ export default function StatsPage({
       </div>
       </div>
 
-      <div className="stats-page__optimizer-wrap">
+      <div className={`stats-page__optimizer-wrap ${sideLayout ? 'stats-page__optimizer-wrap--pinned' : ''}`} ref={optimizerWrapRef}>
         <div className="stats-page__head-actions">
           <button className="capture-page__back capture-page__back--danger" onClick={() => setResetOpen(true)}>초기화</button>
           <button className="capture-page__back capture-page__back--nav" onClick={onGoToCharacters}>← 캐릭터 선택으로</button>
@@ -1375,7 +1443,7 @@ export default function StatsPage({
           <h2>상세 정보</h2>
           <p className="uploader__hint">유효 옵션은 노란색으로 표시됩니다.</p>
         </header>
-        <aside className="stats-page__optimizer-col">
+        <aside className="stats-page__optimizer-col" style={sideLayout ? sideLayout.calc : undefined}>
           <MobileSection title="목표 스탯 계산기 - 베타">
           {/* 목표를 넣고 계산하기를 누르면 결과는 넓은 최적화 화면에서 봅니다(돌아가기로 다시 이 화면). */}
           <OptimizerPanel
@@ -1391,6 +1459,12 @@ export default function StatsPage({
           />
           </MobileSection>
         </aside>
+        {/* 계산기 아래 빈 자리. 넓은 화면에서는 에코 상세 설정 줄과 위·아래 끝을 맞춥니다(sideLayout). */}
+        {echoes.length > 0 && (
+          <div className="stats-page__odds" style={sideLayout?.odds ?? undefined}>
+            <EchoOddsCard echoes={echoes} selectedIndex={selectedEchoIdx} validLabels={validLabels} onSelect={(i) => focusEcho(i, null, false)} />
+          </div>
+        )}
       </div>
       </div>
 

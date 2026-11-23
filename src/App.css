@@ -1,4 +1,16 @@
+/* 푸터를 화면 아래에 붙여 둡니다: 내용이 짧아도 본문(app__flow)이 남는 높이를 채워서 푸터가 위로 올라오지 않습니다. */
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 .app {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
   max-width: 1400px;
   margin: 0 auto;
   /* 아래 여백은 푸터 밑에 남는 공간이라 작게 둡니다(100px이면 푸터 아래가 휑하게 비었음). */
@@ -34,6 +46,7 @@
 }
 
 .app__flow {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 20px;

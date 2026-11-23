@@ -13,6 +13,7 @@ export default function EnhanceMissionCard({ mission, character, echo, onSave, o
   const [folded, setFolded] = useState(false)
   if (!mission || !character) return null
   const remaining = mission.goals.filter((g) => !g.done).length
+  const otherCost = echo?.cost ? mission.goals.filter((g) => !g.done && Number(echo.cost) !== g.cost).length : 0
 
   return (
     <section className="mission">
@@ -32,9 +33,16 @@ export default function EnhanceMissionCard({ mission, character, echo, onSave, o
       <>
       <p className="mission__hint">지금 끼고 있는 에코 옵션은 바꿀 수 없어요. 아래 조건이 붙은 새 에코를 강화해서 띄워 주세요.</p>
 
+      {otherCost > 0 && (
+        <p className="mission__other-cost">
+          지금 에코({echo.cost}코)와 코스트가 다른 목표 {otherCost}개는 숨겼어요.
+        </p>
+      )}
       <ol className="mission__goals">
         {mission.goals.map((goal, i) => {
           const result = echo ? checkGoal(goal, { cost: echo.cost, subStats: echo.subStats }) : null
+          // 코스트가 다른 목표는 이 에코로 채울 수 없어서 목록에서 뺍니다(위에 개수만 안내).
+          if (!goal.done && result?.costState === 'fail') return null
           return (
             <li key={i} className={`mission__goal ${goal.done ? 'mission__goal--done' : ''} ${result ? `mission__goal--${result.status}` : ''}`}>
               <div className="mission__goal-head">

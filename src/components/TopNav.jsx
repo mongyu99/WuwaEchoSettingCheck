@@ -15,7 +15,7 @@ const MENU = [
   ...(screenCaptureSupported ? [
         { page: 'bag', label: '에코 가방', handler: 'onGoToEchoBag' },
         // 가방 정리로 모은 에코로 캐릭터마다 5개 조합을 짜 줍니다(가방 정리와 같은 PC 전용 묶음).
-        { page: 'recommend', label: '세팅 추천 - 베타', handler: 'onGoToRecommend' },
+        { page: 'recommend', label: '추천 세팅 - 베타', handler: 'onGoToRecommend' },
       ] : []),
   { page: 'events', label: '이벤트 캘린더', handler: 'onGoToEventCalendar' },
   { page: 'eventnote', label: '이벤트 노트', handler: 'onGoToEventNote' },

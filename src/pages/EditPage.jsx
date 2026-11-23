@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import EchoPanel from '../components/EchoPanel'
 import { getEchoCost } from '../utils/ocr'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -11,11 +11,19 @@ function hasIncompleteStat(echoes) {
 export default function EditPage({ echoes, onUpdateSubStats, onUpdateMainStats, onUpdateCost, onReplaceOne, onReRecognize, replacingId, onProceedToStats, onGoToCharacters }) {
   const [highlightIncomplete, setHighlightIncomplete] = useState(false)
   const [fewEchoesOpen, setFewEchoesOpen] = useState(false)
+  // 오른쪽 아래 알림. 누를 때마다 숫자를 바꿔서, 이미 떠 있어도 다시 4초를 셉니다.
+  const [toastKey, setToastKey] = useState(0)
+
+  useEffect(() => {
+    if (!toastKey) return
+    const timer = setTimeout(() => setToastKey(0), 4000)
+    return () => clearTimeout(timer)
+  }, [toastKey])
 
   const handleProceedClick = () => {
     if (hasIncompleteStat(echoes)) {
       setHighlightIncomplete(true)
-      alert('스탯명이나 수치를 고르지 않은 서브 스탯이 있어요. 하늘색 테두리로 표시된 칸을 채워주세요.')
+      setToastKey(Date.now())
       return
     }
     setHighlightIncomplete(false)
@@ -112,6 +120,11 @@ export default function EditPage({ echoes, onUpdateSubStats, onUpdateMainStats, 
         onConfirm={() => { setFewEchoesOpen(false); onProceedToStats() }}
         onCancel={() => setFewEchoesOpen(false)}
       />
+      {toastKey > 0 && (
+        <div className="edit-page__toast" role="alert" key={toastKey} onClick={() => setToastKey(0)}>
+          스탯명이나 수치를 고르지 않은 서브 스탯이 있어요. 빨간색 테두리로 표시된 칸을 채워주세요.
+        </div>
+      )}
     </section>
   )
 }

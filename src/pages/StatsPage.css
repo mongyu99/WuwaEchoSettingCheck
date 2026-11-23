@@ -180,6 +180,29 @@
   -ms-overflow-style: none;
 }
 
+.stats-page__odds {
+  margin-top: 16px;
+  display: flex;
+}
+
+/* 넓은 화면: 계산기·교체 우선순위를 왼쪽 카드 위치에 맞춰 놓습니다(top/height는 StatsPage.jsx가 잼). */
+.stats-page__optimizer-wrap--pinned {
+  position: relative;
+}
+
+.stats-page__optimizer-wrap--pinned > .stats-page__optimizer-col,
+.stats-page__optimizer-wrap--pinned > .stats-page__odds {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.stats-page__odds > .echo-odds {
+  flex: 1;
+}
+
 .stats-page__optimizer-col::-webkit-scrollbar {
   display: none;
 }
