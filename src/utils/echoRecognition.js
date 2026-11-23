@@ -135,9 +135,17 @@ export function findSetId(lines) {
 
 /** 메인 옵션 첫 줄(% 수치)만 씁니다. 둘째 줄은 코스트로 고정된 플랫이라 비교할 필요가 없습니다. */
 const MAIN_LABELS = [...new Set(Object.values(MAIN_STAT_VALUES).flatMap((byLabel) => Object.keys(byLabel)))]
+// 메인 옵션 중 "○○ 피해 보너스"의 속성 이름(전도, 응결 등)
+const ELEMENT_NAMES = MAIN_LABELS.map((l) => l.match(/^(\S{2}) 피해 보너스/)?.[1]).filter(Boolean)
 
 export const readMainStat = (text) => {
-  const [rawStat, second] = normalizeMainStats(parseStatLines(text))
+  const parsed = parseStatLines(text)
+  // 속성 피해 보너스는 앞 두 글자(전도·응결·용융…)만 다릅니다. 아이콘에 가리거나 잘려 그 두 글자를 못 읽으면
+  // (예: "7, Me 피해 보너스") 모든 속성과 똑같이 가까워져 목록 맨 앞(응결)으로 잘못 맞춰졌습니다.
+  // 보정 전 원문에 속성 이름이 없으면 이번 결과는 버립니다(실시간 인식은 바로 전 메인 옵션을 그대로 둡니다).
+  const rawHead = (parsed[0]?.label ?? '').replace(/[^가-힣]/g, '')
+  if (/피해보너스/.test(rawHead) && !ELEMENT_NAMES.some((el) => rawHead.includes(el))) return null
+  const [rawStat, second] = normalizeMainStats(parsed)
   if (!rawStat?.label || !rawStat.valueText?.includes('%')) return null
   const head = rawStat.label.split(/\d/)[0].replace(/[^가-힣A-Za-z ]/g, '').trim()
   const stat = { ...rawStat, label: closestMatch(head, MAIN_LABELS) ?? rawStat.label }

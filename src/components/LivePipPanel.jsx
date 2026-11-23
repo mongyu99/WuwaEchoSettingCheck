@@ -8,15 +8,40 @@ const TOP_COUNT = 3
 /**
  * 실시간 에코 체크 PiP 창 안의 내용: 세트·코스트 한 줄, 강화 목표 카드(missionCard, 페이지와 같은 것), 추천 캐릭터 상위 3명.
  */
-export default function LivePipPanel({ pipWindow, sharing, setId, cost, stats, missionCard, results }) {
+export default function LivePipPanel({ pipWindow, sharing, setId, cost, stats, missionCard, results, onRecognize, recognizing, flash, autoRecognize, onToggleAuto }) {
   if (!pipWindow) return null
   const set = getEchoSet(setId)
 
   return createPortal(
     <div className="bag-pip live-pip">
       <div className="bag-pip__status">
-        <span className={`bag-pip__live ${sharing ? 'bag-pip__live--on' : ''}`}>{sharing ? '● 인식 중' : '공유 꺼짐'}</span>
+        <span className={`bag-pip__live ${sharing ? 'bag-pip__live--on' : ''}`}>{sharing ? '● 공유 중' : '공유 꺼짐'}</span>
+        {flash.n > 0 && (
+          <span key={flash.n} className={`bag-pip__flash ${flash.ok ? '' : 'bag-pip__flash--dup'}`}>
+            {flash.ok ? '✓ 인식됨' : '못 읽었어요'}
+          </span>
+        )}
       </div>
+
+      {sharing && (
+        <div className="live-pip__controls">
+          <button type="button" className="btn btn--primary live-pip__now" disabled={recognizing} onClick={onRecognize}>
+            {recognizing ? '읽는 중...' : '📸 지금 인식'}
+          </button>
+          <button
+            type="button"
+            className={`motion-switch ${autoRecognize ? 'motion-switch--on' : ''}`}
+            role="switch"
+            aria-checked={autoRecognize}
+            onClick={() => onToggleAuto(!autoRecognize)}
+          >
+            <span className="motion-switch__track">
+              <span className="motion-switch__knob" />
+            </span>
+            자동
+          </button>
+        </div>
+      )}
 
       {stats ? (
         <p className="live-pip__set live-pip__echo">

@@ -11,7 +11,8 @@ export const FIXED_REGIONS = {
 export const LIVE_REGIONS = {
   sonata: { x: 1485, y: 480, width: 385, height: 420 },
   // 강화 화면은 패널이 왼쪽에 있습니다. 넓은 화면에서 잘리지 않게 왼쪽 끝 기준, 높이 1080 기준 좌표로 씁니다.
-  enhanceMainStat: { x: 200, y: 262, width: 470, height: 75 },
+  // 위쪽이 빠듯해 첫 줄(전도 피해 보너스 등) 글자 윗부분이 잘려 속성 이름을 못 읽는 일이 있어 4px 넓혔습니다.
+  enhanceMainStat: { x: 200, y: 258, width: 470, height: 79 },
   enhanceSubStat: { x: 200, y: 335, width: 470, height: 225 },
 }
 

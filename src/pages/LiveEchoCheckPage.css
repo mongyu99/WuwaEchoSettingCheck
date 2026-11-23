@@ -842,3 +842,20 @@
   max-height: none;
   object-fit: contain;
 }
+
+/* 실시간 인식: [지금 화면 인식] 버튼 + 자동 인식 켜기/끄기 */
+.live-check__manual {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.live-check__manual .btn {
+  flex: 1;
+}
+
+.live-check__head-tools {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}

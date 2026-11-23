@@ -58,6 +58,18 @@
   margin-left: auto;
 }
 
+.live-pip__controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.live-pip__now {
+  flex: 1;
+  padding: 10px;
+  font-size: 14px;
+}
+
 /* 작은 창에서는 강화 목표 카드의 긴 안내 문구를 빼고 목표만 보여 줍니다. */
 .live-pip .mission__hint {
   display: none;
