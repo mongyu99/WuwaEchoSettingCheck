@@ -71,7 +71,7 @@ export function saveMission(mission) {
 
 /**
  * 지금 인식한 에코가 목표를 얼마나 채웠는지. 옵션마다 'ok' | 'wait'(아직 안 열린 칸이 남음) | 'fail'.
- * 서브 옵션 5칸이 다 열렸는데 없으면 fail, 수치가 모자라면 fail입니다.
+ * 남은 빈칸으로 안 뜬 옵션을 다 못 채우면 fail, 수치가 모자라면 fail입니다.
  */
 export function checkGoal(goal, { cost, subStats }) {
   const subs = subStats ?? []
@@ -91,6 +91,9 @@ export function checkGoal(goal, { cost, subStats }) {
     if (!s) return { ...t, state: open ? 'wait' : 'fail' }
     return { ...t, state: parseFloat(s.valueText) >= t.min - 1e-9 ? 'ok' : 'fail', got: s.valueText }
   })
+  // 아직 안 뜬 옵션 수가 남은 빈칸(5 - 지금 옵션 수)보다 많으면 끝까지 강화해도 다 못 채우므로 바로 탈락입니다.
+  const missing = [...keep, ...targets].filter((x) => x.state === 'wait')
+  if (missing.length > 5 - subs.length) missing.forEach((x) => { x.state = 'fail' })
   const all = [costState, ...keep.map((k) => k.state), ...targets.map((t) => t.state)]
   return {
     costState,

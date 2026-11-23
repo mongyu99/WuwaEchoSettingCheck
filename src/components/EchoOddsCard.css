@@ -1,0 +1,111 @@
+.echo-odds {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 16px;
+}
+
+.echo-odds__title {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.echo-odds__hint {
+  margin: 6px 0 14px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.echo-odds__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  flex: 1;
+  gap: 4px;
+}
+
+.echo-odds__row {
+  position: relative;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 6px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  cursor: pointer;
+}
+
+.echo-odds__row:hover {
+  background: var(--bg-surface-raised);
+}
+
+.echo-odds__row--active {
+  color: var(--accent-wave);
+}
+
+.echo-odds__bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg-surface-raised);
+  overflow: hidden;
+}
+
+.echo-odds__bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent-wave);
+}
+
+.echo-odds__row strong {
+  text-align: right;
+  color: var(--text-primary);
+}
+
+.echo-odds__detail {
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-hairline);
+  font-size: 13px;
+}
+
+.echo-odds__detail dt {
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--accent-wave);
+}
+
+.echo-odds__detail dd {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 4px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.echo-odds__detail dd strong {
+  color: var(--text-primary);
+}
+
+.echo-odds__first {
+  position: absolute;
+  top: -6px;
+  left: 6px;
+  font-style: normal;
+  font-size: 10px;
+  color: var(--accent-wave);
+}

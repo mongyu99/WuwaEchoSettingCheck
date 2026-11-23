@@ -55,6 +55,7 @@ const MOBILE_ROWS = [
   { srcY: 199, srcH: 33, dstY: 195, dstH: 35 }, // 코스트
   { srcY: 255, srcH: 85, dstY: 230, dstH: 70 }, // 메인 스탯 2줄
   { srcY: 345, srcH: 215, dstY: 300, dstH: 180 }, // 서브 스탯 5줄
+  { srcY: 560, srcH: 520, dstY: 480, dstH: 420 }, // 화음 이펙트(어빌리티 설명 길이에 따라 위치가 바뀌어서 넓게)
 ]
 
 /** 패널의 각 구역을 잘라 FIXED_REGIONS의 PC 좌표에 옮겨 그립니다. */

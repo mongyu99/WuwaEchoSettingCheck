@@ -24,6 +24,8 @@ import { loadMission, saveMission } from '../utils/enhanceMission'
 import OcrHelpLink from '../components/OcrHelpLink'
 import { CHARACTERS } from '../config/characters'
 import CharacterPicker from '../components/CharacterPicker'
+import { pipSupported, usePipWindow } from '../components/BagPipPanel'
+import LivePipPanel from '../components/LivePipPanel'
 
 // 에코 가방처럼 가볍게 자주 봅니다: 매번 전체 화면을 복사하지 않고(게임 위치는 2초마다만 찾음)
 // 작은 비교용 그림만 영상에서 바로 뽑고, 화면이 멈췄을 때만 전체를 잘라 글자를 읽습니다.
@@ -199,6 +201,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
     setManualMain(valueText ? { cost, label: shownMain.label, valueText } : null)
   }
   const [savedNotice, setSavedNotice] = useState(null)
+  const pip = usePipWindow('명체크 · 에코 체크', { width: 400, height: 640 })
   const [editOpen, setEditOpen] = useState(false) // 인식한 옵션 고치기 팝업
   // 왼쪽 캐릭터 줄에서 고른 캐릭터: 고르면 오른쪽 칸이 "추천 캐릭터" 대신 그 캐릭터 기준 비교로 바뀝니다.
   // 목표 스탯 계산기에서 넘어온 강화 목표(있으면 그 캐릭터를 바로 골라 둡니다)
@@ -389,6 +392,28 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
   }, [recognizedKey]) // eslint-disable-line react-hooks/exhaustive-deps
   const setName = getEchoSet(setId)?.name
 
+  // 강화 목표 카드: 페이지 오른쪽과 PiP 작은 창에 똑같이 띄웁니다.
+  const missionCard = mission ? (
+    <EnhanceMissionCard
+      mission={mission}
+      character={CHARACTERS.find((c) => c.id === mission.characterId)}
+      echo={shownStats && currentCost ? buildEcho(shownMain, shownStats, currentCost) : shownStats ? { cost: null, subStats: shownStats } : null}
+      onSave={(i) => {
+        const goal = mission.goals[i]
+        const target = CHARACTERS.find((c) => c.id === mission.characterId)
+        onApplyEcho(target, buildEcho(shownMain, shownStats, currentCost), goal.echoIndex, true)
+        const next = { ...mission, goals: mission.goals.map((g, j) => (j === i ? { ...g, done: true } : g)) }
+        setMission(next)
+        saveMission(next)
+        setSavedNotice(`${target.name} 에코 ${goal.echoIndex + 1}에 저장했어요.`)
+      }}
+      onClose={() => {
+        setMission(null)
+        saveMission(null)
+      }}
+    />
+  ) : null
+
   // 패널 머리줄: 제목 + (PC면) 실시간/캡쳐 전환
   const modeTabs = (
     <div className="live-check__panel-head">
@@ -476,6 +501,20 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
                 화면 공유 시작
               </button>
             )}
+            {pipSupported && (
+              <button type="button" className="btn btn--ghost" onClick={pip.pipWindow ? pip.close : pip.open}>
+                {pip.pipWindow ? '작은 창 닫기' : '게임 위에 작은 창 띄우기'}
+              </button>
+            )}
+            <LivePipPanel
+              pipWindow={pip.pipWindow}
+              sharing={sharing}
+              setId={setId}
+              cost={currentCost}
+              stats={shownStats}
+              missionCard={missionCard}
+              results={results}
+            />
             {error && <p className="screen-capture__error">{error}</p>}
 
             {debugViews.length > 0 && (
@@ -646,26 +685,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
           </Modal>
 
           <div className="live-check__result" ref={rankBoxRef}>
-            {mission && (
-              <EnhanceMissionCard
-                mission={mission}
-                character={CHARACTERS.find((c) => c.id === mission.characterId)}
-                echo={shownStats && currentCost ? buildEcho(shownMain, shownStats, currentCost) : shownStats ? { cost: null, subStats: shownStats } : null}
-                onSave={(i) => {
-                  const goal = mission.goals[i]
-                  const target = CHARACTERS.find((c) => c.id === mission.characterId)
-                  onApplyEcho(target, buildEcho(shownMain, shownStats, currentCost), goal.echoIndex, true)
-                  const next = { ...mission, goals: mission.goals.map((g, j) => (j === i ? { ...g, done: true } : g)) }
-                  setMission(next)
-                  saveMission(next)
-                  setSavedNotice(`${target.name} 에코 ${goal.echoIndex + 1}에 저장했어요.`)
-                }}
-                onClose={() => {
-                  setMission(null)
-                  saveMission(null)
-                }}
-              />
-            )}
+            {missionCard}
             {/* 캐릭터를 고르면 이 칸이 그 캐릭터 기준 비교로 바뀝니다(해제하면 추천 캐릭터 목록). */}
             <div className="live-check__picker">
               <CharacterPicker value={pinned} onChange={(c) => setPinnedId(c?.id ?? null)} placeholder="캐릭터 골라서 비교" clearLabel="추천 목록으로" />

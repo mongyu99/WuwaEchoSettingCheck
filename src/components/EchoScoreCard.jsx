@@ -39,6 +39,9 @@ export default function EchoScoreCard({ echoes, selectedIndex, validLabels }) {
             <br />
             <br />
             확률에 기반한 점수이며, 유효 데미지 옵션을 기반한 점수가 아닙니다.
+            <br />
+            <br />
+            티어는 숫자가 클수록 높은 수치예요. 8티어가 가장 높아요(5단계 옵션은 5티어).
           </p>
         </div>
       </div>
@@ -66,7 +69,7 @@ export default function EchoScoreCard({ echoes, selectedIndex, validLabels }) {
             <li key={row.id}>
               <span className="echo-score__label">{row.label}</span>
               <span>{row.valueText}</span>
-              <span className="echo-score__tier">{/* 표기는 최고 수치가 1티어입니다. */}{row.tier > 0 ? `${row.tierCount - row.tier + 1}티어` : '-'}</span>
+              <span className="echo-score__tier">{/* 숫자가 클수록 높은 수치(최고 = 단계 수). 예: 2/8티어 */}{row.tier > 0 ? `${row.tier}/${row.tierCount}티어` : '-'}</span>
               <strong>{row.points.toFixed(1)}</strong>
             </li>
           ))}

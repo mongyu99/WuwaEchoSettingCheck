@@ -238,7 +238,7 @@ export default function CharacterRecommendPage({ initialCharacterId = null, onGo
   return (
     <section className="char-rec">
       <header>
-        <span className="uploader__eyebrow">세팅 추천</span>
+        <span className="uploader__eyebrow">추천 세팅</span>
         <h2>내 가방 에코로 캐릭터 세팅 짜기</h2>
         <p className="uploader__hint">
           에코 가방에 모은 에코 중에서, 캐릭터의 메인 에코와 추천 세트를 맞추고 유효 옵션 점수가 가장 높은 5개를 골라드려요.
