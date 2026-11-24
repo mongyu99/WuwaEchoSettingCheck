@@ -753,6 +753,7 @@ export default function StatsPage({
   onUpdateCost,
   onReplaceOne,
   onAddEcho,
+  onMoveEcho,
   onGoToCharacters,
   onReset,
   // 목표 스탯 계산기를 따로 연 화면(최적화하기 → 돌아가기)
@@ -887,6 +888,20 @@ export default function StatsPage({
   // 오른쪽 칸(목표 계산기, 교체 우선순위)을 왼쪽 카드와 위·아래 끝까지 맞춥니다.
   // 서로 다른 칸이라 CSS만으로는 못 맞춰서, 왼쪽 카드의 실제 위치를 재서 오른쪽 칸 기준 좌표로 옮깁니다.
   // 넓은 화면(두 칸 배치)에서만 쓰고, 좁은 화면은 원래대로 세로로 쌓습니다.
+  // 에코 순서 바꾸기(드래그): 끌고 있는 칸과 놓으려는 칸
+  const [dragFrom, setDragFrom] = useState(null)
+  const [dragOver, setDragOver] = useState(null)
+  const [reordering, setReordering] = useState(false) // [순서 변경]을 누르면 칸마다 ▲▼가 나옵니다
+  // 순서를 바꾸고, 고른 에코는 옮긴 자리를 따라가게 합니다(오른쪽 편집 칸이 같은 에코 유지).
+  const moveEchoAndFollow = (from, to) => {
+    const selectedId = echoes[selectedEchoIdx]?.id
+    const order = echoes.map((x) => x.id)
+    const [moved] = order.splice(from, 1)
+    order.splice(to, 0, moved)
+    onMoveEcho(from, to)
+    const nextIdx = order.indexOf(selectedId)
+    if (nextIdx >= 0) focusEcho(nextIdx, null, false)
+  }
   const optimizerWrapRef = useRef(null)
   const [sideLayout, setSideLayout] = useState(null)
   useEffect(() => {
@@ -1362,26 +1377,98 @@ export default function StatsPage({
 
         <div className="echo-editor">
             <div className="echo-editor__scores">
-              <h4 className="stats-page__col-title">
-                에코 선택{' '}
-                <span className={totalCost > MAX_TOTAL_COST ? 'echo-editor__cost-over' : ''}>
-                  (COST {totalCost}/{MAX_TOTAL_COST})
-                </span>
-              </h4>
+              <div className="stats-page__chip-title-row">
+                <h4 className="stats-page__col-title">
+                  에코 선택{' '}
+                  <span className={totalCost > MAX_TOTAL_COST ? 'echo-editor__cost-over' : ''}>
+                    (COST {totalCost}/{MAX_TOTAL_COST})
+                  </span>
+                </h4>
+                {onMoveEcho && echoes.length > 1 && (
+                  <button
+                    type="button"
+                    className={`stats-page__reorder-btn ${reordering ? 'stats-page__reorder-btn--on' : ''}`}
+                    onClick={() => setReordering((v) => !v)}
+                  >
+                    {reordering ? '완료' : '순서 변경'}
+                  </button>
+                )}
+              </div>
               {echoes.length === 0 ? (
                 <p className="uploader__hint">등록된 에코가 없어요.</p>
               ) : (
                 <ul className="stats-page__chip-list">
                   {echoes.map((echo, i) => (
-                    <li key={echo.id}>
+                    <li
+                      key={echo.id}
+                      // 끌어서 놓으면 순서가 바뀝니다. 고른 에코는 옮긴 자리를 따라갑니다.
+                      draggable={!!onMoveEcho}
+                      className={`${dragFrom === i ? 'stats-page__chip--dragging' : ''} ${dragOver === i && dragFrom !== i ? 'stats-page__chip--drop' : ''}`}
+                      onDragStart={(e) => {
+                        setDragFrom(i)
+                        e.dataTransfer.effectAllowed = 'move'
+                      }}
+                      onDragOver={(e) => {
+                        if (dragFrom === null) return
+                        e.preventDefault()
+                        setDragOver(i)
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        if (dragFrom !== null && dragFrom !== i) moveEchoAndFollow(dragFrom, i)
+                        setDragFrom(null)
+                        setDragOver(null)
+                      }}
+                      onDragEnd={() => {
+                        setDragFrom(null)
+                        setDragOver(null)
+                      }}
+                    >
                       <button
                         className={`stats-page__chip-card stats-page__chip-head--btn ${selectedEchoIdx === i ? 'stats-page__chip-card--active' : ''}`}
                         onClick={() => focusEcho(i, null, false)}
+                        title={onMoveEcho ? '끌어서 순서를 바꿀 수 있어요' : undefined}
                       >
                         <div className="stats-page__chip-head">
                           <span>에코 {i + 1}</span>
                           {getEchoCost(echo) && <span className="stats-page__chip-cost">COST {getEchoCost(echo)}</span>}
-                          <span className="stats-page__chip-arrow" aria-hidden="true">›</span>
+                          {reordering ? (
+                            // 순서 변경 중: 위/아래로 한 칸씩(맨 위·맨 아래는 더 못 가서 -로 표시). 모바일에서도 됩니다.
+                            <span className="stats-page__chip-move">
+                              {[
+                                [-1, '▲', '위로'],
+                                [1, '▼', '아래로'],
+                              ].map(([step, mark, label]) => {
+                                const to = i + step
+                                const blocked = to < 0 || to >= echoes.length
+                                return (
+                                  <span
+                                    key={step}
+                                    role="button"
+                                    tabIndex={blocked ? -1 : 0}
+                                    aria-label={`에코 ${i + 1} ${label}`}
+                                    aria-disabled={blocked}
+                                    className={`stats-page__chip-move-btn ${blocked ? 'stats-page__chip-move-btn--off' : ''}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      if (!blocked) moveEchoAndFollow(i, to)
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if ((e.key === 'Enter' || e.key === ' ') && !blocked) {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        moveEchoAndFollow(i, to)
+                                      }
+                                    }}
+                                  >
+                                    {blocked ? '-' : mark}
+                                  </span>
+                                )
+                              })}
+                            </span>
+                          ) : (
+                            <span className="stats-page__chip-arrow" aria-hidden="true">›</span>
+                          )}
                         </div>
                       </button>
                     </li>

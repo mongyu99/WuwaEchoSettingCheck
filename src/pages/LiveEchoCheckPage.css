@@ -859,3 +859,10 @@
   align-items: center;
   gap: 14px;
 }
+
+/* 넓은 화면: 오른쪽에 "다른 캐릭터도 쓸 수 있을까요?" 칸을 붙이고, 기존 두 칸을 조금 줄입니다. */
+@media (min-width: 1301px) {
+  .live-check__layout {
+    grid-template-columns: minmax(280px, 0.95fr) minmax(0, 1.45fr) minmax(240px, 0.85fr);
+  }
+}

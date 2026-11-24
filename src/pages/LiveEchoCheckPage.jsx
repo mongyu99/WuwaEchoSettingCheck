@@ -26,6 +26,7 @@ import { CHARACTERS } from '../config/characters'
 import CharacterPicker from '../components/CharacterPicker'
 import { pipSupported, usePipWindow } from '../components/BagPipPanel'
 import LivePipPanel from '../components/LivePipPanel'
+import OtherUsersCard from '../components/OtherUsersCard'
 
 // 에코 가방처럼 가볍게 자주 봅니다: 매번 전체 화면을 복사하지 않고(게임 위치는 2초마다만 찾음)
 // 작은 비교용 그림만 영상에서 바로 뽑고, 화면이 멈췄을 때만 전체를 잘라 글자를 읽습니다.
@@ -443,6 +444,20 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
   }, [recognizedKey]) // eslint-disable-line react-hooks/exhaustive-deps
   const setName = getEchoSet(setId)?.name
 
+  // "다른 캐릭터도 쓸 수 있을까요?" 칸: 페이지 오른쪽과 PiP 작은 창(compact)에 같이 띄웁니다.
+  const otherUsersCard = (compact) => (
+    <OtherUsersCard
+      compact={compact}
+      subStats={shownStats}
+      setId={setId}
+      mainLabel={shownMain?.label}
+      cost={currentCost}
+      characterEchoes={characterEchoes}
+      excludeId={mission?.characterId ?? pinnedId}
+      onPick={(c) => setPinnedId(c.id)}
+    />
+  )
+
   // 강화 목표 카드: 페이지 오른쪽과 PiP 작은 창에 똑같이 띄웁니다.
   const missionCard = mission ? (
     <EnhanceMissionCard
@@ -591,6 +606,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
               main={shownMain}
               stats={shownStats}
               missionCard={missionCard}
+              otherUsersCard={shownStats ? otherUsersCard(true) : null}
               onRecognize={recognizeNow}
               recognizing={manualBusy}
               flash={recognizeFlash}
@@ -825,6 +841,9 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
             </>
             )}
           </div>
+
+          {/* 오른쪽 칸: 같은 세트를 쓰는 다른 캐릭터에게도 쓸 만한 에코인지(갈기 전에 확인). 누르면 그 캐릭터로 비교 */}
+          {otherUsersCard(false)}
       </div>
 
       <Modal open={picker?.type === 'slot'} title={`${picker?.character?.name} · 넣을 자리 선택`} onClose={() => setPicker(null)}>

@@ -63,3 +63,18 @@
   right: 8px;
   z-index: 2;
 }
+
+/* 지금 보이는 픽업의 남은 날(왼쪽 위) */
+.pickup__left {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(20, 24, 32, 0.82);
+  border: 1px solid var(--accent-wave);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}

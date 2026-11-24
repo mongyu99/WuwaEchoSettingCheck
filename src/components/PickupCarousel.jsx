@@ -4,6 +4,7 @@ import { assetPath } from '../config/assetPath'
 import { fetchPickups } from '../utils/api'
 import './PickupCarousel.css'
 import { motionOff } from '../utils/motion'
+import { daysRemaining } from '../utils/eventDates'
 
 const SLIDE_INTERVAL_MS = 4000
 // PickupCarousel.css .pickup__track 의 transition 시간(0.6s)과 같아야 합니다.
@@ -16,6 +17,8 @@ const TRANSITION_MS = 600
 export default function PickupCarousel() {
   // 관리자 페이지에서 기간을 정해 활성화한 픽업 배너(/api/pickups). 조회가 실패하면 config의 로컬 이미지를 씁니다.
   const [images, setImages] = useState(null)
+  // 이미지마다 기간(남은 날 표시용). 로컬 이미지로 대신 보여 줄 때는 기간이 없어 비워 둡니다.
+  const [periods, setPeriods] = useState([])
   // 진행 중인 픽업이 없어서 예정 픽업을 보여 주는 중이면 true입니다(서버가 둘을 섞어 보내지 않음).
   const [upcoming, setUpcoming] = useState(false)
 
@@ -26,6 +29,7 @@ export default function PickupCarousel() {
         if (!cancelled) {
           const shown = result.filter((p) => p.imagePath)
           setImages(shown.map((p) => assetPath(p.imagePath)))
+          setPeriods(shown.map((p) => ({ startsAt: p.startsAt, endsAt: p.endsAt, upcoming: p.upcoming })))
           setUpcoming(shown.length > 0 && shown.every((p) => p.upcoming))
         }
       })
@@ -83,10 +87,15 @@ export default function PickupCarousel() {
   }
 
   const slides = count > 1 ? [...images, images[0]] : images
+  // 지금 보이는 배너의 남은 날: 진행 중이면 끝날 때까지, 예정이면 시작까지
+  const period = periods[index % count]
+  const left = period ? daysRemaining(period.upcoming ? period.startsAt : period.endsAt) : null
+  const leftText = left === null ? null : period.upcoming ? `${left}일 후 시작` : left <= 1 ? '오늘 종료' : `${left}일 남음`
 
   return (
     <div className="pickup" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       {upcoming && <span className="upcoming-badge pickup__upcoming">예정</span>}
+      {leftText && <span className="pickup__left">{leftText}</span>}
       <div
         className={`pickup__track ${animate ? '' : 'pickup__track--instant'}`}
         style={{ transform: `translateX(-${index * 100}%)` }}

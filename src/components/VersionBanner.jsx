@@ -5,6 +5,25 @@ import { FALLBACK_BANNERS } from '../config/versionBanner'
 import './VersionBanner.css'
 
 const SLIDE_INTERVAL_MS = 5000
+// 마지막으로 받은 배너 목록. 다음 방문 때 서버 응답을 기다리지 않고 바로 첫 배너를 그립니다(LCP).
+// index.html의 미리 불러오기 스크립트도 이 키의 firstUrl을 읽으므로 이름을 바꾸면 같이 바꿔야 합니다.
+const CACHE_KEY = 'wuwa-echo-check:banners'
+
+function loadCachedBanners() {
+  try {
+    return JSON.parse(localStorage.getItem(CACHE_KEY))?.banners ?? []
+  } catch {
+    return []
+  }
+}
+
+function saveCachedBanners(banners) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ banners, firstUrl: banners[0] ? assetPath(banners[0].imagePath) : null }))
+  } catch {
+    // 저장 못 해도 다음에 서버에서 받으면 됩니다.
+  }
+}
 
 function useAutoSlide(count) {
   const [index, setIndex] = useState(0)
@@ -24,13 +43,18 @@ function useAutoSlide(count) {
  */
 // 지금 보이는 배너를 onCurrentChange로 알려 줍니다(홈 오른쪽 타이머가 그 배너의 기간을 씁니다).
 export default function VersionBanner({ onCurrentChange }) {
-  const [banners, setBanners] = useState([])
+  const [banners, setBanners] = useState(loadCachedBanners)
   const [index, setIndex] = useAutoSlide(banners.length)
 
   useEffect(() => {
     let cancelled = false
     fetchBanners()
-      .then((result) => !cancelled && setBanners(result.filter((b) => b.imagePath)))
+      .then((result) => {
+        if (cancelled) return
+        const shown = result.filter((b) => b.imagePath)
+        setBanners(shown)
+        saveCachedBanners(shown)
+      })
       // 서버나 DB 조회가 실패하면 public/main/의 로컬 배너를 대신 보여줍니다.
       .catch(() => !cancelled && setBanners(FALLBACK_BANNERS))
     return () => {
@@ -50,12 +74,18 @@ export default function VersionBanner({ onCurrentChange }) {
         <div className="version-banner__image-wrap">
           {banners.length > 0 ? (
             <div className="version-banner__track" style={{ transform: `translateX(-${index * 100}%)` }}>
-              {banners.map((banner) => (
+              {banners.map((banner, i) => (
                 <img
                   key={banner.id}
                   className="version-banner__image"
                   src={assetPath(banner.imagePath)}
                   alt={banner.title}
+                  // 첫 배너가 화면에서 가장 큰 그림(LCP)이라 가장 먼저 받고, 나머지는 넘어갈 때 받습니다.
+                  fetchpriority={i === 0 ? 'high' : 'low'}
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  decoding={i === 0 ? 'sync' : 'async'}
+                  width={1920}
+                  height={1080}
                 />
               ))}
             </div>

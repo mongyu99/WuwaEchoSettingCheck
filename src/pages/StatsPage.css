@@ -2209,3 +2209,78 @@
   line-height: 1.6;
   color: var(--text-muted);
 }
+
+/* 에코 순서 바꾸기(드래그) */
+.stats-page__chip-list li[draggable='true'] {
+  cursor: grab;
+}
+
+.stats-page__chip--dragging {
+  opacity: 0.4;
+}
+
+.stats-page__chip--drop > .stats-page__chip-card {
+  outline: 2px dashed var(--accent-wave);
+  outline-offset: 2px;
+}
+
+/* 에코 선택 제목 줄 + [순서 변경] */
+.stats-page__chip-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.stats-page__reorder-btn {
+  padding: 3px 10px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.stats-page__reorder-btn:hover,
+.stats-page__reorder-btn--on {
+  border-color: var(--accent-wave);
+  color: var(--accent-wave);
+}
+
+/* 칸 안의 ▲▼ */
+.stats-page__chip-move {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.stats-page__chip-move-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 24px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.stats-page__chip-move-btn:hover {
+  border-color: var(--accent-wave);
+  color: var(--accent-wave);
+}
+
+.stats-page__chip-move-btn--off {
+  color: var(--text-muted);
+  opacity: 0.4;
+  cursor: default;
+}
+
+.stats-page__chip-move-btn--off:hover {
+  border-color: var(--border-hairline);
+  color: var(--text-muted);
+}
