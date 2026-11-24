@@ -133,3 +133,65 @@
   width: 28px;
   height: 28px;
 }
+
+/* 눌러서 펼친 줄: 어느 자리와 바꾸면 점수가 얼마나 바뀌는지 */
+.other-users__row--open button {
+  border-color: var(--ww-gold-soft, var(--accent-wave));
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.other-users__detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px 10px;
+  border: 1px solid var(--ww-gold-soft, var(--accent-wave));
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
+  background: var(--bg-surface);
+  font-size: 12px;
+  animation: other-users-open 0.15s ease-out;
+}
+
+@keyframes other-users-open {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: none; }
+}
+
+.other-users__detail p {
+  margin: 0;
+}
+
+.other-users__swap {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.other-users__swap span {
+  color: var(--text-muted);
+}
+
+.other-users__swap strong {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.other-users__swap b {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.other-users__up {
+  color: #5fd394;
+}
+
+.other-users__down {
+  color: #f08a8a;
+}
+
+.other-users__verdict,
+.other-users__hits {
+  color: var(--text-muted);
+}

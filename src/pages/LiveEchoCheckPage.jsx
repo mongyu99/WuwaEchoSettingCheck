@@ -8,7 +8,7 @@ import { getValidOptions } from '../config/characterValidOptions'
 import { ECHO_SETS, getEchoSet } from '../config/echoSets'
 import { MAIN_STAT_VALUES, applyCostToMainStats } from '../config/echoMainStats'
 import { createOcrSession, getEchoCost } from '../utils/ocr'
-import { recommend } from '../utils/echoRecommend'
+import { recommend, usesSet } from '../utils/echoRecommend'
 import { saveOcrSample } from '../utils/ocrSample'
 import { jelly } from '../utils/jelly'
 import { costOfMain, findGameRect, grabRect, recognizeEchoPanel } from '../utils/echoRecognition'
@@ -27,6 +27,7 @@ import CharacterPicker from '../components/CharacterPicker'
 import { pipSupported, usePipWindow } from '../components/BagPipPanel'
 import LivePipPanel from '../components/LivePipPanel'
 import OtherUsersCard from '../components/OtherUsersCard'
+import Dropdown from '../components/Dropdown'
 
 // 에코 가방처럼 가볍게 자주 봅니다: 매번 전체 화면을 복사하지 않고(게임 위치는 2초마다만 찾음)
 // 작은 비교용 그림만 영상에서 바로 뽑고, 화면이 멈췄을 때만 전체를 잘라 글자를 읽습니다.
@@ -139,19 +140,12 @@ function TargetOdds({ targets, setTargets, stats }) {
                   {targetHit(t, stats) ? '✓ ' : ''}
                   {t.label}
                 </span>
-                <select
-                  className="live-check__select"
-                  aria-label={`${t.label} 최소 수치`}
+<Dropdown
+                  ariaLabel={`${t.label} 최소 수치`}
                   value={t.minValue ?? ''}
-                  onChange={(e) => setMin(t.label, e.target.value ? Number(e.target.value) : null)}
-                >
-                  <option value="">수치 무관</option>
-                  {(SUB_STAT_OPTIONS[t.label] ?? []).map((value) => (
-                    <option key={value} value={value}>
-                      {formatSubStatValue(t.label, value)} 이상
-                    </option>
-                  ))}
-                </select>
+                  options={[{ value: '', label: '수치 무관' }, ...(SUB_STAT_OPTIONS[t.label] ?? []).map((value) => ({ value, label: `${formatSubStatValue(t.label, value)} 이상` }))]}
+                  onChange={(v) => setMin(t.label, v === '' ? null : Number(v))}
+                />
               </li>
             ))}
           </ul>
@@ -163,6 +157,11 @@ function TargetOdds({ targets, setTargets, stats }) {
     </div>
   )
 }
+
+/** 인식이 어떤 이유로든 멈춰도(창 전환 등) "읽는 중"에 갇히지 않게, 일정 시간이 지나면 실패로 끝냅니다. */
+const RECOGNIZE_TIMEOUT_MS = 15000
+const withTimeout = (promise) =>
+  Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('인식 시간 초과')), RECOGNIZE_TIMEOUT_MS))])
 
 const EMPTY_MANUAL_STATS = [0, 1, 2, 3, 4].map((i) => ({ id: `manual-${i}`, label: '', valueText: '' }))
 
@@ -204,7 +203,6 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
   }
   const [savedNotice, setSavedNotice] = useState(null)
   const pip = usePipWindow('명체크 · 에코 체크', { width: 400, height: 640 })
-  const [editOpen, setEditOpen] = useState(false) // 인식한 옵션 고치기 팝업
   // 왼쪽 캐릭터 줄에서 고른 캐릭터: 고르면 오른쪽 칸이 "추천 캐릭터" 대신 그 캐릭터 기준 비교로 바뀝니다.
   // 목표 스탯 계산기에서 넘어온 강화 목표(있으면 그 캐릭터를 바로 골라 둡니다)
   const [mission, setMission] = useState(() => loadMission())
@@ -306,6 +304,13 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
   }
   const updateManualStat = (id, patch) =>
     setManualStats((rows) => rows.map((row) => (row.id === id ? { ...row, ...patch } : row)))
+  // 직접 고친 세트·코스트·메인·서브를 모두 풀고 인식 결과로 돌아갑니다.
+  const resetManual = () => {
+    setManualSetId('')
+    setManualCost('')
+    setManualMain(null)
+    setManualStats(EMPTY_MANUAL_STATS)
+  }
 
   const stop = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop())
@@ -354,7 +359,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
       for (let i = 0; i < 3; i++) {
         if (i > 0) await new Promise((r) => setTimeout(r, 200))
         const area = grabRect(video, rect)
-        recognized = await recognizeEchoPanel(area, session)
+        recognized = await withTimeout(recognizeEchoPanel(area, session))
         saveOcrSample(area, recognized, 'live')
         const key = JSON.stringify(recognized.subStats)
         if (recognized.subStats.length > 0 && key === previous) break
@@ -368,6 +373,8 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
       setError(ok ? null : '에코 옵션을 찾지 못했어요. 에코 상세 화면이나 강화 화면을 띄우고 다시 눌러 주세요.')
     } catch (err) {
       console.error(err)
+      setRecognizeFlash((f) => ({ n: f.n + 1, ok: false }))
+      setError('인식이 오래 걸려서 멈췄어요. 다시 눌러 주세요.')
     } finally {
       busyRef.current = false
       setManualBusy(false)
@@ -407,7 +414,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
         lastSignature = signature
 
         const area = grabRect(video, rect)
-        const recognized = await recognizeEchoPanel(area, session)
+        const recognized = await withTimeout(recognizeEchoPanel(area, session))
         saveOcrSample(area, recognized, 'live')
         const { views } = recognized
         if (!cancelled) setDebugViews(views)
@@ -454,7 +461,6 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
       cost={currentCost}
       characterEchoes={characterEchoes}
       excludeId={mission?.characterId ?? pinnedId}
-      onPick={(c) => setPinnedId(c.id)}
     />
   )
 
@@ -631,163 +637,111 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
           </div>
         )}
 
-          {/* 인식한 에코 요약. 고칠 때만 [수정]으로 편집 팝업을 엽니다. */}
-          <div className="live-check__result live-check__summary">
+          {/* 인식한 에코. 칸을 누르면 바로 드롭다운으로 고칠 수 있고, 못 읽은 칸은 빈칸(점선)으로 둡니다. */}
+          <div className="live-check__result live-check__summary" ref={optionBoxRef}>
             <div className="live-check__summary-head">
               <h3>인식한 에코</h3>
-              <button type="button" className="btn btn--ghost live-check__edit-btn" onClick={() => setEditOpen(true)}>
-                수정
-              </button>
+              {(manualSetId || manualCost || manualMain || manualStats.some((row) => row.label)) && (
+                <button type="button" className="btn btn--ghost live-check__edit-btn" onClick={resetManual}>
+                  고친 값 되돌리기
+                </button>
+              )}
             </div>
-            {!shownStats && !shownMain ? (
-              <p className="uploader__hint">{mode === 'capture' ? '스크린샷을 올리면 여기에 나와요.' : '게임에서 에코를 띄우면 여기에 나와요.'}</p>
-            ) : (
-              <>
-                <p className="live-check__summary-set">
-                  {getEchoSet(setId)?.icon && <img src={getEchoSet(setId).icon} alt="" />}
-                  <span>{setName ?? '세트 모름'}</span>
-                  <em>{currentCost ? `${currentCost}코` : '코스트 모름'}</em>
-                </p>
-                {shownMain && (
-                  <p className="live-check__summary-main">
-                    {shownMain.label} {shownMain.valueText}
-                  </p>
-                )}
-                <ul className="live-check__summary-subs">
-                  {(shownStats ?? []).map((st, i) => (
-                    // 줄 위치로 key: 인식 중 같은 이름이 잠깐 두 번 잡히면 이름 key가 겹쳐 이전 줄이 화면에 남았습니다.
-                    <li key={i}>
-                      <span>{st.label}</span>
-                      {/* 이 옵션이 나올 수 있는 최저~최고 수치와 지금 몇 단계인지 */}
-                      {(() => {
-                        const tiers = SUB_STAT_OPTIONS[st.label] ?? []
-                        const tier = tiers.indexOf(parseFloat(st.valueText)) + 1
-                        const unit = st.label.endsWith('%') ? '%' : ''
-                        return tiers.length ? (
-                          <small className="live-check__summary-range">
-                            {tiers[0]}
-                            {unit}~{tiers[tiers.length - 1]}
-                            {unit}
-                            {tier > 0 && ` · ${tier}/${tiers.length}단계`}
-                          </small>
-                        ) : null
-                      })()}
-                      <b>{st.valueText}</b>
-                    </li>
-                  ))}
-                </ul>
-              </>
+            {!shownStats && !shownMain && (
+              <p className="uploader__hint">{mode === 'capture' ? '스크린샷을 올리면 여기에 나와요.' : '게임에서 에코를 띄우면 여기에 나와요.'} 칸을 눌러 직접 고를 수도 있어요.</p>
             )}
-          </div>
-        </div>
-
-          <Modal wide open={editOpen} title="인식한 에코 수정" onClose={() => setEditOpen(false)}>
-          <div className="live-check__editor" ref={optionBoxRef}>
-            {shownStats && (
-              <div className="live-check__echo">
-                <strong>{setName ?? '세트를 읽지 못했어요'}</strong>
-                {getEchoSet(setId)?.icon && <img src={getEchoSet(setId).icon} alt="" />}
-              </div>
-            )}
-            <div className="live-check__set-select">
-              <span>에코 세트</span>
-              <button type="button" className="btn btn--ghost" onClick={() => setPicker({ type: 'set' })}>
-                {manualSetId ? getEchoSet(manualSetId)?.name : '자동 인식'}
-              </button>
+            <div className="live-check__summary-set">
+              <Dropdown
+                className="live-check__dd-set"
+                ariaLabel="에코 세트"
+                value={setId || ''}
+                placeholder="세트"
+                options={Object.entries(ECHO_SETS).map(([id, set]) => ({ value: id, label: set.name, icon: set.icon }))}
+                onChange={(id) => setManualSetId(id)}
+              />
+              <Dropdown
+                className="live-check__dd-cost"
+                ariaLabel="에코 코스트"
+                value={currentCost ? String(currentCost) : ''}
+                placeholder="코스트"
+                options={['4', '3', '1'].map((c) => ({ value: c, label: `${c}코` }))}
+                onChange={changeCost}
+              />
             </div>
-            <div className="live-check__main-head">
-              <h3>메인 옵션</h3>
-              <select
-                className="echo-panel__cost echo-panel__cost-select"
-                aria-label="에코 코스트"
-                value={manualCost || currentCost || ''}
-                onChange={(e) => changeCost(e.target.value)}
-              >
-                <option value="">COST 선택</option>
-                {['1', '3', '4'].map((cost) => (
-                  <option key={cost} value={cost}>COST {cost}</option>
-                ))}
-              </select>
-            </div>
-            <select
-              className="live-check__select"
-              aria-label="메인 옵션"
-              value={manualMain ? `${manualMain.cost}|${manualMain.label}` : ''}
-              onChange={(e) => {
-                const [cost, label] = e.target.value.split('|')
-                setManualMain(label ? { cost, label, valueText: MAIN_STAT_VALUES[cost][label] } : null)
+            <Dropdown
+              className="live-check__dd-main"
+              ariaLabel="메인 옵션"
+              value={shownMain && currentCost ? `${currentCost}|${shownMain.label}` : ''}
+              placeholder="메인 옵션"
+              fallbackLabel={shownMain ? `${shownMain.label} ${shownMain.valueText}` : ''}
+              options={mainCosts.flatMap((cost) =>
+                Object.entries(MAIN_STAT_VALUES[cost]).map(([label, valueText]) => ({ value: `${cost}|${label}`, label: `${label} ${valueText}`, group: `${cost}코` })),
+              )}
+              onChange={(v) => {
+                const [cost, label] = v.split('|')
+                setManualMain({ cost, label, valueText: MAIN_STAT_VALUES[cost][label] })
               }}
-            >
-              <option value="">{detectedMain ? `${detectedMain.label} ${detectedMain.valueText} (${detectedCost ? `${detectedCost}코스트 ` : ''}인식)` : '메인 옵션 선택'}</option>
-              {mainCosts.map((cost) => (
-                <optgroup key={cost} label={`COST ${cost}`}>
-                  {Object.entries(MAIN_STAT_VALUES[cost]).map(([label, valueText]) => (
-                    <option key={label} value={`${cost}|${label}`}>{label} {valueText}</option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-
-            <h3>서브 옵션{shownStats ? ` (${shownStats.length}/5)` : ''}</h3>
-            {shownStats && <RollOdds stats={shownStats} />}
-            <ul className="live-check__sub-rows">
+            />
+            <ul className="live-check__summary-subs">
               {manualStats.map((row, i) => {
                 // 직접 고른 값이 없으면 인식 결과를 보여 줍니다.
                 const recognized = subStats?.[i]
                 const label = row.label || recognized?.label || ''
                 const valueText = row.label ? row.valueText : recognized?.valueText ?? ''
-                const value = parseFloat(valueText)
-                const chance = valueText ? tierProbability(label, value) : null
+                const tiers = SUB_STAT_OPTIONS[label] ?? []
+                const tier = tiers.indexOf(parseFloat(valueText)) + 1
+                const unit = label.endsWith('%') ? '%' : ''
                 const wanted = targets.some((t) => t.label === label)
                 return (
+                  // 줄 위치로 key: 인식 중 같은 이름이 잠깐 두 번 잡히면 이름 key가 겹쳐 이전 줄이 화면에 남았습니다.
                   <li key={row.id} className={wanted ? 'live-check__sub--wanted' : ''}>
-                    <select
-                      className="live-check__select"
-                      aria-label={`서브 옵션 ${i + 1}`}
+                    <Dropdown
+                      className="live-check__dd-label"
+                      ariaLabel={`서브 옵션 ${i + 1}`}
                       value={label}
-                      onChange={(e) => updateManualStat(row.id, { label: e.target.value, valueText: '' })}
-                    >
-                      <option value="">옵션 선택</option>
-                      {SUB_STAT_NAMES.map((name) => (
-                        <option key={name} value={name}>{name}</option>
-                      ))}
-                    </select>
-                    <select
-                      className="live-check__select"
-                      aria-label={`서브 옵션 ${i + 1} 수치`}
-                      value={valueText}
-                      disabled={!label}
-                      onChange={(e) => updateManualStat(row.id, { label, valueText: e.target.value })}
-                    >
-                      <option value="">수치</option>
-                      {(SUB_STAT_OPTIONS[label] ?? []).map((value) => (
-                        <option key={value} value={formatSubStatValue(label, value)}>{formatSubStatValue(label, value)}</option>
-                      ))}
-                    </select>
-                    {chance !== null && (
-                      <small className="live-check__tier-odds">
-                        이 수치 확률 {chance.toFixed(1)}% · 상위 {successProbability(label, value).toFixed(1)}%
+                      options={SUB_STAT_NAMES.map((name) => ({ value: name, label: name }))}
+                      onChange={(name) => updateManualStat(row.id, { label: name, valueText: '' })}
+                    />
+                    {/* 이 옵션이 나올 수 있는 최저~최고 수치와 지금 몇 단계인지 */}
+                    {tiers.length > 0 && (
+                      <small className="live-check__summary-range">
+                        {tiers[0]}
+                        {unit}~{tiers[tiers.length - 1]}
+                        {unit}
+                        {tier > 0 && ` · ${tier}/${tiers.length}단계`}
                       </small>
                     )}
+                    <Dropdown
+                      className="live-check__dd-value"
+                      ariaLabel={`서브 옵션 ${i + 1} 수치`}
+                      value={valueText}
+                      disabled={!label}
+                      options={tiers.map((v) => ({ value: formatSubStatValue(label, v), label: formatSubStatValue(label, v) }))}
+                      onChange={(v) => updateManualStat(row.id, { label, valueText: v })}
+                    />
                   </li>
                 )
               })}
             </ul>
-            {manualStats.some((row) => row.label) && (
-              <button type="button" className="btn btn--ghost" onClick={() => setManualStats(EMPTY_MANUAL_STATS)}>
-                직접 고친 값 지우기
-              </button>
-            )}
 
-            <TargetOdds targets={targets} setTargets={setTargets} stats={shownStats} />
+            {/* 확률·원하는 옵션은 필요할 때만 펼쳐 봅니다. */}
+            <details className="live-check__more">
+              <summary>옵션 확률 · 원하는 옵션</summary>
+              {shownStats && <RollOdds stats={shownStats} />}
+              <TargetOdds targets={targets} setTargets={setTargets} stats={shownStats} />
+            </details>
           </div>
-          </Modal>
+        </div>
 
           <div className="live-check__result" ref={rankBoxRef}>
             {missionCard}
             {/* 캐릭터를 고르면 이 칸이 그 캐릭터 기준 비교로 바뀝니다(해제하면 추천 캐릭터 목록). */}
-            <div className="live-check__picker">
+            <div className="live-check__picker live-check__picker--row">
               <CharacterPicker value={pinned} onChange={(c) => setPinnedId(c?.id ?? null)} placeholder="캐릭터 골라서 비교" clearLabel="추천 목록으로" />
+              {/* 고른 캐릭터에게 이 에코 세트가 추천 세트인지 바로 보이게 */}
+              {pinned && setId && (usesSet(pinned.id, setId)
+                ? <em className="live-check__set-tag">추천 세트</em>
+                : <em className="live-check__set-tag live-check__set-tag--off">추천 세트 아님</em>)}
             </div>
             {pinned ? (
               <LiveCharacterCompare
@@ -923,17 +877,6 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
         )}
       </Modal>
 
-      <Modal wide open={picker?.type === 'set'} title="에코 세트 선택" onClose={() => setPicker(null)}>
-        <button className="picker-item picker-item--simple" onClick={() => { setManualSetId(''); setPicker(null) }}>
-          <span>자동 인식</span>
-        </button>
-        {Object.entries(ECHO_SETS).map(([id, set]) => (
-          <button key={id} className="picker-item picker-item--simple" onClick={() => { setManualSetId(id); setPicker(null) }}>
-            {set.icon && <img src={set.icon} alt="" className="picker-item__icon" />}
-            <span>{set.name}</span>
-          </button>
-        ))}
-      </Modal>
     </section>
   )
 }

@@ -134,8 +134,8 @@ export default function LiveCharacterCompare({ character, echo, hasEcho = false,
               disabled={blocked}
               title={blocked ? `${getEchoCost(e)}코 자리라 ${cost}코 에코와 바꿀 수 없어요` : e ? `${getEchoCost(e)}코 · ${scoreOf(e).toFixed(1)}점` : '빈 자리'}
             >
-              {/* 같은 코스트 중 점수가 가장 낮은 자리 = 바꾸기 추천 */}
-              {autoSlot === i && <span className="live-compare__rec">추천</span>}
+              {/* 같은 코스트 중 점수가 가장 낮은 자리 = 바꾸기 추천(점수가 오를 때만) */}
+              {autoSlot === i && echo && (!e || scoreOf(echo) > scoreOf(e)) && <span className="live-compare__rec">추천</span>}
               <small>{e ? `${getEchoCost(e)}코` : '빈칸'}</small>
               {/* 자리 점수: 저장해서 바뀌면 촤르륵 올라가고, 오른쪽에 등급 아이콘 */}
               <b className="live-compare__slot-score">

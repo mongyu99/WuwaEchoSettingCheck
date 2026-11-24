@@ -4,7 +4,7 @@ import { ECHO_SETS } from '../config/echoSets'
 import { BAG_REGIONS, FIXED_REGIONS, LIVE_REGIONS } from '../config/regions'
 import { MAIN_STAT_VALUES } from '../config/echoMainStats'
 import { matchBagSetIcon } from './setIconMatch'
-import { blobToDataURL, cropNormalizedImage, normalizeImage, preprocessForOcr } from './image'
+import { blobToDataURL, canvasToBlob, cropNormalizedImage, normalizeImage, preprocessForOcr } from './image'
 import { matchSubStatIcons, rowOfLine } from './subStatIconMatch'
 import { matchMainEchoName } from './mainEchoName'
 import { SUB_STAT_NAMES } from '../config/subStatOptions'
@@ -97,7 +97,7 @@ export function cropFromLeft(source, h, region) {
   const ctx = canvas.getContext('2d')
   ctx.imageSmoothingQuality = 'high'
   ctx.drawImage(source, region.x * scale, region.y * scale, region.width * scale, region.height * scale, 0, 0, canvas.width, canvas.height)
-  return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
+  return canvasToBlob(canvas)
 }
 
 // 수치가 없는 줄은 배경 잡음이나 잠긴 옵션 줄입니다. 그대로 두면 짧은 잡음이 "HP"에 맞춰져 최저 수치로 채워집니다.
@@ -255,7 +255,7 @@ async function readSubStatsWithDigitRetry(lines, input, session) {
 export async function recognizeEchoPanel(area, session, { withViews = true, layout = 'character' } = {}) {
   if (layout === 'bag') return recognizeBagPanel(area, session, { withViews })
   const h = area.height
-  const blob = await new Promise((resolve) => area.toBlob(resolve, 'image/png'))
+  const blob = await canvasToBlob(area)
   const { dataUrl } = await normalizeImage(new File([blob], 'live.png', { type: 'image/png' }))
   const views = []
   const read = async (title, image, preprocess = true) => {

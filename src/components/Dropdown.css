@@ -1,0 +1,125 @@
+.dropdown {
+  position: relative;
+  min-width: 0;
+}
+
+.dropdown__btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  min-height: 30px;
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--ww-row);
+  color: var(--ww-ink, var(--text-primary));
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.dropdown__btn:hover:not(:disabled),
+.dropdown--open .dropdown__btn {
+  border-color: var(--ww-gold-soft);
+}
+
+.dropdown__btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* 못 읽은 칸: 빈칸처럼 점선만 */
+.dropdown__btn--empty {
+  border-style: dashed;
+  border-color: var(--ww-panel-border);
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.dropdown__btn span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.dropdown__btn i {
+  flex-shrink: 0;
+  font-style: normal;
+  font-size: 10px;
+  color: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+
+.dropdown--open .dropdown__btn i {
+  transform: rotate(180deg);
+}
+
+.dropdown__btn img,
+.dropdown__item img {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.dropdown__list {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 100%;
+  max-height: 260px;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--ww-panel-border);
+  border-radius: 10px;
+  background: var(--bg-surface-raised);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  animation: dropdown-in 0.12s ease-out;
+}
+
+@keyframes dropdown-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+.dropdown__group {
+  margin: 6px 8px 2px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ww-ink, var(--text-primary));
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.dropdown__item:hover {
+  background: var(--ww-row);
+}
+
+.dropdown__item--on {
+  background: var(--ww-gold-soft);
+  color: var(--ww-ink);
+  font-weight: 700;
+}
