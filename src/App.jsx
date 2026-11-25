@@ -445,7 +445,7 @@ export default function App() {
           />
         )
       case 'bag':
-        return <EchoBagPage onGoToRecommend={goToRecommend} />
+        return <EchoBagPage onGoToRecommend={goToRecommend} characterEchoes={characterEchoes} />
       case 'eventnote':
         return <EventNotePage />
       case 'events':

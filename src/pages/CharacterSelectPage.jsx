@@ -20,6 +20,9 @@ function CardGrade({ echoes, characterId }) {
 export default function CharacterSelectPage({ onSelect, charactersWithData, characterEchoes }) {
   const [element, setElement] = useState('all') // 'all' | ELEMENTS[i]
   const [query, setQuery] = useState('')
+  const [onlySet, setOnlySet] = useState(false) // 에코를 세팅한 캐릭터만
+  const [sort, setSort] = useState('recent') // 'recent'(최신 캐릭터순) → 'high'(점수 높은 순) → 'low'(낮은 순)
+  const scoreOf = (id) => (characterEchoes?.[id]?.length > 0 ? scoreEchoes(characterEchoes[id], getValidOptions(id)) : null)
 
   const filtered = useMemo(() => {
     const q = query.trim()
@@ -28,11 +31,19 @@ export default function CharacterSelectPage({ onSelect, charactersWithData, char
     return CHARACTERS.filter((c) => {
       if (element !== 'all' && c.element !== element) return false
       if (q && !c.name.includes(q)) return false
+      if (onlySet && !charactersWithData?.has(c.id)) return false
       return true
     })
       .reverse()
-      .sort((a, b) => Number(b.upcoming) - Number(a.upcoming))
-  }, [element, query])
+      .sort((a, b) => {
+        if (sort === 'recent') return Number(b.upcoming) - Number(a.upcoming)
+        // 점수순: 세팅 안 한 캐릭터는 항상 맨 뒤
+        const sa = scoreOf(a.id)
+        const sb = scoreOf(b.id)
+        if (sa === null || sb === null) return (sa === null) - (sb === null)
+        return sort === 'high' ? sb - sa : sa - sb
+      })
+  }, [element, query, onlySet, sort, characterEchoes]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <section className="char-select">
@@ -61,6 +72,16 @@ export default function CharacterSelectPage({ onSelect, charactersWithData, char
               {el}
             </button>
           ))}
+          <button className={`char-select__chip ${onlySet ? 'char-select__chip--active' : ''}`} onClick={() => setOnlySet((v) => !v)}>
+            세팅 캐릭터
+          </button>
+          {/* 오른쪽 끝: 누를 때마다 최신순 → 점수 높은 순 → 점수 낮은 순 */}
+          <button
+            className={`char-select__chip char-select__sort ${sort !== 'recent' ? 'char-select__chip--active' : ''}`}
+            onClick={() => setSort((v) => (v === 'recent' ? 'high' : v === 'high' ? 'low' : 'recent'))}
+          >
+            {sort === 'recent' ? '최신순' : sort === 'high' ? '점수 높은 순 ↓' : '점수 낮은 순 ↑'}
+          </button>
         </div>
       </div>
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { thumbFallback } from '../utils/thumbFallback'
 import { createStatVoter } from '../utils/statVote'
 import ConfirmDialog from '../components/ConfirmDialog'
 import Modal from '../components/Modal'
@@ -737,7 +738,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
             {missionCard}
             {/* 캐릭터를 고르면 이 칸이 그 캐릭터 기준 비교로 바뀝니다(해제하면 추천 캐릭터 목록). */}
             <div className="live-check__picker live-check__picker--row">
-              <CharacterPicker value={pinned} onChange={(c) => setPinnedId(c?.id ?? null)} placeholder="캐릭터 골라서 비교" clearLabel="추천 목록으로" />
+              <CharacterPicker value={pinned} onChange={(c) => setPinnedId(c?.id ?? null)} placeholder="캐릭터 골라서 비교" clearLabel="추천 목록으로" characterEchoes={characterEchoes} />
               {/* 고른 캐릭터에게 이 에코 세트가 추천 세트인지 바로 보이게 */}
               {pinned && setId && (usesSet(pinned.id, setId)
                 ? <em className="live-check__set-tag">추천 세트</em>
@@ -762,7 +763,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
             <ol className="live-check__ranks">
               {results.map(({ character, rows, validCount, setMatched }) => (
                 <li key={character.id}>
-                  {character.image && <img src={character.image} alt="" />}
+                  {character.image && <img src={character.thumb ?? character.image} onError={thumbFallback(character)} alt="" />}
                   <div>
                     <span className="live-check__rank-head">
                       <strong>{character.name}</strong>
