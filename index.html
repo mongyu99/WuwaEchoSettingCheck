@@ -24,8 +24,8 @@
       (function () {
         try {
           if (location.pathname !== '/' && location.pathname !== '/index.html') return
-          var url = JSON.parse(localStorage.getItem('wuwa-echo-check:banners') || '{}').firstUrl
-          if (!url) return
+          // 전에 와 본 적이 있으면 저장해 둔 첫 배너 주소, 처음이면 서버가 첫 배너로 보내 주는 주소(302)를 미리 받습니다.
+          var url = JSON.parse(localStorage.getItem('wuwa-echo-check:banners') || '{}').firstUrl || '/api/banners/first-image'
           var link = document.createElement('link')
           link.rel = 'preload'
           link.as = 'image'
