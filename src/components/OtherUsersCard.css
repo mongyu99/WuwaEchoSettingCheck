@@ -1,0 +1,197 @@
+.other-users {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 16px;
+}
+
+.other-users h3 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.other-users__hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.other-users__warn {
+  margin: 0;
+  padding: 6px 10px;
+  border-left: 3px solid var(--accent-wave);
+  border-radius: 6px;
+  background: var(--bg-surface-raised);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.other-users__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.other-users__list button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: var(--bg-surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.other-users__list button:hover {
+  border-color: var(--accent-wave);
+}
+
+/* 교체 이득이 있는 캐릭터 */
+.other-users__row--good button {
+  border-color: rgba(95, 211, 148, 0.45);
+}
+
+.other-users__list img,
+.other-users__face {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--bg-surface);
+}
+
+.other-users__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.other-users__info strong,
+.other-users__info small {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.other-users__info small {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.other-users__gain {
+  flex-shrink: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.other-users__gain b {
+  display: flex;
+  flex-direction: column;
+  color: #5fd394;
+  font-size: 14px;
+}
+
+.other-users__gain b small,
+.other-users__gain em {
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+/* PiP 작은 창용: 여백과 그림을 줄입니다 */
+.other-users--compact {
+  gap: 6px;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.other-users--compact h3 {
+  font-size: 12px;
+}
+
+.other-users--compact .other-users__list button {
+  padding: 6px 8px;
+}
+
+.other-users--compact .other-users__list img,
+.other-users--compact .other-users__face {
+  width: 28px;
+  height: 28px;
+}
+
+/* 눌러서 펼친 줄: 어느 자리와 바꾸면 점수가 얼마나 바뀌는지 */
+.other-users__row--open button {
+  border-color: var(--ww-gold-soft, var(--accent-wave));
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.other-users__detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px 10px;
+  border: 1px solid var(--ww-gold-soft, var(--accent-wave));
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
+  background: var(--bg-surface);
+  font-size: 12px;
+  animation: other-users-open 0.15s ease-out;
+}
+
+@keyframes other-users-open {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: none; }
+}
+
+.other-users__detail p {
+  margin: 0;
+}
+
+.other-users__swap {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.other-users__swap span {
+  color: var(--text-muted);
+}
+
+.other-users__swap strong {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.other-users__swap b {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.other-users__up {
+  color: #5fd394;
+}
+
+.other-users__down {
+  color: #f08a8a;
+}
+
+.other-users__verdict,
+.other-users__hits {
+  color: var(--text-muted);
+}

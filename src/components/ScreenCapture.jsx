@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FIXED_REGIONS } from '../config/regions'
-import { cropNormalizedImage, normalizeImage, preprocessForOcr } from '../utils/image'
+import { canvasToBlob, cropNormalizedImage, normalizeImage, preprocessForOcr } from '../utils/image'
 import { buildStatsFromLines, createOcrSession, snapSubStatsToCatalog } from '../utils/ocr'
 import { panelSignature, signatureChanged } from '../utils/screenWatch'
 import './ScreenCapture.css'
@@ -131,7 +131,7 @@ export default function ScreenCapture({ onCapture, remaining, auto = false }) {
     if (remaining <= 0) return
     const canvas = grabGameArea()
     if (!canvas) return
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
+    const blob = await canvasToBlob(canvas)
     if (blob) submit(blob)
   }
 
@@ -161,7 +161,7 @@ export default function ScreenCapture({ onCapture, remaining, auto = false }) {
         if (moving || !signatureChanged(lastChecked, signature)) return
         lastChecked = signature
 
-        const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
+        const blob = await canvasToBlob(canvas)
         const file = new File([blob], 'auto.png', { type: 'image/png' })
         const { dataUrl } = await normalizeImage(file)
         const crop = await cropNormalizedImage(dataUrl, FIXED_REGIONS.subStat)

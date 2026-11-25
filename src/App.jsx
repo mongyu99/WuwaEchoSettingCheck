@@ -271,6 +271,17 @@ export default function App() {
     setEchoesForCurrent((prev) => prev.map((e) => (e.id === id ? { ...e, subStats } : e)))
   }
 
+  // 에코 순서 바꾸기(드래그해서 놓은 자리로): from번째 에코를 빼서 to번째에 끼웁니다.
+  const moveEcho = (from, to) => {
+    setEchoesForCurrent((prev) => {
+      if (from === to || !prev[from] || to < 0 || to >= prev.length) return prev
+      const next = [...prev]
+      const [moved] = next.splice(from, 1)
+      next.splice(to, 0, moved)
+      return next
+    })
+  }
+
   const updateEchoCost = (id, cost) => {
     setEchoesForCurrent((prev) => prev.map((e) => (e.id === id ? { ...e, cost, mainStats: applyCostToMainStats(e.mainStats, cost) } : e)))
   }
@@ -401,6 +412,7 @@ export default function App() {
             onUpdateCost={updateEchoCost}
             onReplaceOne={handleReplaceOne}
             onAddEcho={addManualEcho}
+            onMoveEcho={moveEcho}
             onGoToCharacters={goToCharacters}
             onReset={handleResetCurrent}
           />

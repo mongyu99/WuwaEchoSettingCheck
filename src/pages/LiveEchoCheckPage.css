@@ -859,3 +859,120 @@
   align-items: center;
   gap: 14px;
 }
+
+/* 넓은 화면: 오른쪽에 "다른 캐릭터도 쓸 수 있을까요?" 칸을 붙이고, 기존 두 칸을 조금 줄입니다. */
+@media (min-width: 1301px) {
+  .live-check__layout {
+    grid-template-columns: minmax(280px, 0.95fr) minmax(0, 1.45fr) minmax(240px, 0.85fr);
+  }
+}
+
+/* 비교 캐릭터 선택 + 오른쪽 "추천 세트" 표시 */
+.live-check__picker--row {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.live-check__picker--row > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.live-check__picker--row .live-check__set-tag {
+  flex-shrink: 0;
+  margin-left: 0;
+  padding: 3px 10px;
+  border: 1px solid var(--accent-wave);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.live-check__set-tag--off {
+  color: #f08a8a;
+  border-color: rgba(240, 138, 138, 0.6) !important;
+}
+
+/* ── 인식한 에코: 칸마다 드롭다운으로 바로 고치기 ── */
+.live-check__summary-set {
+  display: flex;
+  gap: 6px;
+  margin: 4px 0 0;
+}
+
+.live-check__dd-set {
+  flex: 1;
+}
+
+.live-check__dd-cost {
+  width: 84px;
+  flex-shrink: 0;
+}
+
+.live-check__dd-main .dropdown__btn {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.live-check__summary-subs li {
+  padding: 3px;
+}
+
+.live-check__summary-subs .live-check__dd-label {
+  flex: 1;
+}
+
+.live-check__summary-subs .live-check__dd-value {
+  width: 82px;
+  flex-shrink: 0;
+}
+
+.live-check__summary-subs .live-check__dd-value .dropdown__btn {
+  font-weight: 700;
+}
+
+.live-check__summary-subs .dropdown__btn {
+  background: transparent;
+}
+
+.live-check__summary-subs .dropdown__list {
+  max-height: 220px;
+}
+
+.live-check__summary-subs .live-check__dd-value .dropdown__list {
+  right: 0;
+  left: auto;
+}
+
+.live-check__sub--wanted .dropdown__btn {
+  border-color: var(--accent-wave);
+}
+
+.live-check__more {
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.live-check__more summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.live-check__more[open] summary {
+  margin-bottom: 10px;
+}
+
+/* ── 세 칸 높이 맞추기: 가장 긴 칸에 맞춰 늘립니다 ── */
+.live-check__layout {
+  align-items: stretch;
+}
+
+.live-check__left > :last-child {
+  flex: 1;
+}
+
+.live-check__layout > .other-users {
+  align-self: stretch;
+}

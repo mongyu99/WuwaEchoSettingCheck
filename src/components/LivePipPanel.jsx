@@ -11,7 +11,7 @@ const TOP_COUNT = 3
 /**
  * 실시간 에코 체크 PiP 창 안의 내용: 세트·코스트 한 줄, 강화 목표 카드(missionCard, 페이지와 같은 것), 추천 캐릭터 상위 3명.
  */
-export default function LivePipPanel({ pipWindow, sharing, setId, cost, main, stats, missionCard, results, onRecognize, recognizing, flash, autoRecognize, onToggleAuto }) {
+export default function LivePipPanel({ pipWindow, sharing, setId, cost, main, stats, missionCard, otherUsersCard, results, onRecognize, recognizing, flash, autoRecognize, onToggleAuto }) {
   // 새 에코를 읽을 때마다 페이지처럼 상자들을 젤리처럼 흔들어 "읽었다"는 걸 보여 줍니다(위에서부터 차례로).
   const echoRef = useRef(null)
   const bodyRef = useRef(null)
@@ -93,6 +93,7 @@ export default function LivePipPanel({ pipWindow, sharing, setId, cost, main, st
           </ol>
         </>
       )}
+      {otherUsersCard}
       </div>
 
       {/* 맨 아래: 지금 읽은 메인·서브 옵션(잘못 읽었는지 게임 화면과 바로 대 볼 수 있게) */}

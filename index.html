@@ -18,6 +18,23 @@
         } catch (e) {}
       })()
     </script>
+    <script>
+      // 메인 배너(가장 큰 그림, LCP)를 JS 번들·서버 응답을 기다리지 않고 바로 받기 시작합니다.
+      // 지난 방문 때 VersionBanner.jsx가 저장한 첫 배너 주소를 씁니다(키 이름은 그 파일의 CACHE_KEY와 같아야 함).
+      (function () {
+        try {
+          if (location.pathname !== '/' && location.pathname !== '/index.html') return
+          // 전에 와 본 적이 있으면 저장해 둔 첫 배너 주소, 처음이면 서버가 첫 배너로 보내 주는 주소(302)를 미리 받습니다.
+          var url = JSON.parse(localStorage.getItem('wuwa-echo-check:banners') || '{}').firstUrl || '/api/banners/first-image'
+          var link = document.createElement('link')
+          link.rel = 'preload'
+          link.as = 'image'
+          link.href = url
+          link.setAttribute('fetchpriority', 'high')
+          document.head.appendChild(link)
+        } catch (e) {}
+      })()
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

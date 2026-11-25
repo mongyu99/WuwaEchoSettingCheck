@@ -179,6 +179,8 @@
     padding: 0 12px;
     /* backdrop-filter가 있으면 안쪽 fixed 서랍이 화면이 아니라 상단바 기준으로 붙어서 끕니다. */
     backdrop-filter: none;
+    /* 블러를 끄는 대신 상단바도 불투명하게(뒤 글자가 비치지 않게) */
+    background: linear-gradient(var(--ww-panel), var(--ww-panel)), var(--bg-void);
   }
 
   .top-nav__burger {
@@ -218,7 +220,7 @@
     display: block;
     position: fixed;
     inset: var(--top-nav-height) 0 0 0;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(0, 0, 0, 0.6);
     z-index: 1;
   }
 
@@ -234,9 +236,9 @@
     gap: 16px;
     padding: 16px 12px 24px;
     overflow-y: auto;
-    background: var(--ww-panel);
+    /* 모바일 브라우저는 서랍의 블러가 안 먹는 경우가 많아, 뒤 화면이 비쳐 지저분해 보입니다. 불투명하게 깔고 그 위에 패널 색을 얹습니다. */
+    background: linear-gradient(var(--ww-panel), var(--ww-panel)), var(--bg-void);
     border-right: 1px solid var(--ww-gold-soft);
-    backdrop-filter: blur(14px);
     transform: translateX(-100%);
     visibility: hidden;
     transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 0.28s;

@@ -137,7 +137,7 @@ export function cropNormalizedImage(dataUrl, cropPx) {
         cropPx.width,
         cropPx.height,
       )
-      canvas.toBlob((blob) => resolve(blob), 'image/png')
+      canvasToBlob(canvas).then(resolve)
     }
     img.onerror = reject
     img.src = dataUrl
@@ -170,12 +170,41 @@ export function preprocessForOcr(blob) {
       }
       ctx.putImageData(imageData, 0, 0)
       URL.revokeObjectURL(url)
-      canvas.toBlob((out) => resolve(out), 'image/png')
+      canvasToBlob(canvas).then(resolve)
     }
     img.onerror = () => {
       URL.revokeObjectURL(url)
       reject(new Error('전처리용 이미지를 불러올 수 없습니다.'))
     }
     img.src = url
+  })
+}
+
+/**
+ * canvas → PNG Blob. toBlob은 탭이 뒤로 가면(다른 창을 보면) 브라우저가 미뤄서 끝나지 않을 수 있습니다.
+ * 그래서 숨겨진 상태면 바로(동기) 만들고, 보이는 상태라도 0.5초 안에 안 끝나면 동기 방식으로 만듭니다.
+ */
+export function canvasToBlob(canvas) {
+  const sync = () => {
+    const [head, body] = canvas.toDataURL('image/png').split(',')
+    const bin = atob(body)
+    const bytes = new Uint8Array(bin.length)
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+    return new Blob([bytes], { type: head.slice(5, head.indexOf(';')) })
+  }
+  if (document.hidden) return Promise.resolve(sync())
+  return new Promise((resolve) => {
+    let done = false
+    const timer = setTimeout(() => {
+      if (done) return
+      done = true
+      resolve(sync())
+    }, 500)
+    canvas.toBlob((blob) => {
+      if (done) return
+      done = true
+      clearTimeout(timer)
+      resolve(blob ?? sync())
+    }, 'image/png')
   })
 }
