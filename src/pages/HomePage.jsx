@@ -33,10 +33,13 @@ export default function HomePage(props) {
   return (
     <div className="home-page">
       <nav className="home-page__shortcuts" aria-label="주요 기능 바로가기">
-        {SHORTCUTS.map((s) => (
+        {SHORTCUTS.map((s, i) => (
           <button key={s.key} type="button" className="home-page__shortcut" onClick={props[s.handler]}>
+            {/* 금색 번호·화살표: 처음 온 사람이 "여기를 누르면 되는구나" 하고 바로 알게 */}
+            <span className="home-page__shortcut-num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
             <span className="home-page__shortcut-title">{s.title}</span>
             <span className="home-page__shortcut-desc">{s.desc}</span>
+            <span className="home-page__shortcut-go" aria-hidden="true">→</span>
           </button>
         ))}
       </nav>

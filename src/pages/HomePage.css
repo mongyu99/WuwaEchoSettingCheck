@@ -251,3 +251,70 @@
     padding: 10px 14px;
   }
 }
+
+/* ── 상단 기능 카드 골드 포인트 ── */
+.home-page__shortcut {
+  position: relative;
+  overflow: hidden;
+  padding-left: 22px;
+  padding-right: 40px;
+  /* 왼쪽 위에서 은은하게 번지는 금빛 */
+  background:
+    radial-gradient(120% 140% at 0% 0%, var(--ww-gold-soft), transparent 55%),
+    var(--ww-panel);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* 왼쪽 금색 세로 막대 */
+.home-page__shortcut::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--ww-gold);
+  box-shadow: 0 0 10px var(--ww-gold);
+  opacity: 0.75;
+  transition: opacity 0.2s ease;
+}
+
+.home-page__shortcut:hover {
+  box-shadow: 0 0 0 1px var(--ww-gold-soft), 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.home-page__shortcut:hover::before {
+  opacity: 1;
+}
+
+.home-page__shortcut-num {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--ww-gold);
+}
+
+.home-page__shortcut-go {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ww-gold);
+  font-size: 16px;
+  opacity: 0.55;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.home-page__shortcut:hover .home-page__shortcut-go {
+  opacity: 1;
+  transform: translate(4px, -50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-page__shortcut,
+  .home-page__shortcut-go {
+    transition: none;
+  }
+}
