@@ -263,3 +263,8 @@
   height: 26px;
   object-fit: contain;
 }
+
+/* 정렬 버튼은 칩 줄 오른쪽 끝에 */
+.char-select__sort {
+  margin-left: auto;
+}

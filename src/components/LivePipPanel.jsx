@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { thumbFallback } from '../utils/thumbFallback'
 import { createPortal } from 'react-dom'
 import { jelly } from '../utils/jelly'
 import { getEchoSet } from '../config/echoSets'
@@ -77,7 +78,7 @@ export default function LivePipPanel({ pipWindow, sharing, setId, cost, main, st
             {results.length === 0 && <li className="bag-pip__empty">어울리는 캐릭터가 없어요.</li>}
             {results.slice(0, TOP_COUNT).map(({ character, rows, validCount, setMatched }) => (
               <li key={character.id} className="bag-pip__item">
-                {character.image ? <img className="bag-pip__thumb" src={character.image} alt="" /> : <span className="bag-pip__thumb" />}
+                {character.image ? <img className="bag-pip__thumb" src={character.thumb ?? character.image} onError={thumbFallback(character)} alt="" /> : <span className="bag-pip__thumb" />}
                 <div className="bag-pip__info">
                   <strong>
                     {character.name}

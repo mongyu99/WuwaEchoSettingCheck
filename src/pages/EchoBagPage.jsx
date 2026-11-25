@@ -136,7 +136,7 @@ function BagRow({ item, index, open, incoming, exiting, onToggle, highlight, onR
 const MAX_QUEUE = 10
 
 /** 에코 가방 정리: 화면 공유로 가방의 에코를 하나씩 읽어 모으고, 에코마다 맞는 캐릭터와 점수를 매깁니다. */
-export default function EchoBagPage({ onGoToRecommend }) {
+export default function EchoBagPage({ onGoToRecommend, characterEchoes = {} }) {
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const [sharing, setSharing] = useState(false)
@@ -510,7 +510,7 @@ export default function EchoBagPage({ onGoToRecommend }) {
                 </span>
               </span>
             </h3>
-            <CharacterPicker value={target} onChange={(c) => setTargetId(c?.id ?? '')} placeholder="캐릭터 맞춤: 전체" clearLabel="전체 보기" />
+            <CharacterPicker value={target} onChange={(c) => setTargetId(c?.id ?? '')} placeholder="캐릭터 맞춤: 전체" clearLabel="전체 보기" characterEchoes={characterEchoes} />
             <button type="button" className={`echo-bag__filter-btn ${filterCount ? 'echo-bag__filter-btn--on' : ''}`} onClick={() => setFilterOpen(true)}>
               필터{filterCount > 0 && <b>{filterCount}</b>}
             </button>

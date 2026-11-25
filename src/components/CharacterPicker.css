@@ -115,3 +115,17 @@
 .char-picker__item--clear {
   color: var(--text-muted);
 }
+
+/* 에코를 등록하지 않은 캐릭터: 회색으로(마우스를 올리면 원래 색) */
+.char-picker__item--empty img {
+  filter: grayscale(1) brightness(0.75);
+  transition: filter 0.15s ease;
+}
+
+.char-picker__item--empty span:last-child {
+  color: var(--text-muted);
+}
+
+.char-picker__item--empty:hover img {
+  filter: none;
+}

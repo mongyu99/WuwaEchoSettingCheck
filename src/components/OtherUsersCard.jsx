@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { thumbFallback } from '../utils/thumbFallback'
 import { CHARACTERS } from '../config/characters'
 import { getValidOptions } from '../config/characterValidOptions'
 import { scoreValidStats } from '../utils/echoScore'
@@ -78,7 +79,7 @@ export default function OtherUsersCard({ subStats, setId, mainLabel, cost, chara
                 aria-expanded={openId === r.character.id}
                 onClick={() => setOpenId((id) => (id === r.character.id ? null : r.character.id))}
               >
-                {r.character.image ? <img src={r.character.image} alt="" /> : <span className="other-users__face" />}
+                {r.character.image ? <img src={r.character.thumb ?? r.character.image} onError={thumbFallback(r.character)} alt="" /> : <span className="other-users__face" />}
                 <div className="other-users__info">
                   <strong>{r.character.name}</strong>
                   <small>

@@ -261,7 +261,7 @@ export default function CharacterRecommendPage({ initialCharacterId = null, onGo
           <div className="char-rec__result">
             <div className="char-rec__toolbar">
               {/* 캐릭터 고르기: 가방 정리·실시간 체크와 같은 선택 팝업 */}
-              <CharacterPicker value={character} onChange={(c) => setCharacterId(c?.id ?? null)} />
+              <CharacterPicker value={character} onChange={(c) => setCharacterId(c?.id ?? null)} characterEchoes={characterEchoes} />
               <div className="char-rec__layout-toggle" role="radiogroup" aria-label="코스트 배치">
                 {[
                   ['43311', '4-3-3-1-1'],

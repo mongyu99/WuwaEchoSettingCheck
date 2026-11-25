@@ -44,6 +44,8 @@ export async function loadCatalog() {
     weaponType: c.weapon_type ?? '',
     upcoming: c.status === 'UPCOMING',
     image: c.image_path ? assetPath(c.image_path) : null,
+    // 작은 얼굴용 썸네일(public/characters/thumb/, npm run prepare-character-thumbs). 없으면 화면에서 원본으로 바꿉니다(thumbFallback).
+    thumb: c.image_path ? assetPath(c.image_path.replace(/^\/?characters\//, 'characters/thumb/')) : null,
   }))
 
   const innate = groupBy(d.innateBonuses, 'chara_id', charaIds)
