@@ -12,6 +12,7 @@ import { probabilityAbove, sampleEchoScores } from '../utils/betterEchoOdds'
 import { useCountUp } from '../utils/useCountUp'
 import { gradeOf } from '../utils/echoScore'
 import { assetPath } from '../config/assetPath'
+import { findSameEcho } from '../utils/echoIdentity'
 import './LiveCharacterCompare.css'
 
 /** 숫자가 바뀌면 이전 값에서 새 값까지 촤르륵 올라가는 표시(저장해서 점수·스탯이 오를 때). */
@@ -44,6 +45,8 @@ export default function LiveCharacterCompare({ character, echo, hasEcho = false,
     return current.length < 5 ? current.length : null
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [character, cost, current])
+  // 지금 읽은 에코가 이 캐릭터가 이미 끼고 있는 에코와 옵션까지 똑같으면(같은 에코일 가능성이 큼) 알려 주고 "추천"은 뺍니다.
+  const sameIndex = echo ? findSameEcho({ cost, mainLabel: echo.mainStats?.[0]?.label, subStats: echo.subStats }, current) : -1
   // 캐릭터나 코스트가 바뀌면 직접 고른 자리는 풀고 다시 자동으로 고릅니다.
   useEffect(() => setSlotOverride(null), [character.id, cost])
   // 코스트가 다른 자리는 바꿀 수 없어서 고를 수 없게 합니다(코스트를 못 읽었으면 모든 자리를 열어 둡니다).
@@ -121,6 +124,11 @@ export default function LiveCharacterCompare({ character, echo, hasEcho = false,
         )}
       </div>
 
+      {sameIndex >= 0 && (
+        <p className="live-compare__same">
+          {character.name} 에코 {sameIndex + 1}와 옵션이 똑같아요. 같은 에코라면 게임에서는 두 자리에 동시에 낄 수 없어요.
+        </p>
+      )}
       <div className="live-compare__slots" aria-label="바꿀 자리">
         {Array.from({ length: 5 }, (_, i) => {
           const e = current[i]
@@ -129,13 +137,13 @@ export default function LiveCharacterCompare({ character, echo, hasEcho = false,
             <button
               key={i}
               type="button"
-              className={`live-compare__slot ${shownSlot === i ? 'live-compare__slot--on' : ''} ${blocked ? 'live-compare__slot--blocked' : ''}`}
+              className={`live-compare__slot ${shownSlot === i ? 'live-compare__slot--on' : ''} ${blocked ? 'live-compare__slot--blocked' : ''} ${sameIndex === i ? 'live-compare__slot--same' : ''}`}
               onClick={() => setSlotOverride(i)}
               disabled={blocked}
               title={blocked ? `${getEchoCost(e)}코 자리라 ${cost}코 에코와 바꿀 수 없어요` : e ? `${getEchoCost(e)}코 · ${scoreOf(e).toFixed(1)}점` : '빈 자리'}
             >
               {/* 같은 코스트 중 점수가 가장 낮은 자리 = 바꾸기 추천(점수가 오를 때만) */}
-              {autoSlot === i && echo && (!e || scoreOf(echo) > scoreOf(e)) && <span className="live-compare__rec">추천</span>}
+              {autoSlot === i && echo && sameIndex < 0 && (!e || scoreOf(echo) > scoreOf(e)) && <span className="live-compare__rec">추천</span>}
               <small>{e ? `${getEchoCost(e)}코` : '빈칸'}</small>
               {/* 자리 점수: 저장해서 바뀌면 촤르륵 올라가고, 오른쪽에 등급 아이콘 */}
               <b className="live-compare__slot-score">

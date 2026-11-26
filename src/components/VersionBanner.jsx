@@ -8,6 +8,7 @@ const SLIDE_INTERVAL_MS = 5000
 // 마지막으로 받은 배너 목록. 다음 방문 때 서버 응답을 기다리지 않고 바로 첫 배너를 그립니다(LCP).
 // index.html의 미리 불러오기 스크립트도 이 키의 firstUrl을 읽으므로 이름을 바꾸면 같이 바꿔야 합니다.
 const CACHE_KEY = 'wuwa-echo-check:banners'
+const FIRST_IMAGE_URL = '/api/banners/first-image'
 
 function loadCachedBanners() {
   try {
@@ -44,6 +45,9 @@ function useAutoSlide(count) {
 // 지금 보이는 배너를 onCurrentChange로 알려 줍니다(홈 오른쪽 타이머가 그 배너의 기간을 씁니다).
 export default function VersionBanner({ onCurrentChange }) {
   const [banners, setBanners] = useState(loadCachedBanners)
+  // 처음 온 사람(저장된 목록 없음): 목록 API를 기다리지 않고, 서버가 첫 배너로 보내 주는 주소로 바로 그립니다.
+  // index.html이 같은 주소를 미리 받아 두므로 곧바로 뜨고, 목록이 와도 첫 칸은 같은 <img>를 그대로 써서 다시 그리지 않습니다(LCP).
+  const [firstSrc, setFirstSrc] = useState(() => (loadCachedBanners().length ? null : FIRST_IMAGE_URL))
   const [index, setIndex] = useAutoSlide(banners.length)
 
   useEffect(() => {
@@ -52,11 +56,16 @@ export default function VersionBanner({ onCurrentChange }) {
       .then((result) => {
         if (cancelled) return
         const shown = result.filter((b) => b.imagePath)
+        if (shown.length === 0) setFirstSrc(null) // 보여 줄 배너가 없으면 미리 그린 첫 칸도 치웁니다
         setBanners(shown)
         saveCachedBanners(shown)
       })
       // 서버나 DB 조회가 실패하면 public/main/의 로컬 배너를 대신 보여줍니다.
-      .catch(() => !cancelled && setBanners(FALLBACK_BANNERS))
+      .catch(() => {
+        if (cancelled) return
+        setFirstSrc(null)
+        setBanners(FALLBACK_BANNERS)
+      })
     return () => {
       cancelled = true
     }
@@ -72,13 +81,14 @@ export default function VersionBanner({ onCurrentChange }) {
     <>
       <div className="version-banner">
         <div className="version-banner__image-wrap">
-          {banners.length > 0 ? (
+          {banners.length > 0 || firstSrc ? (
             <div className="version-banner__track" style={{ transform: `translateX(-${index * 100}%)` }}>
-              {banners.map((banner, i) => (
+              {(banners.length > 0 ? banners : [{ id: 'first', title: '메인 배너', imagePath: null }]).map((banner, i) => (
                 <img
-                  key={banner.id}
+                  // 첫 칸은 key를 고정해, 목록이 도착해도 같은 그림을 다시 만들지 않습니다.
+                  key={i === 0 ? 'first' : banner.id}
                   className="version-banner__image"
-                  src={assetPath(banner.imagePath)}
+                  src={i === 0 && firstSrc ? firstSrc : assetPath(banner.imagePath)}
                   alt={banner.title}
                   // 첫 배너가 화면에서 가장 큰 그림(LCP)이라 가장 먼저 받고, 나머지는 넘어갈 때 받습니다.
                   fetchpriority={i === 0 ? 'high' : 'low'}

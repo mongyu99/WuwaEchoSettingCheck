@@ -390,3 +390,20 @@
   padding: 5px 12px;
   font-size: 12px;
 }
+
+/* 이미 끼고 있는 에코와 옵션이 똑같을 때 */
+.live-compare__same {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--ww-gold, #d8b35a);
+  border-radius: 6px;
+  background: var(--bg-surface-raised);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.live-compare__slot--same {
+  outline: 1px dashed var(--ww-gold, #d8b35a);
+  outline-offset: 2px;
+}

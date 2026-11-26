@@ -92,3 +92,14 @@
     margin-left: 0;
   }
 }
+
+/* 높이 고정 팝업(캐릭터 고르기 등): 검색·필터로 목록 길이가 바뀌어도 창 크기와 위치가 그대로입니다(안에서만 스크롤). */
+.modal--fixed .modal__card {
+  height: min(80vh, 760px);
+}
+
+@media (min-width: 701px) {
+  .modal--fixed.modal--wide .modal__card {
+    height: min(88vh, 760px);
+  }
+}

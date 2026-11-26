@@ -195,3 +195,7 @@
 .other-users__hits {
   color: var(--text-muted);
 }
+
+.other-users__same {
+  color: var(--ww-gold, #d8b35a) !important;
+}

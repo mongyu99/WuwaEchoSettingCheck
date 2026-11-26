@@ -79,7 +79,8 @@ export default function PickupCarousel() {
   }, [animate])
 
   if (images === null) {
-    return <p className="pickup__empty">불러오는 중...</p>
+    // 불러오는 동안에도 배너 크기(16:9) 자리를 잡아 둬서, 다 불러왔을 때 아래 칸이 밀리지 않게 합니다.
+    return <div className="pickup pickup--loading" aria-label="픽업 일정 불러오는 중" />
   }
 
   if (count === 0) {
@@ -106,6 +107,9 @@ export default function PickupCarousel() {
             key={`${src}-${i}`}
             className="pickup__image"
             src={src}
+            width="1600"
+            height="900"
+            decoding="async"
             alt={`픽업 일정 ${(i % count) + 1}`}
             aria-hidden={i === count}
           />
