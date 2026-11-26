@@ -119,3 +119,25 @@ export function finalStats(totals, { baseStats, weapon, weaponRank, weaponBonuse
   }
   return rows
 }
+
+/**
+ * 캐릭터가 끼고 있는 에코(current) 중 slot 자리를 echo로 바꿨을 때 실제 스탯이 어떻게 바뀌는지(에코 체크 비교와 같은 계산).
+ * deps: { getCharacterEchoCombos, getMainEchoIdForCombo, getCharacterBaseStats, getWeapon, weaponBonusesAt }
+ * 반환: [{ label, value(지금), after(바꾸면), whole }]
+ */
+export function swapFinalStats({ character, record, current, slot, echo, deps }) {
+  const combo = record?.echoParts ?? deps.getCharacterEchoCombos(character.id)?.[0] ?? []
+  const mainEchoId = record?.mainEchoId ?? deps.getMainEchoIdForCombo(combo)
+  const loadout = {
+    baseStats: deps.getCharacterBaseStats(character.id),
+    weapon: deps.getWeapon(record?.weapon),
+    weaponRank: record?.weaponRank ?? 1,
+    weaponBonusesAt: deps.weaponBonusesAt,
+  }
+  const stats = (echoes) => finalStats(buildStatTotals({ echoes, element: character.element, combo, mainEchoId, characterId: character.id }), loadout)
+  const next = [...current]
+  next[slot] = echo
+  const before = stats(current)
+  const after = stats(next.filter(Boolean))
+  return before.map((b, i) => ({ ...b, after: after[i].value }))
+}

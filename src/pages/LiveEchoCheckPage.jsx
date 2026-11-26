@@ -471,6 +471,7 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
       mission={mission}
       character={CHARACTERS.find((c) => c.id === mission.characterId)}
       currentEchoes={characterEchoes?.[mission.characterId] ?? []}
+      record={characterData?.[mission.characterId] ?? null}
       echo={shownStats && currentCost ? buildEcho(shownMain, shownStats, currentCost) : shownStats ? { cost: null, subStats: shownStats } : null}
       onSave={(i) => {
         const goal = mission.goals[i]
