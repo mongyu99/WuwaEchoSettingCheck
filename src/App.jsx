@@ -1,4 +1,5 @@
-import { startTransition, useEffect, useState } from 'react'
+import { startTransition, useEffect, useRef, useState } from 'react'
+import { SITE_URL, isBuildFlow, pageFromPath, routeOf } from './config/routes'
 import ProcessingOverlay from './components/ProcessingOverlay'
 import TopNav from './components/TopNav'
 import SiteFooter from './components/SiteFooter'
@@ -94,14 +95,21 @@ const PAGE_KEY = 'wuwa-current-page'
 
 export default function App() {
   // 보던 페이지는 탭 단위(sessionStorage)로만 기억합니다: 새로고침은 그대로, 새 탭·재방문은 메인부터.
+  // 주소(/live-check 등)가 있으면 그 화면으로 엽니다. /build에서 새로고침하면 보던 캡처·결과 화면을 이어서 보여 주고,
+  // 소셜 로그인 콜백(/auth/callback)처럼 화면 주소가 아니면 이 탭에서 보던 화면으로 돌아갑니다.
   const [page, setPage] = useState(() => {
+    let savedPage = 'home'
     try {
-      const savedPage = sessionStorage.getItem(PAGE_KEY) ?? 'home'
-      // 수정 중인 에코는 메모리에만 있어 새로고침하면 사라지므로, 캡처 화면으로 돌아갑니다.
-      return savedPage === 'edit' ? 'capture' : savedPage
+      savedPage = sessionStorage.getItem(PAGE_KEY) ?? 'home'
     } catch {
-      return 'home'
+      // sessionStorage를 못 쓰면 주소만 보고 고릅니다.
     }
+    // 수정 중인 에코는 메모리에만 있어 새로고침하면 사라지므로, 캡처 화면으로 돌아갑니다.
+    if (savedPage === 'edit') savedPage = 'capture'
+    const fromPath = pageFromPath(window.location.pathname)
+    if (fromPath === 'characters' && isBuildFlow(savedPage)) return savedPage
+    if (fromPath) return fromPath
+    return window.location.pathname.startsWith('/auth/') ? savedPage : 'home'
   }) // home | characters | patchnotes | events | capture | edit | stats
   const [character, setCharacter] = useState(savedCharacter)
   // 캐릭터 id별로 에코/무기/에코세트조합/기초스탯을 따로 보관합니다: { [characterId]: { echoes, weapon, echoParts, baseStats } }
@@ -142,6 +150,34 @@ export default function App() {
       // sessionStorage를 못 쓰면 새로고침 시 메인으로 갑니다.
     }
   }, [page])
+
+  // 화면이 바뀌면 주소·탭 제목·검색 설명을 맞춥니다. 뒤로 가기로 온 화면은 기록에 이미 있어서(state.page가 같음) 또 쌓지 않습니다.
+  const firstSync = useRef(true)
+  useEffect(() => {
+    const route = routeOf(page)
+    if (firstSync.current) {
+      firstSync.current = false
+      // 첫 진입: 기록을 쌓지 않고 바꿉니다. ?token=…(로그인 콜백)은 AuthContext가 읽어야 하니 남겨 둡니다.
+      window.history.replaceState({ page }, '', route.path + window.location.search + window.location.hash)
+    } else if (window.history.state?.page !== page) {
+      window.history.pushState({ page }, '', route.path)
+    }
+    document.title = route.title
+    document.querySelector('meta[name="description"]')?.setAttribute('content', route.description)
+    document.querySelector('link[rel="canonical"]')?.setAttribute('href', SITE_URL + route.path)
+  }, [page])
+
+  useEffect(() => {
+    const onPop = (e) => {
+      let target = e.state?.page ?? pageFromPath(window.location.pathname) ?? 'home'
+      // 수정 화면은 고치던 내용이 이미 저장·취소됐을 수 있어서, 뒤로 가기로는 캡처 화면으로 돌아갑니다.
+      if (target === 'edit') target = 'capture'
+      if (e.state?.page !== target) window.history.replaceState({ page: target }, '', window.location.pathname)
+      startTransition(() => setPage(target))
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
 
   const updateRecordForCurrent = (patcher) => {
     if (!character) return
