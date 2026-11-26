@@ -649,7 +649,9 @@ export default function LiveEchoCheckPage({ onApplyEcho, onGoToSetup, characterE
               )}
             </div>
             {!shownStats && !shownMain && (
-              <p className="uploader__hint">{mode === 'capture' ? '스크린샷을 올리면 여기에 나와요.' : '게임에서 에코를 띄우면 여기에 나와요.'} 칸을 눌러 직접 고를 수도 있어요.</p>
+              <p className="uploader__hint">{mode === 'capture' ? '스크린샷을 올리면 여기에 나와요.' : '게임에서 에코를 띄우면 여기에 나와요.'}
+                <br />
+                칸을 눌러 직접 고를 수도 있어요.</p>
             )}
             <div className="live-check__summary-set">
               <Dropdown

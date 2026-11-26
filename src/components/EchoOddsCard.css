@@ -109,3 +109,67 @@
   font-size: 10px;
   color: var(--accent-wave);
 }
+
+
+/* 제목 줄 + 오른쪽 i 안내 */
+.echo-odds__head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.echo-odds__info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--border-hairline);
+  border-radius: 50%;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: help;
+}
+
+.echo-odds__info:hover,
+.echo-odds__info--on {
+  border-color: var(--accent-wave);
+  color: var(--accent-wave);
+}
+
+.echo-odds__tip {
+  display: none;
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 240px;
+  max-width: calc(100vw - 32px);
+  padding: 10px 12px;
+  border: 1px solid var(--ww-gold-soft, var(--border-hairline));
+  border-radius: 10px;
+  background: var(--bg-surface);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.echo-odds__tip p {
+  margin: 0;
+}
+
+.echo-odds__tip p + p {
+  margin-top: 4px;
+  color: var(--ww-gold, var(--accent-wave));
+}
+
+.echo-odds__info:hover + .echo-odds__tip,
+.echo-odds__info--on + .echo-odds__tip {
+  display: block;
+}
