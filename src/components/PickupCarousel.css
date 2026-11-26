@@ -78,3 +78,21 @@
   font-size: 11px;
   font-weight: 700;
 }
+
+/* 배너 자리를 16:9로 고정(불러오기 전·후 높이가 같게) */
+.pickup {
+  aspect-ratio: 16 / 9;
+}
+
+.pickup__image {
+  height: 100%;
+  object-fit: cover;
+}
+
+.pickup--loading {
+  animation: pickup-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pickup-pulse {
+  50% { opacity: 0.55; }
+}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { startTransition, useEffect, useState } from 'react'
 import ProcessingOverlay from './components/ProcessingOverlay'
 import TopNav from './components/TopNav'
 import SiteFooter from './components/SiteFooter'
@@ -227,6 +227,8 @@ export default function App() {
 
     const results = []
     for (let i = 0; i < perImage.length; i++) {
+      // 사진마다 한 번씩 브라우저에 차례를 넘겨, 인식하는 동안에도 클릭·스크롤이 바로 반응하게 합니다.
+      await new Promise((resolve) => setTimeout(resolve, 0))
       const item = perImage[i]
       const echo = await buildEchoFromCrops(item.id, item.crops, item.previewUrl)
       // 재인식에 쓰려고 잘라 둔 그림을 수정 화면이 끝날 때까지 메모리에 들고 있습니다.
@@ -329,10 +331,12 @@ export default function App() {
     setPage('stats')
   }
 
-  const goHome = () => setPage('home')
-  const goToCharacters = () => setPage('characters')
-  const goToPatchNotes = () => setPage('patchnotes')
-  const goToGuide = () => setPage('guide')
+  // 메뉴·바로가기로 페이지를 옮길 때: 누른 반응(버튼 눌림)을 먼저 그리고, 무거운 새 페이지는 그 뒤에 그립니다(INP 개선).
+  const navigate = (next) => startTransition(() => setPage(next))
+  const goHome = () => navigate('home')
+  const goToCharacters = () => navigate('characters')
+  const goToPatchNotes = () => navigate('patchnotes')
+  const goToGuide = () => navigate('guide')
   // 하단 안내(자주 묻는 질문·약관 등): 어느 항목을 펼칠지 함께 기억합니다.
   const [infoSection, setInfoSection] = useState('faq')
   const goToInfo = (section) => {
@@ -340,10 +344,10 @@ export default function App() {
     setPage('info')
     window.scrollTo(0, 0)
   }
-  const goToEventCalendar = () => setPage('events')
-  const goToEventNote = () => setPage('eventnote')
-  const goToLiveCheck = () => setPage('live')
-  const goToEchoBag = () => setPage('bag')
+  const goToEventCalendar = () => navigate('events')
+  const goToEventNote = () => navigate('eventnote')
+  const goToLiveCheck = () => navigate('live')
+  const goToEchoBag = () => navigate('bag')
   // 캐릭터 추천으로 이동. 가방 정리에서 캐릭터를 골라 둔 채로 넘어오면 그 캐릭터를 바로 보여 줍니다.
   const [recommendCharacterId, setRecommendCharacterId] = useState(null)
   const goToRecommend = (characterId = null) => {

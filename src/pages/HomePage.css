@@ -318,3 +318,15 @@
     transition: none;
   }
 }
+
+/* 방송 소식 이미지: 16:9 자리를 미리 잡고, 비율이 다른 이미지는 잘리지 않게 안에 맞춥니다. */
+.home-page__broadcast {
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  background: var(--ww-row, var(--bg-surface-raised));
+}
+
+.home-page__broadcast--loading {
+  animation: pickup-pulse 1.4s ease-in-out infinite;
+}

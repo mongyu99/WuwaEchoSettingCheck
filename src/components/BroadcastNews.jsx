@@ -21,10 +21,11 @@ export default function BroadcastNews() {
   return (
     <section className="home-page__panel">
       <h4 className="home-page__panel-title">방송 소식</h4>
-      {loading && <p className="home-page__broadcast-empty">불러오는 중...</p>}
+      {/* 불러오는 동안 이미지 크기(16:9) 자리를 잡아 둬서 아래가 밀리지 않게 합니다. */}
+      {loading && <div className="home-page__broadcast home-page__broadcast--loading" aria-label="방송 소식 불러오는 중" />}
       {!loading && broadcasts.length === 0 && <p className="home-page__broadcast-empty">현재 예정된 방송이 없습니다.</p>}
       {broadcasts.map((b) => {
-        const image = <img className="home-page__broadcast" src={assetPath(b.imagePath)} alt={b.title} />
+        const image = <img className="home-page__broadcast" src={assetPath(b.imagePath)} alt={b.title} width="1600" height="900" decoding="async" />
         return b.url ? (
           <a key={b.id} href={b.url} target="_blank" rel="noopener noreferrer">
             {image}

@@ -36,7 +36,7 @@ export default function CharacterPicker({ value, onChange, placeholder = '캐릭
         <i aria-hidden="true">▾</i>
       </button>
 
-      <Modal wide open={open} title="캐릭터 선택" onClose={() => setOpen(false)}>
+      <Modal wide open={open} title="캐릭터 선택" onClose={() => setOpen(false)} className="modal--fixed">
         <div className="char-picker">
           <div className="char-select__filters">
             <input
