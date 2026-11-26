@@ -187,3 +187,15 @@
 .mission__chevron--open {
   transform: rotate(0deg);
 }
+
+/* 조건 미달 이유(수치 부족 · 바꾸면 떨어지는 스탯) */
+.mission__reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 6px 0 0;
+  padding: 0 0 0 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #f08a8a;
+}

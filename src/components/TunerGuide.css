@@ -8,9 +8,11 @@
 }
 
 .tuner-guide ul {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  /* 구간 | 설명 두 칸으로 줄을 맞춥니다 */
+  display: grid;
+  grid-template-columns: 12px max-content 1fr;
+  align-items: baseline;
+  gap: 6px 8px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -23,9 +25,24 @@
   font-weight: 700;
 }
 
-.tuner-guide--on::before {
-  content: '▶ ';
+.tuner-guide li {
+  display: contents;
+}
+
+.tuner-guide__mark {
+  font-size: 9px;
   color: var(--accent-wave);
+}
+
+.tuner-guide__range {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 설명은 줄이 넘어가도 같은 칸 안에서 맞춰 내려갑니다 */
+.tuner-guide li > span:last-child {
+  line-height: 1.45;
+  word-break: keep-all;
 }
 
 .tuner-guide__worst {
