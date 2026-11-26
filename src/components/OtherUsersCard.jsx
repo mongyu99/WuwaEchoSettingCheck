@@ -5,6 +5,7 @@ import { getValidOptions } from '../config/characterValidOptions'
 import { scoreValidStats } from '../utils/echoScore'
 import { getEchoCost } from '../utils/ocr'
 import { mainFits, usesSet } from '../utils/echoRecommend'
+import { findSameEcho } from '../utils/echoIdentity'
 import './OtherUsersCard.css'
 
 const MAX_ROWS = 6
@@ -45,6 +46,8 @@ export default function OtherUsersCard({ subStats, setId, mainLabel, cost, chara
       const mine = characterEchoes[character.id] ?? []
       const sameCost = cost ? mine.map((e, i) => ({ i, score: scoreValidStats(e.subStats, valid).total, cost: Number(getEchoCost(e)) })).filter((x) => x.cost === Number(cost)) : []
       const weakest = sameCost.sort((a, b) => a.score - b.score)[0] ?? null
+      // 이 캐릭터가 이미 똑같은 옵션의 에코를 끼고 있으면(같은 에코일 가능성이 큼) 교체 이득 대신 "착용 중"으로 보여 줍니다.
+      const same = findSameEcho({ cost, mainLabel, subStats }, mine)
       // 이 에코에서 그 캐릭터에게 유효한 서브 옵션
       const hits = subStats.filter((st) => valid.includes(st.label)).map((st) => `${st.label} ${st.valueText}`)
       return {
@@ -56,11 +59,12 @@ export default function OtherUsersCard({ subStats, setId, mainLabel, cost, chara
         gain: weakest ? total - weakest.score : null,
         slot: weakest?.i ?? null,
         slotScore: weakest?.score ?? null,
+        same,
         hits,
       }
     })
     // 메인 옵션이 안 맞는 캐릭터는 뒤로, 그 안에서는 교체 이득 → 점수 순
-    .sort((a, b) => b.mainOk - a.mainOk || (b.gain ?? -Infinity) - (a.gain ?? -Infinity) || b.total - a.total)
+    .sort((a, b) => b.mainOk - a.mainOk || (b.same < 0 ? b.gain ?? -Infinity : -Infinity) - (a.same < 0 ? a.gain ?? -Infinity : -Infinity) || b.total - a.total)
     .slice(0, compact ? 3 : MAX_ROWS)
 
   return (
@@ -73,7 +77,7 @@ export default function OtherUsersCard({ subStats, setId, mainLabel, cost, chara
       ) : (
         <ul className="other-users__list">
           {rows.map((r) => (
-            <li key={r.character.id} className={`${r.gain > 0 && r.mainOk ? 'other-users__row--good' : ''} ${openId === r.character.id ? 'other-users__row--open' : ''}`}>
+            <li key={r.character.id} className={`${r.gain > 0 && r.mainOk && r.same < 0 ? 'other-users__row--good' : ''} ${openId === r.character.id ? 'other-users__row--open' : ''}`}>
               <button
                 type="button"
                 aria-expanded={openId === r.character.id}
@@ -88,7 +92,9 @@ export default function OtherUsersCard({ subStats, setId, mainLabel, cost, chara
                   </small>
                 </div>
                 <span className="other-users__gain">
-                  {r.gain === null ? (
+                  {r.same >= 0 ? (
+                    <em className="other-users__same">착용 중인 에코와 같음</em>
+                  ) : r.gain === null ? (
                     <em>{r.registered ? '같은 코스트 없음' : '세팅 없음'}</em>
                   ) : r.gain > 0 ? (
                     <b>
@@ -102,7 +108,11 @@ export default function OtherUsersCard({ subStats, setId, mainLabel, cost, chara
               </button>
               {openId === r.character.id && (
                 <div className="other-users__detail">
-                  {r.gain !== null ? (
+                  {r.same >= 0 ? (
+                    <p className="other-users__verdict">
+                      {r.character.name} 에코 {r.same + 1}와 옵션이 똑같아요. 같은 에코라면 이미 끼고 있는 에코예요.
+                    </p>
+                  ) : r.gain !== null ? (
                     <>
                       <p className="other-users__swap">
                         <span>
