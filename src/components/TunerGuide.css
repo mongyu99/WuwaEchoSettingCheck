@@ -1,0 +1,38 @@
+/* 총 평균 시도 기준표 */
+.tuner-guide {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg-surface-raised);
+  font-size: 12px;
+}
+
+.tuner-guide ul {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-muted);
+}
+
+/* 지금 계획의 총 평균 시도가 속한 줄 */
+.tuner-guide--on {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.tuner-guide--on::before {
+  content: '▶ ';
+  color: var(--accent-wave);
+}
+
+.tuner-guide__worst {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-hairline);
+  text-align: center;
+  font-weight: 700;
+  color: var(--ww-gold, var(--accent-wave));
+}

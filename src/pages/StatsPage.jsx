@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, Fragment } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, Fragment } from 'react'
 import { ELEMENT_COLORS } from '../config/characters'
 import { getValidOptions } from '../config/characterValidOptions'
 import { getCharacterBaseStats } from '../config/characterBaseStats'
@@ -22,6 +22,9 @@ import Modal from '../components/Modal'
 import RetakeModal from '../components/RetakeModal'
 import EchoScoreCard from '../components/EchoScoreCard'
 import EchoOddsCard from '../components/EchoOddsCard'
+import TunerGuide from '../components/TunerGuide'
+
+const VALID_INFO_SEEN_KEY = 'wuwa-echo-check:valid-info-seen'
 import './StatsPage.css'
 
 const ELEMENT_DAMAGE_LABELS = ['응결 피해 보너스', '용융 피해 보너스', '전도 피해 보너스', '기류 피해 보너스', '회절 피해 보너스', '인멸 피해 보너스']
@@ -490,6 +493,7 @@ function JointResult({ results, echoes, onStartMission }) {
                 이 계획으로 강화하러 가기
               </button>
             )}
+            <TunerGuide attempts={current.attempts} />
           </>
         )}
       </aside>
@@ -684,13 +688,21 @@ function OptimizerPanel({
           i
         </span>
         <div className="optimizer__formula" role="tooltip">
-          <p>성공 확률 = 옵션이 모두 뜰 확률 × 목표 수치 이상이 뜰 확률</p>
-          <p>
-            옵션이 모두 뜰 확률 = C({SUB_STAT_NAMES.length}-n, 5-n) ÷ C({SUB_STAT_NAMES.length}, 5)
-            <br />
-            n = 지켜야 할 유효 옵션 수 + 목표 옵션 1개
-          </p>
-          <p>평균 시도 횟수 = 100 ÷ 성공 확률(%)</p>
+          <p className="optimizer__formula-title">이렇게 계산해요</p>
+          <dl>
+            <dt>교체 한 번 성공 확률</dt>
+            <dd>새 에코에 지켜야 할 유효 옵션과 목표 옵션이 모두, 필요한 수치 이상으로 뜰 확률</dd>
+            <dt>교체 한 번 평균 시도</dt>
+            <dd>100 ÷ 성공 확률(%)</dd>
+            <dt>총 평균 시도</dt>
+            <dd>계획에 들어간 교체마다의 평균 시도를 더한 값</dd>
+            <dt>가장 어려운 교체</dt>
+            <dd>계획 중 성공 확률이 가장 낮은 교체 한 번</dd>
+          </dl>
+          <ul className="optimizer__formula-notes">
+            <li>민맥싱만은 % 옵션만, 깡만은 깡 수치만, 섞어서는 둘 다 써서 채워요.</li>
+            <li>빠른 계획은 총 평균 시도가 가장 적고, 안정적인 계획은 가장 어려운 교체도 잘 뜨는 쪽을 골라요.</li>
+          </ul>
         </div>
       </div>
       <p className="uploader__hint optimizer__hint">
@@ -764,7 +776,29 @@ export default function StatsPage({
 }) {
   const [resetOpen, setResetOpen] = useState(false)
   // 유효 옵션 안내 말풍선: 화면에 들어오면 처음엔 무조건 펼쳐 두고, 화면 아무 곳이나 누르면 닫힙니다. i로 다시 열 수 있어요.
-  const [validInfoOpen, setValidInfoOpen] = useState(true)
+  // 유효 옵션 안내 말풍선은 처음 한 번만 저절로 열고, 그 뒤로는 i를 눌렀을 때만 엽니다.
+  const [validInfoOpen, setValidInfoOpen] = useState(() => {
+    try {
+      if (localStorage.getItem(VALID_INFO_SEEN_KEY)) return false
+      localStorage.setItem(VALID_INFO_SEEN_KEY, '1')
+    } catch {
+      // 저장소를 못 쓰면 매번 열리던 예전처럼 둡니다.
+    }
+    return true
+  })
+  // 유효 옵션 안내 말풍선이 좁은 화면에서 오른쪽 밖으로 잘리지 않게, 열릴 때 화면 안으로 당깁니다(꼬리는 i 아래 그대로).
+  const validNoticeRef = useRef(null)
+  useLayoutEffect(() => {
+    const el = validNoticeRef.current
+    if (!el) return
+    el.style.left = ''
+    el.style.removeProperty('--tail-x')
+    const over = el.getBoundingClientRect().right - (window.innerWidth - 12)
+    if (over > 0) {
+      el.style.left = `${-over}px`
+      el.style.setProperty('--tail-x', `${64 + over}px`)
+    }
+  }, [validInfoOpen])
   useEffect(() => {
     if (!validInfoOpen) return
     const close = () => setValidInfoOpen(false)
@@ -1080,7 +1114,7 @@ export default function StatsPage({
             </button>
             {/* 유효 옵션 기준 안내: 피해 유형을 고르게 쓰는 캐릭터(청초·페비 등)는 빠진 피해 보너스도 도움이 될 수 있음 */}
             {validInfoOpen && (
-              <div className="stats-page__valid-notice" role="note">
+              <div className="stats-page__valid-notice" role="note" ref={validNoticeRef}>
                 <b>이 유효 옵션은 공식에서 권장하는 옵션이에요.</b>
                 <span>청초, 페비처럼 여러 피해 유형을 고르게 쓰는 캐릭터는 유효 옵션에 없는 피해 보너스도 실제로는 도움이 될 수 있어요.</span>
                 <span>점수는 참고용으로 봐 주세요.</span>
@@ -1387,6 +1421,7 @@ export default function StatsPage({
                 {onMoveEcho && echoes.length > 1 && (
                   <button
                     type="button"
+                    // 글자가 "순서 변경" ↔ "완료"로 바뀌어도 폭이 같게(옆 칸이 밀리지 않게) 최소 폭을 둡니다.
                     className={`stats-page__reorder-btn ${reordering ? 'stats-page__reorder-btn--on' : ''}`}
                     onClick={() => setReordering((v) => !v)}
                   >

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { assetPath } from '../config/assetPath'
 import { getValidOptions } from '../config/characterValidOptions'
 import { gradeOf, scoreEchoes } from '../utils/echoScore'
@@ -20,6 +20,9 @@ function CardGrade({ echoes, characterId }) {
 export default function CharacterSelectPage({ onSelect, charactersWithData, characterEchoes }) {
   const [element, setElement] = useState('all') // 'all' | ELEMENTS[i]
   const [query, setQuery] = useState('')
+  // 필터로 목록이 줄어도 페이지 높이는 줄이지 않습니다(아래 푸터가 위아래로 튀지 않게). 늘어날 때만 따라갑니다.
+  const sectionRef = useRef(null)
+  const maxHeightRef = useRef(0)
   const [onlySet, setOnlySet] = useState(false) // 에코를 세팅한 캐릭터만
   const [sort, setSort] = useState('recent') // 'recent'(최신 캐릭터순) → 'high'(점수 높은 순) → 'low'(낮은 순)
   const scoreOf = (id) => (characterEchoes?.[id]?.length > 0 ? scoreEchoes(characterEchoes[id], getValidOptions(id)) : null)
@@ -45,8 +48,16 @@ export default function CharacterSelectPage({ onSelect, charactersWithData, char
       })
   }, [element, query, onlySet, sort, characterEchoes]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  useLayoutEffect(() => {
+    const el = sectionRef.current
+    if (!el) return
+    el.style.minHeight = ''
+    maxHeightRef.current = Math.max(maxHeightRef.current, el.offsetHeight)
+    el.style.minHeight = `${maxHeightRef.current}px`
+  })
+
   return (
-    <section className="char-select">
+    <section className="char-select" ref={sectionRef}>
       <header className="char-select__head">
         <span className="uploader__eyebrow">캐릭터 선택</span>
         <h2>등록할 캐릭터를 고르세요</h2>

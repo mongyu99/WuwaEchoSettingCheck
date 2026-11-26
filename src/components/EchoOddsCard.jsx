@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { scoreValidStats } from '../utils/echoScore'
 import { probabilityAbove, sampleEchoScores } from '../utils/betterEchoOdds'
 import './EchoOddsCard.css'
@@ -22,6 +22,13 @@ function percentText(p) {
  */
 export default function EchoOddsCard({ echoes, selectedIndex, validLabels, onSelect }) {
   // 새 에코 점수 분포는 유효 옵션이 바뀔 때만 다시 계산합니다.
+  const [infoOpen, setInfoOpen] = useState(false)
+  useEffect(() => {
+    if (!infoOpen) return undefined
+    const close = () => setInfoOpen(false)
+    document.addEventListener('pointerdown', close)
+    return () => document.removeEventListener('pointerdown', close)
+  }, [infoOpen])
   const sampled = useMemo(() => sampleEchoScores(validLabels), [validLabels.join('|')]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const rows = echoes
@@ -31,7 +38,24 @@ export default function EchoOddsCard({ echoes, selectedIndex, validLabels, onSel
 
   return (
     <section className="echo-odds">
-      <span className="echo-odds__title">교체 우선순위</span>
+      <div className="echo-odds__head">
+        <span className="echo-odds__title">교체 우선순위</span>
+        {/* 오른쪽 i: 마우스를 올리거나 누르면 확률의 뜻을 보여 줍니다(아무 곳이나 누르면 닫힘). */}
+        <button
+          type="button"
+          className={`echo-odds__info ${infoOpen ? 'echo-odds__info--on' : ''}`}
+          aria-label="확률 안내"
+          aria-expanded={infoOpen}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => setInfoOpen((v) => !v)}
+        >
+          i
+        </button>
+        <div className="echo-odds__tip" role="tooltip">
+          <p>지금보다 1점이라도 더 높게 뜰 확률이에요.</p>
+          <p>이 점수가 딜을 보장해주진 않아요.</p>
+        </div>
+      </div>
       <p className="echo-odds__hint">지금보다 점수가 높게 나올 확률이에요.</p>
       <ol className="echo-odds__list">
         {rows.map((row, rank) => (
