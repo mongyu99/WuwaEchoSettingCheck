@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 화면 주소 목록. src/config/routes.js의 ROUTES와 같게 유지합니다. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://wuwaechocheck.com/</loc></url>
+  <url><loc>https://wuwaechocheck.com/build</loc></url>
+  <url><loc>https://wuwaechocheck.com/live-check</loc></url>
+  <url><loc>https://wuwaechocheck.com/echo-bag</loc></url>
+  <url><loc>https://wuwaechocheck.com/recommend</loc></url>
+  <url><loc>https://wuwaechocheck.com/event-calendar</loc></url>
+  <url><loc>https://wuwaechocheck.com/event-note</loc></url>
+  <url><loc>https://wuwaechocheck.com/patch-notes</loc></url>
+  <url><loc>https://wuwaechocheck.com/help</loc></url>
+  <url><loc>https://wuwaechocheck.com/info</loc></url>
+</urlset>

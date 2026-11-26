@@ -228,6 +228,7 @@ export default function ScreenCapture({ onCapture, remaining, auto = false }) {
         <li>모니터 전체가 아니라 <b>게임 창</b>을 선택해 주세요. 다른 창이 함께 잡히면 인식되지 않을 수 있어요.</li>
         <li>16:9 화면에 맞춰져 있어요. 16:10 등 다른 비율에서는 화면이 깨지거나 스탯 위치가 어긋날 수 있어요.</li>
         <li>창 크기가 작거나 해상도가 낮으면 글자가 뭉개져 인식되지 않을 수 있어요.</li>
+        <li><b>HDR</b>이 켜져 있으면 공유 화면의 색이 달라져 인식되지 않을 수 있어요. 게임과 윈도우의 HDR을 꺼 주세요.</li>
         <li><b>덩치가 큰 에코</b>는 인식이 안 되거나 틀리게 읽힐 수 있어요. 인식 결과를 꼭 확인하고, 틀린 곳은 직접 고쳐 주세요.</li>
       </ul>
       {error && <p className="screen-capture__error">{error}</p>}
