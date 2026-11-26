@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, Fragment } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, Fragment } from 'react'
 import { ELEMENT_COLORS } from '../config/characters'
 import { getValidOptions } from '../config/characterValidOptions'
 import { getCharacterBaseStats } from '../config/characterBaseStats'
@@ -765,6 +765,19 @@ export default function StatsPage({
   const [resetOpen, setResetOpen] = useState(false)
   // 유효 옵션 안내 말풍선: 화면에 들어오면 처음엔 무조건 펼쳐 두고, 화면 아무 곳이나 누르면 닫힙니다. i로 다시 열 수 있어요.
   const [validInfoOpen, setValidInfoOpen] = useState(true)
+  // 유효 옵션 안내 말풍선이 좁은 화면에서 오른쪽 밖으로 잘리지 않게, 열릴 때 화면 안으로 당깁니다(꼬리는 i 아래 그대로).
+  const validNoticeRef = useRef(null)
+  useLayoutEffect(() => {
+    const el = validNoticeRef.current
+    if (!el) return
+    el.style.left = ''
+    el.style.removeProperty('--tail-x')
+    const over = el.getBoundingClientRect().right - (window.innerWidth - 12)
+    if (over > 0) {
+      el.style.left = `${-over}px`
+      el.style.setProperty('--tail-x', `${64 + over}px`)
+    }
+  }, [validInfoOpen])
   useEffect(() => {
     if (!validInfoOpen) return
     const close = () => setValidInfoOpen(false)
@@ -1080,7 +1093,7 @@ export default function StatsPage({
             </button>
             {/* 유효 옵션 기준 안내: 피해 유형을 고르게 쓰는 캐릭터(청초·페비 등)는 빠진 피해 보너스도 도움이 될 수 있음 */}
             {validInfoOpen && (
-              <div className="stats-page__valid-notice" role="note">
+              <div className="stats-page__valid-notice" role="note" ref={validNoticeRef}>
                 <b>이 유효 옵션은 공식에서 권장하는 옵션이에요.</b>
                 <span>청초, 페비처럼 여러 피해 유형을 고르게 쓰는 캐릭터는 유효 옵션에 없는 피해 보너스도 실제로는 도움이 될 수 있어요.</span>
                 <span>점수는 참고용으로 봐 주세요.</span>
@@ -1387,6 +1400,7 @@ export default function StatsPage({
                 {onMoveEcho && echoes.length > 1 && (
                   <button
                     type="button"
+                    // 글자가 "순서 변경" ↔ "완료"로 바뀌어도 폭이 같게(옆 칸이 밀리지 않게) 최소 폭을 둡니다.
                     className={`stats-page__reorder-btn ${reordering ? 'stats-page__reorder-btn--on' : ''}`}
                     onClick={() => setReordering((v) => !v)}
                   >

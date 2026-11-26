@@ -964,15 +964,13 @@
   margin-bottom: 10px;
 }
 
-/* ── 세 칸 높이 맞추기: 가장 긴 칸에 맞춰 늘립니다 ── */
+/* ── 세 칸: 윗선은 맞추고, 칸마다 내용만큼만 차지합니다(빈 상자가 길게 늘어나지 않게).
+   오른쪽 "다른 캐릭터" 칸은 스크롤해도 따라옵니다. ── */
 .live-check__layout {
-  align-items: stretch;
-}
-
-.live-check__left > :last-child {
-  flex: 1;
+  align-items: start;
 }
 
 .live-check__layout > .other-users {
-  align-self: stretch;
+  position: sticky;
+  top: calc(var(--top-nav-height) + 16px);
 }

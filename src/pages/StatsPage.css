@@ -2162,7 +2162,7 @@
   content: "";
   position: absolute;
   top: -6px;
-  left: 64px;
+  left: var(--tail-x, 64px);
   width: 10px;
   height: 10px;
   border-top: 1px solid var(--ww-gold, #d8b35a);
@@ -2233,6 +2233,7 @@
 }
 
 .stats-page__reorder-btn {
+  min-width: 64px;
   padding: 3px 10px;
   border: 1px solid var(--border-hairline);
   border-radius: 999px;

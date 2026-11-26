@@ -475,7 +475,8 @@ export default function EchoBagPage({ onGoToRecommend, characterEchoes = {} }) {
                 </p>
                 {debugShot && <img className="echo-bag__debug-shot" src={debugShot} alt="마지막으로 인식한 화면과 읽는 위치" />}
                 <ul className="echo-bag__debug-legend">
-                  {BAG_DEBUG_BOXES.map((b) => (
+                  {/* 변화 감지 영역은 상자가 여러 개라 범례에는 이름별로 한 번만 */}
+                  {BAG_DEBUG_BOXES.filter((b, i, list) => list.findIndex((x) => x.label === b.label) === i).map((b) => (
                     <li key={b.label}>
                       <i style={{ background: b.color }} />
                       {b.label}
