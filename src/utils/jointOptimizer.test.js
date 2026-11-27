@@ -158,6 +158,24 @@ describe('계산기 규칙 (무작위 세팅)', () => {
   })
 })
 
+describe('깡 옵션 다시 띄우기', () => {
+  // 에코마다 공격력 깡 30이 이미 붙어 있고 빈 자리·무효 자리가 없으면, 깡으로 채우는 방법은 30을 더 높게 다시 띄우는 것뿐입니다.
+  const echoes = Array.from({ length: 5 }, () =>
+    echo([['공격력', '30'], ['크리티컬%', '6.3%'], ['크리티컬 피해%', '12.6%'], ['공격력%', '6.4%'], ['공명 효율%', '6.8%']]),
+  )
+  const validFull = ['크리티컬%', '크리티컬 피해%', '공격력%', '공격력', '공명 효율%']
+
+  it('깡 옵션만으로도, 붙어 있는 깡을 더 높은 단계로 다시 띄우는 계획을 만든다', () => {
+    // 기본 공격력 1000에서 3% = 깡 30 더. (예전엔 깡이 이미 붙은 에코는 후보에서 빠져서 "못 채워요"였음)
+    // 30 → 60 한 번보다 30 → 40 세 번이 더 잘 떠서 그쪽을 고를 수 있으므로, 교체 횟수는 정하지 않습니다.
+    const r = planJoint({ goals: [goal('공격력', '공격력%', 3, '공격력', 1000)], echoes, validLabels: validFull })
+    const flat = r.strategies.flat.fast
+    expect(flat).not.toBeNull()
+    for (const st of flat.steps) expect(st.changes).toEqual([expect.objectContaining({ kind: 'upgrade', label: '공격력', from: '30' })])
+    expect(flat.steps.reduce((s, st) => s + st.gains[0], 0)).toBeGreaterThanOrEqual(3 - 1e-6)
+  })
+})
+
 describe('가장 낮은 단계로 맞추기', () => {
   const echoes = Array.from({ length: 5 }, () => echo([['공격력%', '7.1%'], ['HP%', '8.6%'], ['방어력%', '9%']]))
 

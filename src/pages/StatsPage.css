@@ -1816,7 +1816,7 @@
 
 .optimizer__compare th,
 .optimizer__compare td {
-  padding: 7px 10px;
+  padding: 7px 8px;
   border-bottom: 1px solid var(--border-hairline);
   text-align: right;
   white-space: nowrap;
@@ -1841,6 +1841,26 @@
 .optimizer__compare-best td:first-child::after {
   content: ' · 가장 빠름';
   font-size: 11px;
+}
+
+.optimizer__compare-best--safe td:first-child::after {
+  content: ' · 가장 안정적';
+}
+
+/* 좁은 화면: 4칸이 넘치지 않게 여백을 줄이고 "가장 빠름/안정적"은 방법 아래 줄로 */
+@media (max-width: 480px) {
+  .optimizer__compare th,
+  .optimizer__compare td {
+    padding: 6px 4px;
+    font-size: 12px;
+  }
+  .optimizer__compare-best td:first-child::after {
+    display: block;
+    content: '가장 빠름';
+  }
+  .optimizer__compare-best--safe td:first-child::after {
+    content: '가장 안정적';
+  }
 }
 
 .optimizer__compare-no {
@@ -2003,7 +2023,8 @@
 /* ===== 결과: 왼쪽 요약(따라옴) | 오른쪽 에코 카드 ===== */
 .optimizer--result > .optimizer__results.optimizer__joint {
   display: grid;
-  grid-template-columns: 380px minmax(0, 1fr);
+  /* 왼쪽 비교표가 4칸(방법·교체·에코 개수·가장 어려운 교체)이라 넉넉하게, 오른쪽 에코 카드가 나머지를 씁니다. */
+  grid-template-columns: 440px minmax(0, 1fr);
   gap: 20px;
   align-items: start;
   max-width: 1200px;

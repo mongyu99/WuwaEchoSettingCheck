@@ -11,6 +11,8 @@ const GUIDE = [
 export default function TunerGuide({ attempts }) {
   return (
     <div className="tuner-guide">
+      <p className="tuner-guide__title">총 평균 에코 개수</p>
+      <p className="tuner-guide__sub">서브 옵션 5개가 다 열리는 +25까지 강화한 에코 기준이에요.</p>
       <ul>
         {GUIDE.map((g, i) => {
           const on = attempts >= g.min && attempts < (GUIDE[i + 1]?.min ?? Infinity)
