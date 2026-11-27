@@ -359,7 +359,7 @@ function formatChance(s) {
   const attempts = Number.isFinite(s.attempts) ? `약 ${Math.ceil(s.attempts).toLocaleString()}개` : '-'
   // 0.01% 미만은 toFixed(2)로 자르면 0.0052%가 "0.01%"로 보여서, 계획 요약처럼 유효 숫자 2자리로 보여 줍니다.
   const chance = s.probability >= 0.01 ? s.probability.toFixed(2) : String(Number(s.probability.toPrecision(2)))
-  return `뜰 확률 ${chance}% · 기대 시도 ${attempts}`
+  return `뜰 확률 ${chance}% · 평균 에코 ${attempts}`
 }
 
 
@@ -385,11 +385,17 @@ function JointResult({ results, echoes, onStartMission }) {
 
   const sig = (p) => p?.steps.map((st) => `${st.echoIndex}:${st.changes.map((c) => c.label + c.to).join(',')}`).join('|')
   const strategies = plan?.strategies ?? {}
-  const bestKey = ['minmax', 'flat', 'mixed']
-    .filter((k) => strategies[k]?.fast)
-    .reduce((bk, k) => (!bk || strategies[k].fast.attempts < strategies[bk].fast.attempts - 0.5 ? k : bk), null)
   const same = plan?.fast && sig(plan.fast) === sig(plan.safe)
   const current = !plan?.fast ? null : same || pick === 'fast' || !plan.safe ? plan.fast : plan.safe
+  // 비교표도 아래에서 고른 계획(빠른/안정적)을 따라갑니다. 빠른 계획이면 총 평균 시도가 적은 쪽,
+  // 안정적인 계획이면 가장 어려운 교체 확률이 높은 쪽을 가장 좋은 줄로 표시합니다.
+  const tableKey = current && current === plan.safe && !same ? 'safe' : 'fast'
+  const planOf = (k) => strategies[k]?.[tableKey] ?? strategies[k]?.fast ?? null
+  const isBetter = (a, b) =>
+    tableKey === 'fast' ? a.attempts < b.attempts - 0.5 : a.minProbability > b.minProbability * (1 + 1e-9)
+  const bestKey = ['minmax', 'flat', 'mixed']
+    .filter((k) => planOf(k))
+    .reduce((bk, k) => (!bk || isBetter(planOf(k), planOf(bk)) ? k : bk), null)
   const after = current ? afterOf(current) : []
   const running = goals.map((g) => g.current)
 
@@ -403,28 +409,43 @@ function JointResult({ results, echoes, onStartMission }) {
             <tr>
               <th>방법</th>
               <th>교체</th>
-              <th>총 평균 시도</th>
+              <th>에코 개수</th>
+              <th>가장 어려운 교체</th>
             </tr>
           </thead>
           <tbody>
             {[
-              ['minmax', '민맥싱만'],
-              ['flat', '깡만'],
-              ['mixed', '섞어서'],
+              ['minmax', '% 옵션만'],
+              ['flat', '깡 옵션만'],
+              ['mixed', '% + 깡 섞어서'],
             ]
               .filter(([k]) => strategies[k])
               .map(([k, label]) => {
-                const f = strategies[k].fast
+                const f = planOf(k)
+                // "섞어서"는 % 옵션만·깡 옵션만 중 더 나은 계획을 그대로 쓰기도 해서, 같은 계획이면 숫자를 또 적지 않고 같다고만 알려 줍니다.
+                const sameAs =
+                  k === 'mixed' && f
+                    ? [
+                        ['minmax', '% 옵션만'],
+                        ['flat', '깡 옵션만'],
+                      ].find(([o]) => planOf(o) && sig(planOf(o)) === sig(f))?.[1]
+                    : null
+                const bestClass = k === bestKey ? `optimizer__compare-best optimizer__compare-best--${tableKey}` : ''
                 return (
-                  <tr key={k} className={k === bestKey ? 'optimizer__compare-best' : ''}>
+                  <tr key={k} className={bestClass}>
                     <td>{label}</td>
-                    {f ? (
+                    {sameAs ? (
+                      <td colSpan={3} className="optimizer__compare-no">
+                        {sameAs}과 같아요
+                      </td>
+                    ) : f ? (
                       <>
                         <td>{f.steps.length}번</td>
                         <td>약 {Math.round(f.attempts).toLocaleString()}개</td>
+                        <td>{formatPlanChance(f.minProbability)}</td>
                       </>
                     ) : (
-                      <td colSpan={2} className="optimizer__compare-no">
+                      <td colSpan={3} className="optimizer__compare-no">
                         못 채워요
                       </td>
                     )}
@@ -446,7 +467,7 @@ function JointResult({ results, echoes, onStartMission }) {
             ) : (
               <div className="optimizer__plan-pick" role="tablist" aria-label="계획">
                 {[
-                  ['fast', '빠른 계획', '시도 합이 가장 적어요'],
+                  ['fast', '빠른 계획', '에코 개수가 가장 적어요'],
                   ['safe', '안정적인 계획', '교체마다 잘 떠요'],
                 ].map(([k, title, desc]) => (
                   <button
@@ -469,7 +490,7 @@ function JointResult({ results, echoes, onStartMission }) {
                 <b>{current.steps.length}번</b>
               </span>
               <span>
-                <small>총 평균 시도</small>
+                <small>총 평균 에코 개수</small>
                 <b>약 {Math.round(current.attempts).toLocaleString()}개</b>
               </span>
               <span>
@@ -692,16 +713,16 @@ function OptimizerPanel({
           <dl>
             <dt>교체 한 번 성공 확률</dt>
             <dd>새 에코에 지켜야 할 유효 옵션과 목표 옵션이 모두, 필요한 수치 이상으로 뜰 확률</dd>
-            <dt>교체 한 번 평균 시도</dt>
+            <dt>교체 한 번 평균 에코 개수</dt>
             <dd>100 ÷ 성공 확률(%)</dd>
-            <dt>총 평균 시도</dt>
-            <dd>계획에 들어간 교체마다의 평균 시도를 더한 값</dd>
+            <dt>총 평균 에코 개수</dt>
+            <dd>계획에 들어간 교체마다의 평균 에코 개수를 더한 값</dd>
             <dt>가장 어려운 교체</dt>
             <dd>계획 중 성공 확률이 가장 낮은 교체 한 번</dd>
           </dl>
           <ul className="optimizer__formula-notes">
-            <li>민맥싱만은 % 옵션만, 깡만은 깡 수치만, 섞어서는 둘 다 써서 채워요.</li>
-            <li>빠른 계획은 총 평균 시도가 가장 적고, 안정적인 계획은 가장 어려운 교체도 잘 뜨는 쪽을 골라요.</li>
+            <li>% 옵션만은 공격력% 같은 % 옵션으로만, 깡 옵션만은 공격력 같은 고정 수치로만, % + 깡 섞어서는 둘 다 써서 채워요.</li>
+            <li>빠른 계획은 총 평균 에코 개수가 가장 적고, 안정적인 계획은 가장 어려운 교체도 잘 뜨는 쪽을 골라요.</li>
           </ul>
         </div>
       </div>
