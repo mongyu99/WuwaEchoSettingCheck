@@ -157,10 +157,16 @@ function echoCandidates(echo, echoIndex, goals, validLabels, allow) {
   return kept
 }
 
-/** 에코를 하나씩 넘기며 좋은 조합만 남겨, 모든 목표를 채우는 가장 좋은 계획을 찾습니다. */
+/**
+ * 에코를 하나씩 넘기며 좋은 조합만 남겨, 모든 목표를 채우는 가장 좋은 계획을 찾습니다.
+ * 탐색은 대표 단계로 대충 계산하므로, 목표를 다 채운 계획이 나올 때마다 실제 단계로 낮춰(lowerTiers) 정확히 계산한 뒤
+ * 그 값으로 1등을 정합니다. (예전엔 대충 계산한 1등 하나만 낮춰서, 목표를 낮췄는데 시도 횟수가 오히려 느는 경우가 약 9% 있었음)
+ */
 function beamSearch(perEcho, needs, better) {
   const deficit = (gains) => gains.reduce((sum, g, i) => sum + Math.max(0, needs[i] - g) / needs[i], 0)
   let states = [{ gains: needs.map(() => 0), attempts: 0, minProbability: Infinity, steps: [] }]
+  let best = null
+  const checked = new WeakSet() // 다음 에코로 넘어가도 그대로 남는 계획을 다시 계산하지 않게
   for (const cands of perEcho) {
     const next = []
     for (const s of states) {
@@ -174,6 +180,12 @@ function beamSearch(perEcho, needs, better) {
         })
       }
     }
+    for (const s of next) {
+      if (s.steps.length === 0 || checked.has(s) || deficit(s.gains) >= 1e-9) continue
+      checked.add(s)
+      const exact = lowerTiers(s, needs)
+      if (!best || better(exact, best)) best = exact
+    }
     // 목표를 넘친 증가량은 같은 걸로 보고(목표에서 자름) 같은 상태끼리는 더 좋은 하나만 남깁니다.
     const byKey = new Map()
     for (const s of next) {
@@ -185,9 +197,7 @@ function beamSearch(perEcho, needs, better) {
       .sort((a, b) => deficit(a.gains) - deficit(b.gains) || (better(a, b) ? -1 : better(b, a) ? 1 : 0))
       .slice(0, BEAM)
   }
-  const done = states.filter((s) => deficit(s.gains) < 1e-9)
-  if (done.length === 0) return null
-  return done.reduce((best, s) => (better(s, best) ? s : best))
+  return best
 }
 
 /**
@@ -240,8 +250,8 @@ export function planJoint({ goals, echoes, validLabels }) {
   const needs = goals.map((g) => g.need)
   const solve = (allow) => {
     const perEcho = echoes.map((e, i) => echoCandidates(e, i, goals, validLabels, allow)).filter((c) => c.length > 0)
-    const fast = lowerTiers(beamSearch(perEcho, needs, fastBetter), needs)
-    const safe = lowerTiers(beamSearch(perEcho, needs, safeBetter), needs)
+    const fast = beamSearch(perEcho, needs, fastBetter)
+    const safe = beamSearch(perEcho, needs, safeBetter)
     return { fast, safe }
   }
   const hasFlat = goals.some((g) => g.info.flatLabel && g.base > 0)

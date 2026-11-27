@@ -98,7 +98,9 @@ export default function CharacterSelectPage({ onSelect, charactersWithData, char
 
       {filtered.length === 0 && <p className="uploader__hint">조건에 맞는 캐릭터가 없어요.</p>}
 
-      <div key={element} className="char-select__grid"> {/* 속성을 바꾸면 목록을 새로 그려 물결 등장을 다시 재생합니다. */}
+      {/* 속성·세팅 캐릭터·정렬을 바꾸면 목록을 통째로 새로 그려 물결 등장을 처음부터 다시 재생합니다.
+          (key가 그대로면 남아 있던 카드는 그대로 두고 새로 생긴 카드만 자기 순번만큼 기다렸다 나타나서, 중간중간 빈칸이 보였습니다.) */}
+      <div key={`${element}|${onlySet}|${sort}`} className="char-select__grid">
         {filtered.map((c, i) => (
           <button
             key={c.id}
