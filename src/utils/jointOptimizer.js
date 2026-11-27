@@ -61,27 +61,46 @@ function goalOptions(goal, subs, allow) {
     }
   }
   opts.push(...pctOpts)
-  const canFlat = allow.flat && info.flatLabel && base > 0 && !subs.some((s) => s.label === info.flatLabel)
-  if (canFlat) {
+  if (allow.flat && info.flatLabel && base > 0) {
+    // 깡 옵션도 % 옵션처럼: 이미 붙어 있으면 더 높은 단계로 다시 띄우기(upgrade), 없으면 새로 붙이기(add).
+    // 늘어나는 양은 기본값 대비 %로 환산합니다(공격력% 1% = 기본 공격력의 1%라서 깡과 같은 단위로 비교됨).
+    const flatStat = subs.find((s) => s.label === info.flatLabel)
     const flatTiers = pickTiers(SUB_STAT_OPTIONS[info.flatLabel] ?? [], FLAT_TIERS)
-    for (const f of flatTiers) {
-      const flatOpt = {
-        slots: 1,
-        gain: (f / base) * 100,
-        targets: [{ label: info.flatLabel, value: f, from: 0, scale: 100 / base }],
-        changes: [{ kind: 'add', label: info.flatLabel, to: fmtValue(info.flatLabel, f) }],
-        upgraded: null,
+    const scale = 100 / base
+    const flatOpts = []
+    if (flatStat) {
+      const cur = parseFloat(flatStat.valueText)
+      for (const f of flatTiers.filter((v) => v > cur)) {
+        flatOpts.push({
+          slots: 0,
+          gain: (f - cur) * scale,
+          targets: [{ label: info.flatLabel, value: f, from: cur, scale }],
+          changes: [{ kind: 'upgrade', label: info.flatLabel, from: flatStat.valueText, to: fmtValue(info.flatLabel, f) }],
+          upgraded: flatStat,
+        })
       }
+    } else {
+      for (const f of flatTiers) {
+        flatOpts.push({
+          slots: 1,
+          gain: f * scale,
+          targets: [{ label: info.flatLabel, value: f, from: 0, scale }],
+          changes: [{ kind: 'add', label: info.flatLabel, to: fmtValue(info.flatLabel, f) }],
+          upgraded: null,
+        })
+      }
+    }
+    for (const flatOpt of flatOpts) {
       opts.push(flatOpt)
       // %와 깡을 한 에코에 같이(섞어서)
-      if (allow.percent && allow.flat) {
+      if (allow.percent) {
         for (const p of pctOpts) {
           opts.push({
-            slots: p.slots + 1,
+            slots: p.slots + flatOpt.slots,
             gain: p.gain + flatOpt.gain,
             targets: [...p.targets, ...flatOpt.targets],
             changes: [...p.changes, ...flatOpt.changes],
-            upgraded: p.upgraded,
+            upgraded: [p.upgraded, flatOpt.upgraded].filter(Boolean),
           })
         }
       }
@@ -138,7 +157,7 @@ function echoCandidates(echo, echoIndex, goals, validLabels, allow) {
         slots: acc.slots + opt.slots,
         targets: [...acc.targets, ...opt.targets.map((t) => ({ ...t, goal: gi }))],
         changes: [...acc.changes, ...opt.changes],
-        upgraded: opt.upgraded ? [...acc.upgraded, opt.upgraded] : acc.upgraded,
+        upgraded: opt.upgraded ? acc.upgraded.concat(opt.upgraded) : acc.upgraded, // 하나 또는 여러 개(%·깡 같이 다시 띄우기)
         gains: [...acc.gains, opt.gain],
       })
     }
