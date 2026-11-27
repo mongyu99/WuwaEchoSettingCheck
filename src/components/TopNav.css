@@ -339,3 +339,35 @@
   transform: translateX(14px);
   background: var(--accent-wave);
 }
+
+/* 새 패치노트 알림: 패치노트 글자 오른쪽 위의 작은 숫자 배지. 패치노트 화면에 들어가면 사라집니다. */
+.top-nav__new-badge {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #e5484d;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* 모바일 햄버거 버튼 위의 빨간 점(서랍 안에 새 패치노트가 있다는 표시). */
+.top-nav__burger {
+  position: relative;
+}
+.top-nav__new-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e5484d;
+}

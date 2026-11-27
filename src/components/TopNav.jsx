@@ -3,6 +3,8 @@ import BackupPanel from './BackupPanel'
 import { screenCaptureSupported } from './ScreenCapture'
 import { useEffect, useState } from 'react'
 import { applyMotion, loadMotion } from '../utils/motion'
+import { fetchPatchNotes } from '../utils/api'
+import { isFirstVisit, loadSeenPatchNote, saveSeenPatchNote } from '../utils/patchNoteSeen'
 import './TopNav.css'
 
 // 상단바 메뉴. 왼쪽 사이드바 대신 모든 화면에서 같은 위치로 바로 이동합니다.
@@ -38,6 +40,30 @@ export default function TopNav({ currentPage, theme, onToggleTheme, characterDat
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [drawerOpen])
+  // 새 패치노트 알림: 가장 최신 글 id가 이 기기에서 마지막으로 본 id와 다르면 "1"을 띄우고, 패치노트 화면에 들어가면 지웁니다.
+  const [latestNoteId, setLatestNoteId] = useState(null)
+  const [seenNoteId, setSeenNoteId] = useState(loadSeenPatchNote)
+  useEffect(() => {
+    fetchPatchNotes({ page: 0, size: 1 })
+      .then((r) => {
+        const id = r.items[0]?.id ?? null
+        // 처음 온 사람은 지금 최신 글을 읽은 것으로 두고, 다음 새 글부터 1을 띄웁니다.
+        if (id != null && loadSeenPatchNote() === null && isFirstVisit()) {
+          saveSeenPatchNote(id)
+          setSeenNoteId(String(id))
+        }
+        setLatestNoteId(id)
+      })
+      .catch(() => {})
+  }, [])
+  useEffect(() => {
+    if (currentPage === PATCH_NOTES.page && latestNoteId != null && String(latestNoteId) !== seenNoteId) {
+      saveSeenPatchNote(latestNoteId)
+      setSeenNoteId(String(latestNoteId))
+    }
+  }, [currentPage, latestNoteId, seenNoteId])
+  const hasNewNote = latestNoteId != null && String(latestNoteId) !== seenNoteId && currentPage !== PATCH_NOTES.page
+
   const go = (handler) => () => {
     setDrawerOpen(false)
     handlers[handler]?.()
@@ -55,6 +81,8 @@ export default function TopNav({ currentPage, theme, onToggleTheme, characterDat
         <span />
         <span />
         <span />
+        {/* 모바일에서는 패치노트가 서랍 안에 숨어 있어서 햄버거에도 점을 띄웁니다. */}
+        {hasNewNote && !drawerOpen && <i className="top-nav__new-dot" aria-hidden="true" />}
       </button>
       <button className="top-nav__brand" onClick={go('onGoHome')}>
         명체크
@@ -88,6 +116,11 @@ export default function TopNav({ currentPage, theme, onToggleTheme, characterDat
           onClick={go(PATCH_NOTES.handler)}
         >
           {PATCH_NOTES.label}
+          {hasNewNote && (
+            <span className="top-nav__new-badge" aria-label="새 패치노트">
+              1
+            </span>
+          )}
         </button>
         <AuthPanel characterData={characterData} onLoadCloudData={onLoadCloudData} />
       </div>
