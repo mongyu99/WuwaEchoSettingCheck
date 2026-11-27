@@ -248,17 +248,23 @@ const safeBetter = (a, b) =>
 export function planJoint({ goals, echoes, validLabels }) {
   if (goals.length === 0) return { fast: null, safe: null, strategies: {} }
   const needs = goals.map((g) => g.need)
+  // 근사 탐색이라 기준이 다른 두 탐색의 결과가 서로를 앞설 수 있어서(빠른 계획이 안정적 계획보다 시도가 많은 등),
+  // 나온 계획들 중 각 기준으로 가장 좋은 것을 고릅니다.
+  const bestOf = (plans, better) => plans.filter(Boolean).reduce((best, p) => (!best || better(p, best) ? p : best), null)
   const solve = (allow) => {
     const perEcho = echoes.map((e, i) => echoCandidates(e, i, goals, validLabels, allow)).filter((c) => c.length > 0)
     const fast = beamSearch(perEcho, needs, fastBetter)
     const safe = beamSearch(perEcho, needs, safeBetter)
-    return { fast, safe }
+    return { fast: bestOf([fast, safe], fastBetter), safe: bestOf([safe, fast], safeBetter) }
   }
   const hasFlat = goals.some((g) => g.info.flatLabel && g.base > 0)
-  const strategies = {
-    minmax: solve({ percent: true, flat: false }),
-    ...(hasFlat ? { flat: solve({ percent: false, flat: true }) } : {}),
-    mixed: solve({ percent: true, flat: true }),
-  }
-  return { fast: strategies.mixed.fast, safe: strategies.mixed.safe, strategies }
+  const minmax = solve({ percent: true, flat: false })
+  const flat = hasFlat ? solve({ percent: false, flat: true }) : null
+  const mixedRaw = solve({ percent: true, flat: true })
+  // "섞어서"는 %·깡을 다 쓸 수 있어서 민맥싱만·깡만의 계획도 그대로 쓸 수 있습니다. 후보가 많아 탐색이 놓친 경우를 위해
+  // 셋 중 가장 좋은 계획을 "섞어서"로 씁니다(1만 건 테스트에서 섞어서가 민맥싱만보다 최대 1.34배 어렵게 나오던 문제).
+  const all = [minmax, flat, mixedRaw].filter(Boolean)
+  const mixed = { fast: bestOf(all.map((s) => s.fast), fastBetter), safe: bestOf(all.map((s) => s.safe), safeBetter) }
+  const strategies = { minmax, ...(flat ? { flat } : {}), mixed }
+  return { fast: mixed.fast, safe: mixed.safe, strategies }
 }
